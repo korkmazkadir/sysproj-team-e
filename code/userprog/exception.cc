@@ -71,11 +71,12 @@ UpdatePC ()
  * \param from  <- MIPS virtual address
  * \param to    <- x86 'physical' address
  * \param size  <- max number of bytes to copy
- * \brief Copies up to size characters from virtual address \a from to 'physical'
+ * \brief Copies up to \a size - 1 characters from virtual address \a from to 'physical'
  *        address \a to
  *        The last character (at pos size) of \a to is always set to 0
  */
 static void copyStringFromMachine(int from, char *to, unsigned size) {
+    --size;
     while (size--) {
         machine->ReadMem(from, 1, (int *)to);
         if (*to == 0) {
@@ -95,8 +96,7 @@ static void copyStringToMachine(char *from, int to, unsigned size) {
     }
 }
 
-void
-ExceptionHandler (ExceptionType which)
+void ExceptionHandler (ExceptionType which)
 {
     int type = machine->ReadRegister (SYSCALL_ID_REGISTER);
 
@@ -118,8 +118,8 @@ ExceptionHandler (ExceptionType which)
             case SC_SynchPutString:
             {
                 int fromAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
-                static char local_buf[MAX_WRITE_BUF_SIZE];
-                copyStringFromMachine(fromAddress, local_buf, MAX_WRITE_BUF_SIZE - 1);
+                char local_buf[MAX_WRITE_BUF_SIZE];
+                copyStringFromMachine(fromAddress, local_buf, MAX_WRITE_BUF_SIZE);
                 syncConsole->SynchPutString(local_buf);
             } break;
 
@@ -141,11 +141,39 @@ ExceptionHandler (ExceptionType which)
                         numBytes = MAX_WRITE_BUF_SIZE;
                     }
 
-                    static char local_buf[MAX_WRITE_BUF_SIZE];
+                    char local_buf[MAX_WRITE_BUF_SIZE];
                     syncConsole->SynchGetString(local_buf, numBytes);
                     copyStringToMachine(local_buf, toVirtualAddress, MAX_WRITE_BUF_SIZE);
                 }
                 readStringSemaphore.V();
+            } break;
+
+            case SC_SynchPutInt:
+            {
+                int valToPut = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                char local_buf[MAX_INT_LEN];
+                (void)snprintf(local_buf, MAX_INT_LEN, "%d", valToPut);
+                syncConsole->SynchPutString(local_buf);
+            } break;
+
+            case SC_SynchGetInt:
+            {
+                readStringSemaphore.P();
+                {
+                    int resAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                    char local_buf[MAX_INT_LEN];
+                    syncConsole->SynchGetString(local_buf, MAX_INT_LEN);
+                    int val;
+                    sscanf(local_buf, "%d", &val);
+                    machine->WriteMem(resAddress, 4, val);
+                }
+                readStringSemaphore.V();
+            } break;
+
+            case SC_Exit:
+            {
+                int retValue = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                printf("Application exited with code %d \n", retValue);
             } break;
 
             default:

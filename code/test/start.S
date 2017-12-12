@@ -129,7 +129,7 @@ Yield:
 	j	$31
 	.end Yield
 
-    .global PutChar
+    .globl PutChar
     .ent PutChar
 PutChar:
     addiu $2,$0,SC_PutChar
@@ -137,7 +137,7 @@ PutChar:
     j   $31
     .end PutChar
 
-    .global SynchPutString
+    .globl SynchPutString
     .ent SynchPutString
 SynchPutString:
     addiu $2,$0,SC_SynchPutString
@@ -145,7 +145,7 @@ SynchPutString:
     j   $31
     .end SynchPutString
 
-    .global SynchGetChar
+    .globl SynchGetChar
     .ent SynchGetChar
 SynchGetChar:
     addiu $2,$0,SC_SynchGetChar
@@ -153,13 +153,29 @@ SynchGetChar:
     j   $31
     .end SynchGetChar
 
-    .global SynchGetString
+    .globl SynchGetString
     .ent SynchGetString
 SynchGetString:
     addiu $2,$0,SC_SynchGetString
     syscall
     j   $31
     .end SynchGetString
+
+    .globl SynchPutInt
+    .ent SynchPutInt
+SynchPutInt:
+    addiu $2,$0,SC_SynchPutInt
+    syscall
+    j   $31
+    .end SynchPutInt
+
+    .globl SynchGetInt
+    .ent SynchGetInt
+SynchGetInt:
+    addiu $2,$0,SC_SynchGetInt
+    syscall
+    j   $31
+    .end SynchGetInt
 /* dummy function to keep gcc happy */
         .globl  __main
         .ent    __main

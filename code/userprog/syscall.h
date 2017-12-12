@@ -33,6 +33,8 @@
 #define SC_SynchPutString 12
 #define SC_SynchGetChar 13
 #define SC_SynchGetString 14
+#define SC_SynchPutInt 15
+#define SC_SynchGetInt 16
 
 #ifdef IN_USER_MODE
 
@@ -63,6 +65,8 @@ void PutChar(char c);
 void SynchPutString(const char *string);
 char SynchGetChar();
 void SynchGetString(char *s, int n);
+void SynchPutInt(int n);
+void SynchGetInt(int *n);
 
 /* A unique identifier for an executing user program (address space) */
 typedef int SpaceId;

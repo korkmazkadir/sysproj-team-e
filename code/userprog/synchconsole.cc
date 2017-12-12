@@ -47,6 +47,7 @@ void SynchConsole::SynchGetString(char *s, int n)
         }
         *(s + ii) = nextChar;
     }
+    *(s + ii) = 0;
 }
 
 void SynchConsole::ReadAvail(int arg)

@@ -11,10 +11,11 @@ void print(char c, int n)
 
 int main()
 {
-//    char c = SynchGetChar();
-//    PutChar(c);
-
+    char c = SynchGetChar();
+    PutChar(c);
+    (void)SynchGetChar();
     SynchPutString("Enter data!\n");
+
 
     static char test[10] = { 0 };
     SynchGetString(&test[0], 5);
@@ -22,6 +23,11 @@ int main()
     SynchPutString(test);
     SynchPutString("\n");
 
+    SynchPutString("Enter integer: ");
+    int n;
+    SynchGetInt(&n);
+    SynchPutString("Your input was ");
+    SynchPutInt(n);
+    SynchPutString("\n");
 
-    Halt();
 }
