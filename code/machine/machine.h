@@ -57,6 +57,11 @@ enum ExceptionType { NoException,           // Everything ok!
 // any two instructions (thus we need to keep track of things like load
 // delay slots, etc.)
 
+#define RET_VALUE_REGISTER 2
+#define SYSCALL_ID_REGISTER 2
+#define FIRST_PARAM_REGISTER 4
+#define SECOND_PARAM_REGISTER 5
+
 #define StackReg	29	// User's stack pointer
 #define RetAddrReg	31	// Holds return address for procedure calls
 #define NumGPRegs	32	// 32 general purpose registers on MIPS

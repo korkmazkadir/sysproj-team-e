@@ -29,6 +29,10 @@
 #define SC_Close	8
 #define SC_Fork		9
 #define SC_Yield	10
+#define SC_PutChar  11
+#define SC_SynchPutString 12
+#define SC_SynchGetChar 13
+#define SC_SynchGetString 14
 
 #ifdef IN_USER_MODE
 
@@ -54,6 +58,11 @@ void Halt () __attribute__((noreturn));
 
 /* This user program is done (status = 0 means exited normally). */
 void Exit (int status) __attribute__((noreturn));
+
+void PutChar(char c);
+void SynchPutString(const char *string);
+char SynchGetChar();
+void SynchGetString(char *s, int n);
 
 /* A unique identifier for an executing user program (address space) */
 typedef int SpaceId;
