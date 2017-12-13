@@ -18,7 +18,7 @@ int main()
 
 
     static char test[10] = { 0 };
-    SynchGetString(&test[0], 5);
+    SynchGetString(&test[0], 10);
     SynchPutString("\n");
     SynchPutString(test);
     SynchPutString("\n");

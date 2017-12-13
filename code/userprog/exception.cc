@@ -25,8 +25,6 @@
 #include "system.h"
 #include "syscall.h"
 
-static Semaphore readStringSemaphore("Exception.cc:ReadString", 1);
-
 //----------------------------------------------------------------------
 // UpdatePC : Increments the Program Counter register in order to resume
 // the user program immediately after the "syscall" instruction.
@@ -125,27 +123,24 @@ void ExceptionHandler (ExceptionType which)
 
             case SC_SynchGetChar:
             {
-                char retChar = syncConsole->SynchGetChar();
-                machine->WriteRegister(RET_VALUE_REGISTER, (int)retChar);
+                int retChar = syncConsole->SynchGetChar();
+                machine->WriteRegister(RET_VALUE_REGISTER, retChar);
             } break;
 
             //TODO: Check for correctness
             case SC_SynchGetString:
             {
-                readStringSemaphore.P();
-                {
-                    int toVirtualAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
-                    int numBytes = machine->ReadRegister(SECOND_PARAM_REGISTER);
+                int toVirtualAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                int numBytes = machine->ReadRegister(SECOND_PARAM_REGISTER);
 
-                    if (numBytes > MAX_WRITE_BUF_SIZE) {
-                        numBytes = MAX_WRITE_BUF_SIZE;
-                    }
-
-                    char local_buf[MAX_WRITE_BUF_SIZE];
-                    syncConsole->SynchGetString(local_buf, numBytes);
-                    copyStringToMachine(local_buf, toVirtualAddress, MAX_WRITE_BUF_SIZE);
+                if (numBytes > MAX_WRITE_BUF_SIZE) {
+                    numBytes = MAX_WRITE_BUF_SIZE;
                 }
-                readStringSemaphore.V();
+
+                char local_buf[MAX_WRITE_BUF_SIZE];
+                syncConsole->SynchGetString(local_buf, numBytes);
+                copyStringToMachine(local_buf, toVirtualAddress, numBytes);
+
             } break;
 
             case SC_SynchPutInt:
@@ -158,16 +153,12 @@ void ExceptionHandler (ExceptionType which)
 
             case SC_SynchGetInt:
             {
-                readStringSemaphore.P();
-                {
-                    int resAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
-                    char local_buf[MAX_INT_LEN];
-                    syncConsole->SynchGetString(local_buf, MAX_INT_LEN);
-                    int val;
-                    sscanf(local_buf, "%d", &val);
-                    machine->WriteMem(resAddress, 4, val);
-                }
-                readStringSemaphore.V();
+                int resAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                char local_buf[MAX_INT_LEN];
+                syncConsole->SynchGetString(local_buf, MAX_INT_LEN);
+                int val;
+                sscanf(local_buf, "%d", &val);
+                machine->WriteMem(resAddress, 4, val);
             } break;
 
             case SC_Exit:

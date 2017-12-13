@@ -14,7 +14,7 @@ public:
     ~SynchConsole();
 
     void SynchPutChar(char ch);
-    char SynchGetChar();
+    int SynchGetChar();
     void SynchPutString(const char *s);
     void SynchGetString(char *s, int n);
 private:
