@@ -280,6 +280,9 @@ SWITCH
 
 #ifdef HOST_i386
 
+#ifdef UNIT_TESTS
+.code32
+#endif
         .text
         .align  2
 
