@@ -2,6 +2,7 @@
 #include "test_utils.h"
 
 #include "console_mock.h"
+#include <limits.h>
 
 #define CONSOLE_H
 #define SYNCH_H
@@ -10,10 +11,70 @@
 
 #include "synchconsole.cc"
 
-int main () {
-    SynchConsole testConsole(NULL, NULL);
-    testConsole.m_Console->nextExpectedChar = 't';
-    char obtainedChar = testConsole.SynchGetChar();
+static SynchConsole *testConsole = NULL;
 
-    EXPECT_EQ(testConsole.m_Console->nextExpectedChar, obtainedChar);
+void TestUtils_SetUp() {
+    Semaphore::pCalledTimes = 0;
+    Semaphore::vCalledTimes = 0;
+    testConsole = new SynchConsole(NULL, NULL);
+}
+
+void TestUtils_TearDown() {
+    delete testConsole;
+}
+
+TEST_LIST_BEGIN
+
+DECLARE_TEST_BEGIN(SynchGetCharTest)
+    for (int tc = (int)CHAR_MIN; tc <= (int)CHAR_MAX; ++tc) {
+        testConsole->m_Console->nextExpectedChar = (char)tc;
+        char obtainedChar = testConsole->SynchGetChar();
+
+        EXPECT_EQ(testConsole->m_Console->nextExpectedChar, obtainedChar);
+        EXPECT_EQ(1, Semaphore::pCalledTimes);
+        Semaphore::pCalledTimes = 0;
+    }
+DECLARE_TEST_END(SynchGetCharTest)
+
+DECLARE_TEST_BEGIN(SynchPutCharTest)
+    for (int tc = (int)CHAR_MIN; tc <= (int)CHAR_MAX; ++tc) {
+        testConsole->SynchPutChar(tc);
+        EXPECT_EQ((char)tc, testConsole->m_Console->lastPutChar);
+        EXPECT_EQ(1, Semaphore::pCalledTimes);
+        Semaphore::pCalledTimes = 0;
+    }
+DECLARE_TEST_END(SynchPutCharTest)
+
+DECLARE_TEST_BEGIN(SynchPutString)
+    const char *testString = "test string\n";
+    testConsole->SynchPutString(testString);
+    EXPECT_STREQ(testString, testConsole->m_Console->allPutChar.c_str());
+DECLARE_TEST_END(SynchPutString)
+
+DECLARE_TEST_BEGIN(SynchGetString_1)
+    char buf[6];
+    testConsole->m_Console->expectedString = "Hello\nWorld";
+    testConsole->SynchGetString(buf, 90);
+    EXPECT_STREQ("Hello", buf);
+DECLARE_TEST_END(SynchGetString_1)
+
+DECLARE_TEST_BEGIN(SynchGetString_2)
+    char buf[12];
+    testConsole->m_Console->expectedString = "Hello World\n";
+    testConsole->SynchGetString(buf, 90);
+    EXPECT_STREQ("Hello World", buf);
+DECLARE_TEST_END(SynchGetString_2)
+
+DECLARE_TEST_BEGIN(SynchGetString_3)
+    char buf[4];
+    testConsole->m_Console->expectedString = "Hello World";
+    testConsole->SynchGetString(buf, 4);
+    EXPECT_STREQ("Hel", buf);
+DECLARE_TEST_END(SynchGetString_3)
+
+TEST_LIST_END
+
+int main () {
+    INITIALIZE_TESTS;
+    RUN_ALL_TESTS;
 }
