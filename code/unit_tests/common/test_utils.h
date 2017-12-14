@@ -134,3 +134,18 @@ std::vector<TUTestInterface *> TUTestInterface::testRunners = std::vector<TUTest
               << __LINE__ \
               << " Expected " << less << " less than " << greater << std::endl; } \
     } while(0)
+
+#define EXPECT_LESS_EQUAL(less, greater) \
+    do \
+    { \
+        if (less < greater) { /* do nothing */ } \
+        else { \
+            m_testResult = false; \
+            std::cout << "Test Failed: " \
+              << "Function " << __FUNCTION__ << " Line: " \
+              << __LINE__ \
+              << " Expected " << less << " less than or equal to " << greater << std::endl; } \
+    } while(0)
+
+#define EXPECT_GREATER(greater, less) EXPECT_LESS_EQUAL(less, greater)
+#define EXPECT_GREATER_EQUAL(greater, less) EXPECT_LESS(less, greater)

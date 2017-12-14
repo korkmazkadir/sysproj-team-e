@@ -31,7 +31,7 @@ DECLARE_TEST_BEGIN(SynchGetCharTest)
         char obtainedChar = testConsole->SynchGetChar();
 
         EXPECT_EQ(testConsole->m_Console->nextExpectedChar, obtainedChar);
-        EXPECT_EQ(1, Semaphore::pCalledTimes);
+        EXPECT_LESS_EQUAL(1, Semaphore::pCalledTimes);
         Semaphore::pCalledTimes = 0;
     }
 DECLARE_TEST_END(SynchGetCharTest)
@@ -40,7 +40,7 @@ DECLARE_TEST_BEGIN(SynchPutCharTest)
     for (int tc = (int)CHAR_MIN; tc <= (int)CHAR_MAX; ++tc) {
         testConsole->SynchPutChar(tc);
         EXPECT_EQ((char)tc, testConsole->m_Console->lastPutChar);
-        EXPECT_EQ(1, Semaphore::pCalledTimes);
+        EXPECT_LESS_EQUAL(1, Semaphore::pCalledTimes);
         Semaphore::pCalledTimes = 0;
     }
 DECLARE_TEST_END(SynchPutCharTest)

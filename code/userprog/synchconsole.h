@@ -23,5 +23,8 @@ private:
     static void ReadAvail (int arg);
     static void WriteDone (int arg);
 
+    void synchPutChar(char ch);
+    int synchGetChar();
+
 };
 #endif // SYNCHCONSOLE_H

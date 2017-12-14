@@ -17,18 +17,31 @@ SynchConsole::~SynchConsole()
     delete m_Console;
 }
 
+/*!
+ * A version of put char that grabs a lock on write operations to console
+ * Should only be used from outside (i.e. not from this class)
+ */
 void SynchConsole::SynchPutChar(char ch)
 {
-    m_Console->PutChar(ch);
-    writeAvail.P();
+    writeMutex.P();
+    {
+        synchPutChar(ch);
+    }
+    writeMutex.V();
 }
 
+/*!
+ * A version of get char that grabs a lock on read operations to console
+ * Should only be used from outside (i.e. not from this class)
+ */
 int SynchConsole::SynchGetChar()
 {
-    int retVal = EOF;
-    readAvail.P();
-
-    retVal = (int)m_Console->GetChar();
+    int retVal;
+    readMutex.P();
+    {
+        retVal = synchGetChar();
+    }
+    readMutex.V();
     return retVal;
 }
 
@@ -37,7 +50,7 @@ void SynchConsole::SynchPutString(const char *s)
     writeMutex.P();
     {
         while (0 != *s) {
-            SynchPutChar(*s);
+            synchPutChar(*s);
             ++s;
         }
     }
@@ -50,7 +63,7 @@ void SynchConsole::SynchGetString(char *s, int n)
     {
         int ii = 0;
         for (ii = 0; ii < n - 1; ++ii) {
-            int nextChar = SynchGetChar();
+            int nextChar = synchGetChar();
             char cvtChar = (char)nextChar;
             if ((EOF == nextChar) || ('\n' == cvtChar)) {
                 break;
@@ -72,4 +85,22 @@ void SynchConsole::WriteDone(int arg)
 {
     (void)arg;
     writeAvail.V();
+}
+
+/*!
+ * Private version of putchar function that contains
+ * actual put char functionality without using any mutexes
+ */
+void SynchConsole::synchPutChar(char ch)
+{
+    m_Console->PutChar(ch);
+    writeAvail.P();
+}
+
+int SynchConsole::synchGetChar()
+{
+    readAvail.P();
+
+    int retVal = (int)m_Console->GetChar();
+    return retVal;
 }
