@@ -55,11 +55,8 @@
 /* Stop Nachos, and print out performance stats */
 void Halt () __attribute__((noreturn));
 
+/* Input/Output operations: PutChar SycnhPutString SynchGetChar SynchGetSrting SynchPutInt SynchGetInt */
 
-/* Address space control operations: Exit, Exec, and Join */
-
-/* This user program is done (status = 0 means exited normally). */
-void Exit (int status) __attribute__((noreturn));
 
 void PutChar(char c);
 void SynchPutString(const char *string);
@@ -67,6 +64,11 @@ char SynchGetChar();
 void SynchGetString(char *s, int n);
 void SynchPutInt(int n);
 void SynchGetInt(int *n);
+
+/* Address space control operations: Exit, Exec, and Join */
+
+/* This user program is done (status = 0 means exited normally). */
+void Exit (int status) __attribute__((noreturn));
 
 /* A unique identifier for an executing user program (address space) */
 typedef int SpaceId;

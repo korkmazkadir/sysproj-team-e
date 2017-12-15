@@ -65,10 +65,14 @@ void SynchConsole::SynchGetString(char *s, int n)
         for (ii = 0; ii < n - 1; ++ii) {
             int nextChar = synchGetChar();
             char cvtChar = (char)nextChar;
-            if ((EOF == nextChar) || ('\n' == cvtChar)) {
+            if (EOF == nextChar) {
                 break;
             }
             *(s + ii) = cvtChar;
+            if ('\n' == cvtChar) {
+                ++ii;
+                break;
+            }
         }
         *(s + ii) = 0;
     }
@@ -97,6 +101,10 @@ void SynchConsole::synchPutChar(char ch)
     writeAvail.P();
 }
 
+/*!
+ * Private version of getChar function that contains
+ * actual getChar functionality without using any mutexes
+ */
 int SynchConsole::synchGetChar()
 {
     readAvail.P();

@@ -55,20 +55,20 @@ DECLARE_TEST_END(SynchPutString)
  *  Tests Get String for a string with a newline character in the middle
  */
 DECLARE_TEST_BEGIN(SynchGetString_1)
-    char buf[6];
+    char buf[7];
     testConsole->m_Console->expectedString = "Hello\nWorld";
     testConsole->SynchGetString(buf, 90);
-    EXPECT_STREQ("Hello", buf);
+    EXPECT_STREQ("Hello\n", buf);
 DECLARE_TEST_END(SynchGetString_1)
 
 /*!
  *  Tests Get String for a string with a newline character in the end
  */
 DECLARE_TEST_BEGIN(SynchGetString_2)
-    char buf[12];
+    char buf[13];
     testConsole->m_Console->expectedString = "Hello World\n";
     testConsole->SynchGetString(buf, 90);
-    EXPECT_STREQ("Hello World", buf);
+    EXPECT_STREQ("Hello World\n", buf);
 DECLARE_TEST_END(SynchGetString_2)
 
 /*!
