@@ -1,0 +1,46 @@
+Step 2
+Input / output syscalls
+
+1) Interesting / main features
+//...
+
+2) Specification 
+
+void PutChar (char c)
+writes the character c to standard output.
+
+void SynchPutString(char *c)
+writes  the  string  s to standard output, without its terminating null byte ('\0').
+
+char SynchGetChar()
+reads the next character from standard input, and returns it as a char. Returns EOF if no character is buffered.
+
+void SynchGetString(char *s, int n)
+reads in at most n-1 characters from stdin and stores them into the buffer pointed to by s. Reading stops after an EOF or newline. If a newline is read, it is stored into the buffer. A terminating null byte ('\0') is stored after the  last  character in the buffer. The character code 127 is handled as EOF.
+
+void SynchPutInt(int n)
+writes the decimal notation of n to standard output, without its terminating null byte ('\0').
+
+void SynchGetInt(int *n)
+reads the first integer from standard input and stores it into the variable pointed to by n.
+
+
+3) Implementation details
+PutChar / GetChar:
+In order to handle concurrent calls to the synchconsole printing functions, two versions of PutChar exist. The public version uses a semaphore for synchronization (ex: avoiding running a putchar while another process was doing putstring). The private version is destined to be called by putstring, and therefore it does not require synchronization since this is handled by putstring.
+The same principle is applied to GetChar and GetString.
+
+GetChar / GetString:
+Given that the console class's getChar returns a char, we cannot distinguish between EOF and character code 127. We chose to interpret code 127 as EOF.
+
+GetString / PutString:
+If the string to be read or written is longer than MAX_WRITE_BUF_SIZE (defined in system.h), the string will be truncated to fit the buffer: MAX_WRITE_BUF_SIZE elements are written / read.
+In the case of GetString, this means the remaining characters are still available to be read with a second GetString. 
+
+
+
+
+
+4) User Tests
+description of user tests "the test programs you wrote, what they check, ..."
+

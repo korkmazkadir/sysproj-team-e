@@ -41,6 +41,38 @@ UpdatePC ()
 }
 
 
+
+
+/*!
+ * \fn copyStringFromMachine
+ * \param from  <- MIPS virtual address
+ * \param to    <- x86 'physical' address
+ * \param size  <- max number of bytes to copy
+ * \brief Copies up to \a size - 1 characters from virtual address \a from to 'physical'
+ *        address \a to
+ *        The last character (at pos size) of \a to is always set to 0
+ */
+static void copyStringFromMachine(int from, char *to, unsigned size) {
+    --size;
+    while (size--) {
+        machine->ReadMem(from, 1, (int *)to);
+        if (*to == 0) {
+            break;
+        }
+        ++from;
+        ++to;
+    }
+    *to = 0;
+}
+
+static void copyStringToMachine(char *from, int to, unsigned size) {
+    while (size--) {
+        machine->WriteMem(to, 1, (int)(*from));
+        ++to;
+        ++from;
+    }
+}
+
 //----------------------------------------------------------------------
 // ExceptionHandler
 //      Entry point into the Nachos kernel.  Called when a user program
@@ -55,30 +87,97 @@ UpdatePC ()
 //              arg3 -- r6
 //              arg4 -- r7
 //
-//      The result of the system call, if any, must be put back into r2. 
+//      The result of the system call, if any, must be put back into r2.
 //
 // And don't forget to increment the pc before returning. (Or else you'll
 // loop making the same system call forever!
 //
-//      "which" is the kind of exception.  The list of possible exceptions 
+//      "which" is the kind of exception.  The list of possible exceptions
 //      are in machine.h.
 //----------------------------------------------------------------------
-
-void
-ExceptionHandler (ExceptionType which)
+void ExceptionHandler (ExceptionType which)
 {
-    int type = machine->ReadRegister (2);
+    int type = machine->ReadRegister (SYSCALL_ID_REGISTER);
 
-    if ((which == SyscallException) && (type == SC_Halt))
-      {
-	  DEBUG ('a', "Shutdown, initiated by user program.\n");
-	  interrupt->Halt ();
-      }
-    else
-      {
-	  printf ("Unexpected user mode exception %d %d\n", which, type);
-	  ASSERT (FALSE);
-      }
+    if (SyscallException == which) {
+        switch (type) {
+            case SC_Halt:
+            {
+                DEBUG ('a', "Shutdown, initiated by user program.\n");
+                interrupt->Halt ();
+            } break;
+
+            case SC_PutChar:
+            {
+                int requestedCharacter = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                char convertedCharacter = (char)requestedCharacter;
+                syncConsole->SynchPutChar(convertedCharacter);
+            } break;
+
+            case SC_SynchPutString:
+            {
+                int fromAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                char local_buf[MAX_WRITE_BUF_SIZE];
+                copyStringFromMachine(fromAddress, local_buf, MAX_WRITE_BUF_SIZE);
+                syncConsole->SynchPutString(local_buf);
+            } break;
+
+            case SC_SynchGetChar:
+            {
+                int retChar = syncConsole->SynchGetChar();
+                machine->WriteRegister(RET_VALUE_REGISTER, retChar);
+            } break;
+
+            //TODO: Check for correctness
+            case SC_SynchGetString:
+            {
+                int toVirtualAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                int numBytes = machine->ReadRegister(SECOND_PARAM_REGISTER);
+
+                if (numBytes > MAX_WRITE_BUF_SIZE) {
+                    numBytes = MAX_WRITE_BUF_SIZE;
+                }
+
+                char local_buf[MAX_WRITE_BUF_SIZE];
+                syncConsole->SynchGetString(local_buf, numBytes);
+                copyStringToMachine(local_buf, toVirtualAddress, numBytes);
+
+            } break;
+
+            case SC_SynchPutInt:
+            {
+                int valToPut = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                char local_buf[MAX_INT_LEN];
+                (void)snprintf(local_buf, MAX_INT_LEN, "%d", valToPut);
+                syncConsole->SynchPutString(local_buf);
+            } break;
+
+            case SC_SynchGetInt:
+            {
+                int resAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                char local_buf[MAX_INT_LEN];
+                syncConsole->SynchGetString(local_buf, MAX_INT_LEN);
+                int val;
+                sscanf(local_buf, "%d", &val);
+                machine->WriteMem(resAddress, 4, val);
+            } break;
+
+            case SC_Exit:
+            {
+                int retValue = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                printf("Application exited with code %d \n", retValue);
+            } break;
+
+            default:
+            {
+                printf ("Unexpected SYSCALL %d %d\n", which, type);
+                ASSERT (FALSE);
+            } break;
+        }
+    } else {
+        printf ("Unexpected user mode exception %d %d\n", which, type);
+        ASSERT (FALSE);
+    }
 
     // LB: Do not forget to increment the pc before returning!
     UpdatePC ();

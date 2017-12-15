@@ -18,6 +18,7 @@ Interrupt *interrupt;		// interrupt status
 Statistics *stats;		// performance metrics
 Timer *timer;			// the hardware timer device,
 					// for invoking context switches
+SynchConsole *syncConsole;
 
 #ifdef FILESYS_NEEDED
 FileSystem *fileSystem;
@@ -152,6 +153,8 @@ Initialize (int argc, char **argv)
     currentThread = new Thread ("main");
     currentThread->setStatus (RUNNING);
 
+    syncConsole = new SynchConsole(NULL, NULL);
+
     interrupt->Enable ();
     CallOnUserAbort (Cleanup);	// if user hits ctl-C
 
@@ -196,6 +199,7 @@ Cleanup ()
     delete synchDisk;
 #endif
 
+    delete syncConsole;
     delete timer;
     delete scheduler;
     delete interrupt;

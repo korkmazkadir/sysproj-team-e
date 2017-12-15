@@ -69,7 +69,7 @@ class Console {
 					// If so, you can't do another one!
     char incoming;    			// Contains the character to be read,
 					// if there is one available. 
-					// Otherwise contains EOF.
+                    // Otherwise contains EOF.
 };
 
 #endif // CONSOLE_H

@@ -15,6 +15,10 @@
 #include "interrupt.h"
 #include "stats.h"
 #include "timer.h"
+#include "synchconsole.h"
+
+#define MAX_WRITE_BUF_SIZE 128
+#define MAX_INT_LEN 11
 
 // Initialization and cleanup routines
 extern void Initialize (int argc, char **argv);	// Initialization,
@@ -28,6 +32,8 @@ extern Scheduler *scheduler;	// the ready list
 extern Interrupt *interrupt;	// interrupt status
 extern Statistics *stats;	// performance metrics
 extern Timer *timer;		// the hardware alarm clock
+extern SynchConsole *syncConsole;
+
 
 #ifdef USER_PROGRAM
 #include "machine.h"
