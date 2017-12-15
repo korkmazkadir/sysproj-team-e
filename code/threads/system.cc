@@ -8,6 +8,7 @@
 #include "copyright.h"
 #include "system.h"
 
+
 // This defines *all* of the global data structures used by Nachos.
 // These are all initialized and de-allocated by this file.
 
@@ -18,6 +19,7 @@ Interrupt *interrupt;		// interrupt status
 Statistics *stats;		// performance metrics
 Timer *timer;			// the hardware timer device,
 					// for invoking context switches
+SynchConsole *synchconsole;
 
 #ifdef FILESYS_NEEDED
 FileSystem *fileSystem;
@@ -144,6 +146,8 @@ Initialize (int argc, char **argv)
     if (randomYield)		// start the timer (if needed)
 	timer = new Timer (TimerInterruptHandler, 0, randomYield);
 
+    synchconsole = new SynchConsole(NULL,NULL);
+
     threadToBeDestroyed = NULL;
 
     // We didn't explicitly allocate the current thread we are running in.
@@ -172,6 +176,7 @@ Initialize (int argc, char **argv)
 #endif
 }
 
+
 //----------------------------------------------------------------------
 // Cleanup
 //      Nachos is halting.  De-allocate global data structures.
@@ -199,6 +204,7 @@ Cleanup ()
     delete timer;
     delete scheduler;
     delete interrupt;
-
+    delete synchconsole;
+    
     Exit (0);
 }

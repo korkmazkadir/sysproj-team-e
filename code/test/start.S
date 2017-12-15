@@ -129,6 +129,67 @@ Yield:
 	j	$31
 	.end Yield
 
+	.globl PutChar
+	.ent    PutChar
+PutChar:
+	addiu $2,$0,SC_PutChar
+	syscall
+	j	$31
+	.end PutChar
+
+	.globl SynchPutString
+	.ent    SynchPutString
+
+SynchPutString :
+	addiu $2,$0,SC_SynchPutString
+	syscall
+	j	$31
+	.end SynchPutString
+
+
+	.globl SynchGetChar
+	.ent    SynchGetChar
+SynchGetChar :
+	addiu $2,$0,SC_SynchGetChar
+	syscall
+	j	$31
+	.end SynchGetChar
+
+    
+	.globl SynchGetString
+	.ent    SynchGetString
+SynchGetString :
+	addiu $2,$0,SC_SynchGetString
+	syscall
+	j	$31
+	.end SynchGetString
+
+
+	.globl SynchPutInt
+	.ent    SynchPutInt
+SynchPutInt :
+	addiu $2,$0,SC_SynchPutInt
+	syscall
+	j	$31
+	.end SynchPutInt
+
+
+	.globl SynchGetInt
+	.ent    SynchGetInt
+SynchGetInt :
+	addiu $2,$0,SC_SynchGetInt
+	syscall
+	j	$31
+	.end SynchGetInt
+
+	.globl AssertionFailed
+	.ent    AssertionFailed
+AssertionFailed :
+	addiu $2,$0,SC_AssertionFailed
+	syscall
+	j	$31
+	.end SynchGetInt
+
 /* dummy function to keep gcc happy */
         .globl  __main
         .ent    __main

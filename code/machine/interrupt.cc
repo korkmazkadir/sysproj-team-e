@@ -243,9 +243,83 @@ Interrupt::Idle()
 void
 Interrupt::Halt()
 {
-    printf("Machine halting!\n\n");
+    printf("\n\nMachine halting!\n\n");
     stats->Print();
     Cleanup();     // Never returns.
+}
+
+//----------------------------------------------------------------------
+// Interrupt::PutChar
+// 	Puts a character to the console.
+//----------------------------------------------------------------------
+void
+Interrupt::PutChar(char ch)
+{
+    //printf("Putting Character!\n\n");
+    synchconsole->SynchPutChar(ch);
+}
+
+//----------------------------------------------------------------------
+// Interrupt::SynchPutString
+// 	Puts a string to the console.
+//----------------------------------------------------------------------
+void
+Interrupt::SynchPutString(char *ch)
+{
+    //printf("Putting String!\n\n");
+    synchconsole->SynchPutString(ch);
+}
+
+//----------------------------------------------------------------------
+// Interrupt::SynchGetChar
+// 	Gets a character from the console.
+//----------------------------------------------------------------------
+char
+Interrupt::SynchGetChar(){
+    //printf("Getting Character!\n\n");
+    char ch = synchconsole->SynchGetChar();
+    return ch;
+}
+    
+//----------------------------------------------------------------------
+// Interrupt::SynchGetString
+// 	Gets a string from the console.
+//----------------------------------------------------------------------
+void 
+Interrupt::SynchGetString( char *s, int n){
+    //printf("Getting String!\n\n");
+    synchconsole->SynchGetString(s,n);
+}
+
+
+//----------------------------------------------------------------------
+// Interrupt::SynchPutInt
+// 	Puts an integer to the console.
+//----------------------------------------------------------------------
+void 
+Interrupt::SynchPutInt(int n){
+    //printf("Putting integer!\n\n");
+    synchconsole->SynchPutInt(n);
+}
+
+//----------------------------------------------------------------------
+// Interrupt::SynchGetInt
+// 	Gets an integer from the console.
+//----------------------------------------------------------------------
+void
+Interrupt::SynchGetInt(int *n){
+    //printf("Getting integer!\n\n");
+    synchconsole->SynchGetInt(n);
+}
+
+//----------------------------------------------------------------------
+// Interrupt::AssertionFailed
+// 	Stops the program assertion failed.
+//----------------------------------------------------------------------
+void
+Interrupt::AssertionFailed(char *fileName, int lineNumber){
+    fprintf(stderr,"\nERORR : Assertion failed. FILE : %s LINE : %d\n\n",fileName,lineNumber);
+    Exit (123);
 }
 
 //----------------------------------------------------------------------

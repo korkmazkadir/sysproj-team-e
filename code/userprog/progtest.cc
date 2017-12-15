@@ -10,9 +10,10 @@
 
 #include "copyright.h"
 #include "system.h"
-#include "console.h"
 #include "addrspace.h"
 #include "synch.h"
+
+#include "synchconsole.h"
 
 //----------------------------------------------------------------------
 // StartProcess
@@ -21,26 +22,24 @@
 //----------------------------------------------------------------------
 
 void
-StartProcess (char *filename)
-{
-    OpenFile *executable = fileSystem->Open (filename);
+StartProcess(char *filename) {
+    OpenFile *executable = fileSystem->Open(filename);
     AddrSpace *space;
 
-    if (executable == NULL)
-      {
-	  printf ("Unable to open file %s\n", filename);
-	  return;
-      }
-    space = new AddrSpace (executable);
+    if (executable == NULL) {
+        printf("Unable to open file %s\n", filename);
+        return;
+    }
+    space = new AddrSpace(executable);
     currentThread->space = space;
 
-    delete executable;		// close file
+    delete executable; // close file
 
-    space->InitRegisters ();	// set the initial register values
-    space->RestoreState ();	// load page table register
+    space->InitRegisters(); // set the initial register values
+    space->RestoreState(); // load page table register
 
-    machine->Run ();		// jump to the user progam
-    ASSERT (FALSE);		// machine->Run never returns;
+    machine->Run(); // jump to the user progam
+    ASSERT(FALSE); // machine->Run never returns;
     // the address space exits
     // by doing the syscall "exit"
 }
@@ -58,14 +57,13 @@ static Semaphore *writeDone;
 //----------------------------------------------------------------------
 
 static void
-ReadAvail (int arg)
-{
-    readAvail->V ();
+ReadAvail(int arg) {
+    readAvail->V();
 }
+
 static void
-WriteDone (int arg)
-{
-    writeDone->V ();
+WriteDone(int arg) {
+    writeDone->V();
 }
 
 //----------------------------------------------------------------------
@@ -75,21 +73,35 @@ WriteDone (int arg)
 //----------------------------------------------------------------------
 
 void
-ConsoleTest (char *in, char *out)
-{
+ConsoleTest(char *in, char *out) {
     char ch;
 
-    console = new Console (in, out, ReadAvail, WriteDone, 0);
-    readAvail = new Semaphore ("read avail", 0);
-    writeDone = new Semaphore ("write done", 0);
+    console = new Console(in, out, ReadAvail, WriteDone, 0);
+    readAvail = new Semaphore("read avail", 0);
+    writeDone = new Semaphore("write done", 0);
 
-    for (;;)
-      {
-	  readAvail->P ();	// wait for character to arrive
-	  ch = console->GetChar ();
-	  console->PutChar (ch);	// echo it!
-	  writeDone->P ();	// wait for write to finish
-	  if (ch == 'q')
-	      return;		// if q, quit
-      }
+    for (;;) {
+        readAvail->P(); // wait for character to arrive
+        ch = console->GetChar();
+
+        if (ch == EOF) {
+            break;
+        }
+
+        console->PutChar(ch); // echo it!
+        writeDone->P(); // wait for write to finish
+        if (ch == 'q')
+            return; // if q, quit
+    }
 }
+
+void
+SynchConsoleTest(char *in, char *out) {
+    char ch;
+    //static SynchConsole *synchconsole = new SynchConsole(in, out);
+    while ((ch = synchconsole->SynchGetChar()) != EOF)
+        synchconsole->SynchPutChar(ch);
+    fprintf(stderr, "Solaris: EOF detected in SynchConsole!\n");
+}
+
+

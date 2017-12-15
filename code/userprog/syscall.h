@@ -29,6 +29,14 @@
 #define SC_Close	8
 #define SC_Fork		9
 #define SC_Yield	10
+#define SC_PutChar	11
+#define SC_SynchPutString   12 
+#define SC_SynchGetChar     13
+#define SC_SynchGetString   14
+#define SC_SynchPutInt     15
+#define SC_SynchGetInt     16
+#define SC_AssertionFailed     100
+
 
 #ifdef IN_USER_MODE
 
@@ -127,6 +135,43 @@ void Fork (void (*func) ());
  * or not. 
  */
 void Yield ();
+
+/* Writes a character
+ * 
+ */
+void PutChar (char c);
+
+/* Writes a string
+ * 
+ */
+void SynchPutString (char *c);
+
+/* Writes a character
+ * 
+ */
+char SynchGetChar ();
+
+/* Writes a string
+ * 
+ */
+void SynchGetString (char *c, int size);
+
+
+/* Writes a signed integer
+ * 
+ */
+void SynchPutInt( int n );
+
+
+/* Reades a signed integer
+ * 
+ */
+void SynchGetInt( int * n );
+
+/* Assertion failure
+ * 
+ */
+void AssertionFailed(char *fileName, int lineNumber);
 
 #endif // IN_USER_MODE
 

@@ -95,7 +95,21 @@ class Interrupt {
     
     void YieldOnReturn();		// cause a context switch on return 
 					// from an interrupt handler
+    
+    void PutChar(char ch);                     // Puts a character
 
+    void SynchPutString(char *ch);      //Puts string
+    
+    char SynchGetChar();
+    
+    void SynchGetString( char *s, int n);
+    
+    void SynchPutInt(int n);
+    
+    void SynchGetInt(int *n);
+    
+    void AssertionFailed(char *fileName, int lineNumber);
+    
     MachineStatus getStatus() { return status; } // idle, kernel, user
     void setStatus(MachineStatus st) { status = st; }
 
