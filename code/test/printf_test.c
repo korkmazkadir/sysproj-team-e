@@ -5,25 +5,17 @@
 int
 main() {
 
-    //char *h = "Hello there";
+    const char c1 = 'Q';
+    const char c2 = 'W';
     
-    const char c1 = 'c';
-    const char c2 = 'b';
+    char * str = "Kadir  korkmaz : %c ------- %c --- #%d# ----  #%d#  #%d# \n";
     
-    
-    
-    _printf("Kadir % korkmaz : %c %c \n",c1,c2);
-    
-    //_printf("%c -- %c \n", c1, c2);
+    _printf(str,c2,c1,12,-133,-2345);
+    _printf("%d Kadir Korkmaz %s", 1234, "Hello There :) \n");
+    _printf("Address of C1 : %d \n", &c1);
+    _printf("Address of C2 : %d \n", &c2);
+    _printf("%c -- %d -- %s -- %b\n", 'a', 0, "K.Korkmaz", 7);
 
-    char *str = "Hello World\n\0";
+    _ASSERT(3 > 5);
     
-    _printf("String : %s \0", str);
-    
-    
-    PutChar(c1);
-    PutChar(c2);
-    
-    ASSERT_NEW (2 > 5);
-
 }
