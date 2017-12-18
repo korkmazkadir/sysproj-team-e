@@ -35,6 +35,7 @@
 #define SC_SynchGetString 14
 #define SC_SynchPutInt 15
 #define SC_SynchGetInt 16
+#define SC_AssertionFailed     100
 
 #ifdef IN_USER_MODE
 
@@ -142,6 +143,12 @@ void Fork (void (*func) ());
  * or not. 
  */
 void Yield ();
+
+/* Assertion failure
+ * 
+ */
+void AssertionFailed(char *fileName, int lineNumber);
+
 
 #endif // IN_USER_MODE
 

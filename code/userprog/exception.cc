@@ -165,9 +165,20 @@ void ExceptionHandler (ExceptionType which)
             case SC_Exit:
             {
                 int retValue = machine->ReadRegister(FIRST_PARAM_REGISTER);
-                printf("Application exited with code %d \n", retValue);
+                //printf("Application exited with code %d \n", retValue);
+                Exit(retValue);
             } break;
 
+            case SC_AssertionFailed:
+            {
+                int fileNameAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                int lineNumber = machine->ReadRegister(SECOND_PARAM_REGISTER);
+                char fileName [MAX_WRITE_BUF_SIZE];
+                copyStringFromMachine(fileNameAddress, fileName, MAX_WRITE_BUF_SIZE);
+                interrupt->AssertionFailed(fileName,lineNumber);
+                break;
+            }
+            
             default:
             {
                 printf ("Unexpected SYSCALL %d %d\n", which, type);

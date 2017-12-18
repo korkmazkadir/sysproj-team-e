@@ -176,6 +176,15 @@ SynchGetInt:
     syscall
     j   $31
     .end SynchGetInt
+
+    .globl AssertionFailed
+    .ent    AssertionFailed
+AssertionFailed :
+    addiu $2,$0,SC_AssertionFailed
+    syscall
+    j	$31
+    .end SynchGetInt
+
 /* dummy function to keep gcc happy */
         .globl  __main
         .ent    __main
