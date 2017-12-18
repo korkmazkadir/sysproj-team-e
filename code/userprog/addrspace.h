@@ -15,6 +15,7 @@
 
 #include "copyright.h"
 #include "filesys.h"
+#include "frameprovider.h"
 
 #define UserStackSize		1024	// increase this as necessary!
 
@@ -33,7 +34,8 @@ class AddrSpace
     void RestoreState ();	// info on a context switch 
 
   private:
-      TranslationEntry * pageTable;	// Assume linear page table translation
+    TranslationEntry * pageTable;	// Assume linear page table translation
+    FrameProvider *frameProvider;
     // for now!
     unsigned int numPages;	// Number of pages in the virtual 
     // address space
