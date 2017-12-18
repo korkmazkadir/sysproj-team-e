@@ -1,0 +1,151 @@
+Specification
+
+========================================================================================
+
+Signature: int UserThreadCreate(void f(void *arg), void *arg);
+Parameters:
+    f   <-  pointer to function that will be executing in a newly created thread
+    arg <-  argument that will be passed to function f when the thread starts executing
+
+Return value
+ *         thread ID if thread creation was successful
+ *         -1        if \a funPtr is NULL
+ *         -2        if number of threads in the system is equal to MAX_NUM_USERTHREADS
+ *         -3        if there is no space left on stack for a new thread
+ *         -4        ran out of memory
+
+
+Description:
+
+
+Creates a new thread that will execute function f. 
+Note that signature of the function must comply with the signature of f.
+
+The function returns a thread ID of a freshly created thread. This thread ID is guaranteed
+to be unique in entire system (i.e. threads created in different processes still have
+different IDs)
+
+Currently it is only possible to create up to 128 threads.
+
+Thread ID of the newly created thread may be re-used after this thread is joined.
+
+Note that f must represent a valid function pointer with the specified signature.
+If NULL function pointer is specified, the thread is not be created and -1 is returned.
+If f is invalid pointer, the behaviour is undefined.
+
+========================================================================================
+
+Signature: void UserThreadExit();
+Parameters:     none
+
+Return value:   none
+
+
+Description:
+
+
+Terminates the execution of the current thread.
+Note that the thread will automatically terminate when the function f associated with the 
+thread in UserThreadCreate function returns.
+
+========================================================================================
+
+Signature: int UserThreadJoin(int tid);
+Parameters:
+    tid     <-  ID of the thread that is to be joined
+     
+Return value:
+    *       0   if the thread is successfully terminated 
+    *      -1   if there are no threads associated with the specified tid
+                or if the thread is already being joined by another thread
+
+Description:
+
+In case of invalid tid or when another thread has already executed UserThreadJoin on the same tid
+the function returns immediately.
+
+If the thread that corresponds to the tid has already terminated, this function immediately returns
+making tid available for creation of new threads.
+
+If the thread that corresponds to the tid is still running, this function blocks until the thread
+terminates.
+
+========================================================================================
+
+Signature: int UserThreadSelfId();
+Parameters: none
+
+Return value: thread ID of the thread that called this function
+
+
+Description:
+
+Provides a unique ID associated with the thread calling this function.
+
+========================================================================================
+
+Signature: int SemInit(sem_t *semPtr, int val);
+Parameters: semPtr    <- pointer to the semaphore
+            val       <- initial value of the semaphore
+
+Return value: 0 when semaphore was initialized successfully
+             -1 when semaphore quota is reached and no more semaphores can be created
+             -2 when a negative value is passed as an initial value
+
+
+Description:
+
+Initializes the semaphore pointed to by semPtr with the initial value val
+Initializing the same semaphore multiple times results in an undefined behaviour (TBD)
+
+========================================================================================
+
+Signature: int SemPost(sem_t *semPtr);
+Parameters: semPtr      <- pointer to the semaphore
+
+Return value:       0 if post operation is performed successfully
+                   -1 if the value pointed to by semPtr does not represent a valid
+                      initialized semaphore
+                   -2 if the semaphore would overflow after performing post (i.e. its 
+                      value would exceed INT_MAX)
+
+
+Description:
+
+Increments the value associated with the semaphore. Analogue of V() operation on classical
+semaphores. If another thread is blocked by executing SemWait on the same semaphore,
+this operation will allow it to unblock.
+
+Note, that if several threads are blocked by SemWait call on the same semaphore, only one of 
+them will unblock.
+
+========================================================================================
+
+Signature: int SemWait(sem_t *semPtr);
+Parameters: semPtr      <- pointer to the semaphore
+
+Return value:       0 when wait operation has been successfully performed
+                   -1 if the value pointed to by semPtr does not represent a valid
+                      initialized semaphore
+
+
+Description:
+
+If value associated with the semaphore pointed to by semPtr is greater than 0,
+decrements this value and returns immediatedly. If this value is 0, the function blocks
+until SemPost operation is executed on the same semaphore or the semaphore gets destroyed
+by SemDestroy call
+
+========================================================================================
+
+Signature: int SemDestroy(sem_t *semPtr);
+Parameters: semPtr      <- pointer to the semaphore
+
+Return value:   0 when the semaphore has been successfully destoryed
+               -1 if the value pointed to by semPtr does not represent a valid
+                  initialized semaphore
+
+
+Description: Destroys the semaphore whose address is stored by the semPtr
+
+========================================================================================
