@@ -77,7 +77,7 @@ void numberToString( int number, int base, char *stringBuffer){
     while(number > 0){
        int remainder = number % base;
        number = number / base;
-       stringBuffer[index] = END_OF_LINE + remainder;
+       stringBuffer[index] = '0' + remainder;
        index--;
     }
     
