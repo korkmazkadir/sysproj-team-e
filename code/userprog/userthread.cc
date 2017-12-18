@@ -140,15 +140,16 @@ int do_UserThreadCreate(int funPtr, int arg, int retAddress) {
         }
 
         ThreadParam_t *serializedThreadParam = new (std::nothrow) ThreadParam_t;
-        serializedThreadParam->functionPtr = (ThreadFun_t)funPtr;
-        serializedThreadParam->functionParam = (void *)arg;
-        serializedThreadParam->retAddress = retAddress;
-        serializedThreadParam->topOfStack = (int)topOfThreadStack;
 
         if (!serializedThreadParam) {
             retVal = -4;
             goto early_exit;
         }
+
+        serializedThreadParam->functionPtr = (ThreadFun_t)funPtr;
+        serializedThreadParam->functionParam = (void *)arg;
+        serializedThreadParam->retAddress = retAddress;
+        serializedThreadParam->topOfStack = (int)topOfThreadStack;
 
         // Generate debug name for the thread
         // TODO: Remove after active dev phase
