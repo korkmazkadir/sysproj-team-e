@@ -78,5 +78,10 @@ extern void DEBUG (char flag, const char *format, ...);	// Print debug message
         Abort();                                                              \
     }
 
+#define DEBUG_MSG(msg) \
+    do { \
+    printf("%s %s %d %s", __FILE__, __FUNCTION__, __LINE__, msg); \
+    } while(0);
+
 
 #endif /* UTILITY_H */

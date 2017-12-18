@@ -14,6 +14,7 @@
 #define SYSCALLS_H
 
 #include "copyright.h"
+#include "semaphore.h"
 
 /* system call codes -- used by the stubs to tell the kernel which system call
  * is being asked for
@@ -35,6 +36,14 @@
 #define SC_SynchGetString 14
 #define SC_SynchPutInt 15
 #define SC_SynchGetInt 16
+#define SC_UserThreadCreate 17
+#define SC_UserThreadExit 18
+#define SC_UserThreadJoin 19
+#define SC_SemInit 20
+#define SC_SemPost 21
+#define SC_SemWait 22
+#define SC_SemDestroy 23
+#define SC_UserThreadSelfId 24
 
 #ifdef IN_USER_MODE
 
@@ -64,6 +73,15 @@ char SynchGetChar();
 void SynchGetString(char *s, int n);
 void SynchPutInt(int n);
 void SynchGetInt(int *n);
+int UserThreadCreate(void f(void *arg), void *arg);
+void UserThreadExit();
+int UserThreadJoin(int tid);
+int UserThreadSelfId();
+
+int SemInit(sem_t *semPtr, int val);
+int SemPost(sem_t *semPtr);
+int SemWait(sem_t *semPtr);
+int SemDestroy(sem_t *semPtr);
 
 /* Address space control operations: Exit, Exec, and Join */
 

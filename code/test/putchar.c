@@ -30,4 +30,5 @@ int main()
     SynchPutInt(n);
     SynchPutString("\n");
 
+    return 0;
 }

@@ -82,3 +82,10 @@ code/userprog/syscall.h
 code/test/start.S
 code/threads/switch.S
 
+code/userprog/userthread.cc
+code/userprog/userthread.h
+code/test/testthreads.c
+code/userprog/usersemaphore.h
+code/userprog/usersemaphore.cc
+code/userprog/semaphore.h
+code/test/testsemaphores.c

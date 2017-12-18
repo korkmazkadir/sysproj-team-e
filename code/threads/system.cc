@@ -19,6 +19,7 @@ Statistics *stats;		// performance metrics
 Timer *timer;			// the hardware timer device,
 					// for invoking context switches
 SynchConsole *syncConsole;
+SemaphoreManager *semaphoreManager;
 
 #ifdef FILESYS_NEEDED
 FileSystem *fileSystem;
@@ -154,6 +155,7 @@ Initialize (int argc, char **argv)
     currentThread->setStatus (RUNNING);
 
     syncConsole = new SynchConsole(NULL, NULL);
+    semaphoreManager = new SemaphoreManager();
 
     interrupt->Enable ();
     CallOnUserAbort (Cleanup);	// if user hits ctl-C
@@ -199,6 +201,7 @@ Cleanup ()
     delete synchDisk;
 #endif
 
+    delete semaphoreManager;
     delete syncConsole;
     delete timer;
     delete scheduler;

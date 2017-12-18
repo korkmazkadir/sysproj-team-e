@@ -24,6 +24,11 @@
 #include "copyright.h"
 #include "system.h"
 #include "syscall.h"
+#include "userthread.h"
+#include "addrspace.h"
+#include "usersemaphore.h"
+
+Semaphore haltSync("HaltSync", 1);
 
 //----------------------------------------------------------------------
 // UpdatePC : Increments the Program Counter register in order to resume
@@ -104,6 +109,7 @@ void ExceptionHandler (ExceptionType which)
             case SC_Halt:
             {
                 DEBUG ('a', "Shutdown, initiated by user program.\n");
+                haltSync.P();
                 interrupt->Halt ();
             } break;
 
@@ -165,7 +171,73 @@ void ExceptionHandler (ExceptionType which)
             case SC_Exit:
             {
                 int retValue = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                haltSync.P();
                 printf("Application exited with code %d \n", retValue);
+                exit(retValue);
+            } break;
+
+            case SC_UserThreadCreate:
+            {
+                //TODO: When creation can fail -- invalid parameter (e.g. NULL pointer to function)?
+                int funPtr = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                int arg = machine->ReadRegister(SECOND_PARAM_REGISTER);
+
+                int retAddress = machine->ReadRegister(8);
+
+                int threadRetVal = do_UserThreadCreate(funPtr, arg, retAddress);
+                machine->WriteRegister(RET_VALUE_REGISTER, threadRetVal);
+            } break;
+
+            case SC_UserThreadExit:
+            {
+                do_UserThreadExit();
+            } break;
+
+            case SC_UserThreadJoin:
+            {
+                int threadToJoin = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                int retVal = do_UserThreadJoin(threadToJoin);
+                machine->WriteRegister(RET_VALUE_REGISTER, retVal);
+            } break;
+
+            case SC_Yield:
+            {
+                currentThread->Yield();
+            } break;
+
+            case SC_SemInit:
+            {
+                int semPtr = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                int semVal = machine->ReadRegister(SECOND_PARAM_REGISTER);
+                int retVal = semaphoreManager->DoSemInit((sem_t *)semPtr, semVal);
+                machine->WriteRegister(RET_VALUE_REGISTER, retVal);
+            } break;
+
+            case SC_SemPost:
+            {
+                int semPtr = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                int retVal = semaphoreManager->DoSemPost((sem_t *)semPtr);
+                machine->WriteRegister(RET_VALUE_REGISTER, retVal);
+            } break;
+
+            case SC_SemWait:
+            {
+                int semPtr = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                int retVal = semaphoreManager->DoSemWait((sem_t *)semPtr);
+                machine->WriteRegister(RET_VALUE_REGISTER, retVal);
+            } break;
+
+            case SC_SemDestroy:
+            {
+                int semPtr = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                int retVal = semaphoreManager->DoSemDestroy((sem_t *)semPtr);
+                machine->WriteRegister(RET_VALUE_REGISTER, retVal);
+            } break;
+
+            case SC_UserThreadSelfId:
+            {
+                int tid = currentThread->Tid();
+                machine->WriteRegister(RET_VALUE_REGISTER, tid);
             } break;
 
             default:
