@@ -1,4 +1,4 @@
-// addrspace.h 
+// addrspace.h
 //      Data structures to keep track of executing user programs 
 //      (address spaces).
 //
@@ -16,7 +16,7 @@
 #include "copyright.h"
 #include "filesys.h"
 
-#define UserStackSize		1024	// increase this as necessary!
+#define UserStackSize		2048	// increase this as necessary!
 
 class AddrSpace
 {
@@ -32,10 +32,14 @@ class AddrSpace
     void SaveState ();		// Save/restore address space-specific
     void RestoreState ();	// info on a context switch 
 
+    int GetStack() const;
+    int GetEndOfNoff() const;
+
   private:
       TranslationEntry * pageTable;	// Assume linear page table translation
     // for now!
     unsigned int numPages;	// Number of pages in the virtual 
+    int m_endOfNoff;
     // address space
 };
 

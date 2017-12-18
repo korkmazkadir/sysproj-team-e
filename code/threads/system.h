@@ -16,6 +16,7 @@
 #include "stats.h"
 #include "timer.h"
 #include "synchconsole.h"
+#include "usersemaphore.h"
 
 #define MAX_WRITE_BUF_SIZE 128
 #define MAX_INT_LEN 11
@@ -33,7 +34,7 @@ extern Interrupt *interrupt;	// interrupt status
 extern Statistics *stats;	// performance metrics
 extern Timer *timer;		// the hardware alarm clock
 extern SynchConsole *syncConsole;
-
+extern SemaphoreManager *semaphoreManager;
 
 #ifdef USER_PROGRAM
 #include "machine.h"

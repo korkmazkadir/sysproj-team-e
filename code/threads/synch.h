@@ -50,6 +50,7 @@ class Semaphore
     void V ();			// they are both *atomic*
 
   private:
+    friend class SemaphoreManager;
     const char *name;		// useful for debugging
     int value;			// semaphore value, always >= 0
     List *queue;		// threads waiting in P() for the value to be > 0
