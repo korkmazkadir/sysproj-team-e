@@ -226,13 +226,11 @@ int do_UserThreadJoin(int tid) {
 
     ThreadDescriptor_t *descriptor;
     if ((tid < 1) || (tid > MAX_NUM_USERTHREADS)) {
-        retVal = -1;
         goto early_exit;
     }
     descriptor = &thread_args[tid - 1];
 
     if (!descriptor->waitingForJoin) {
-        retVal = -2;
         goto early_exit;
     }
 
