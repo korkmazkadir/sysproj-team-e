@@ -1,0 +1,12 @@
+1)launch 50000 threads, expect: no hard crashes, 
+
+2)Halt main thread before created threads end, expect: created threads still run to completion, then program terminates
+
+3)call halt from a created thread??  expect ??
+
+4)pass NULL arguments (function ptr and / or argument)to UserThreadCreate expect: kernel stops program, no hard crashes
+
+5)pass Pointers that are pointing to another thread's local variables / stack? excpect: program still runs but produces bad output / results...?
+
+6)
+

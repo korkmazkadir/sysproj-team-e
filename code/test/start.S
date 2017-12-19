@@ -17,6 +17,8 @@
  *
  * 	NOTE: This has to be first, so that it gets loaded at location 0.
  *	The Nachos kernel always starts a program by jumping to location 0.
+ *  TEAME CHANGED to take main's return value as parameter instead of 0
+ *  line 29 move $4, $0 changed to $4, $2
  * -------------------------------------------------------------
  */
 
@@ -24,8 +26,8 @@
 	.ent	__start
 __start:
 	jal	main
-	move	$4,$0		
-	jal	Exit	 /* if we return from main, exit(0) */
+	move	$4,$2		
+	jal	Exit	 /* if we return from main, exit(returnValueOfMain) */
 	.end __start
 
 /* -------------------------------------------------------------
@@ -176,6 +178,32 @@ SynchGetInt:
     syscall
     j   $31
     .end SynchGetInt
+    
+    .globl UserThreadCreate
+    .ent UserThreadCreate
+UserThreadCreate:
+    addiu $2,$0,SC_UserThreadCreate
+    syscall
+    j   $31
+    .end UserThreadCreate
+    
+    .globl UserThreadExit
+    .ent UserThreadExit
+UserThreadExit:
+    addiu $2,$0,SC_UserThreadExit
+    syscall
+    j   $31
+    .end UserThreadExit
+    
+    .globl UserThreadJoin
+    .ent UserThreadJoin
+UserThreadJoin:
+    addiu $2,$0,SC_UserThreadJoin
+    syscall
+    j   $31
+    .end UserThreadJoin
+
+    
 /* dummy function to keep gcc happy */
         .globl  __main
         .ent    __main

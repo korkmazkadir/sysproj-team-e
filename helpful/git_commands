@@ -1,0 +1,10 @@
+If a fix is provided, you can add it in your repo with the following procedure. One team member executes such kind of commands:
+
+cd workdir
+git fetch official
+git merge official/master # ask for help if there are issues you cannot resolve
+git push
+
+The others just do:
+
+ git pull

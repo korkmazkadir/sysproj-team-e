@@ -35,6 +35,12 @@
 #define SC_SynchGetString 14
 #define SC_SynchPutInt 15
 #define SC_SynchGetInt 16
+#define SC_UserThreadCreate 17
+#define SC_UserThreadExit 18
+#define SC_UserThreadJoin 19
+
+
+
 
 #ifdef IN_USER_MODE
 
@@ -143,6 +149,15 @@ void Fork (void (*func) ());
  */
 void Yield ();
 
+/* This call must start the execution of f(arg) in a new copy of the MIPS interpreter (in other words, a
+ * new instance of the interpreter executed by a kernel thread).
+ */
+int UserThreadCreate(void f(void *arg), void *arg);
+
+void UserThreadExit();
+
+int UserThreadJoin(int tid);
+ 
 #endif // IN_USER_MODE
 
 #endif /* SYSCALL_H */

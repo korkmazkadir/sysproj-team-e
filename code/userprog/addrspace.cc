@@ -119,7 +119,10 @@ AddrSpace::AddrSpace (OpenFile * executable)
 			       [noffH.initData.virtualAddr]),
 			      noffH.initData.size, noffH.initData.inFileAddr);
       }
-
+      
+      nbThreads = 1;
+      spaceInUse = new Semaphore("addrspace sema", 0);
+      l_nbThreads = new Semaphore("it's a lock l_nbThreads",1);
 }
 
 //----------------------------------------------------------------------
@@ -132,6 +135,8 @@ AddrSpace::~AddrSpace ()
   // LB: Missing [] for delete
   // delete pageTable;
   delete [] pageTable;
+  delete spaceInUse;
+  delete l_nbThreads;
   // End of modification
 }
 
@@ -163,6 +168,8 @@ AddrSpace::InitRegisters ()
     // Set the stack register to the end of the address space, where we
     // allocated the stack; but subtract off a bit, to make sure we don't
     // accidentally reference off the end!
+    //printf("\nteame in addrspace.cc InitRegisters: main SP is: %d\n",numPages * PageSize -16);
+    mainSp = numPages * PageSize - 16;
     machine->WriteRegister (StackReg, numPages * PageSize - 16);
     DEBUG ('a', "Initializing stack register to %d\n",
 	   numPages * PageSize - 16);

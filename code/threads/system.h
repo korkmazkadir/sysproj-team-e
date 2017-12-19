@@ -19,6 +19,7 @@
 
 #define MAX_WRITE_BUF_SIZE 128
 #define MAX_INT_LEN 11
+#define MAX_NUM_THREADS 5
 
 // Initialization and cleanup routines
 extern void Initialize (int argc, char **argv);	// Initialization,
@@ -33,6 +34,10 @@ extern Interrupt *interrupt;	// interrupt status
 extern Statistics *stats;	// performance metrics
 extern Timer *timer;		// the hardware alarm clock
 extern SynchConsole *syncConsole;
+extern Thread **tids;
+extern int mainSp;
+extern int totalThreads;
+extern Semaphore *l_tT;
 
 
 #ifdef USER_PROGRAM

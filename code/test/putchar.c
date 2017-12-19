@@ -11,6 +11,8 @@ void print(char c, int n)
 
 int main()
 {
+    print('p', 2);
+    /*
     char c = SynchGetChar();
     PutChar(c);
     (void)SynchGetChar();
@@ -28,6 +30,10 @@ int main()
     SynchGetInt(&n);
     SynchPutString("Your input was ");
     SynchPutInt(n);
-    SynchPutString("\n");
+    SynchPutString("\n");*/
+    int a = 5;
+    int b = 2;
+    int c = a + b;
+    for (;c>0;c--){};
 
 }

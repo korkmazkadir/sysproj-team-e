@@ -19,6 +19,11 @@ Statistics *stats;		// performance metrics
 Timer *timer;			// the hardware timer device,
 					// for invoking context switches
 SynchConsole *syncConsole;
+Thread **tids;
+int mainSp;
+int totalThreads;
+Semaphore *l_tT;
+
 
 #ifdef FILESYS_NEEDED
 FileSystem *fileSystem;
@@ -144,6 +149,17 @@ Initialize (int argc, char **argv)
     scheduler = new Scheduler ();	// initialize the ready queue
     if (randomYield)		// start the timer (if needed)
 	timer = new Timer (TimerInterruptHandler, 0, randomYield);
+    //tid table setup
+    tids = (Thread**) calloc(MAX_NUM_THREADS, sizeof(Thread*));
+    if (tids == NULL) {
+        printf("calloc failed in system.cc initialize\n");
+        Exit(-1);
+    }
+    //END tid table setup
+    totalThreads = 0;
+    l_tT = new Semaphore("totalthread sema", 1);
+    mainSp = 0;
+
 
     threadToBeDestroyed = NULL;
 
@@ -154,6 +170,7 @@ Initialize (int argc, char **argv)
     currentThread->setStatus (RUNNING);
 
     syncConsole = new SynchConsole(NULL, NULL);
+
 
     interrupt->Enable ();
     CallOnUserAbort (Cleanup);	// if user hits ctl-C
@@ -203,6 +220,7 @@ Cleanup ()
     delete timer;
     delete scheduler;
     delete interrupt;
+    free(tids);
 
     Exit (0);
 }

@@ -243,6 +243,9 @@ Interrupt::Idle()
 void
 Interrupt::Halt()
 {
+    //wait for no one to be using this address space
+    
+    currentThread->space->spaceInUse->P();
     printf("Machine halting!\n\n");
     stats->Print();
     Cleanup();     // Never returns.

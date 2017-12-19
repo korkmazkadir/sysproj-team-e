@@ -1,0 +1,193 @@
+####
+######
+########
+########## STEP 1
+2.2
+-First thread is called main? created in threads/system.cc, in Initialize (),  line 152
+
+-At creation, main thread has no stack, no registers, no address space.
+The Thread data structure will be used to contain the relevant information for the running user program.
+The info is placed in the Thread struct upon running progtest.cc/StartProcess: 
+currentThread->space = space,   regs, state... 
+
+-The subsequent threads cannot be created in the same way since this would overtwrite the only Thread we have.
+(OR do they mean also create new Thread object and get its args from startProc? in this case, yes we can)
+
+2.3
+- in system.cc Initialize () line 159
+    machine = new Machine (debugUserProg);	// this must come first
+
+- in machine.cc Machine::Machine 
+line 59
+    for (i = 0; i < NumTotalRegs; i++)
+        registers[i] = 0;
+Registers are intialized to null
+
+
+line 61
+    mainMemory = new char[MemorySize];
+This variable is the MIPS machine main memory
+
+- in main.cc line 100
+		StartProcess (*(argv + 1));
+So yes, startProcess is called with ./halt as argument
+
+- loading of program into memory:
+it's loaded into virtual memory of the mips processor (machine->mainMemory, as seen in addrspace.cc AddrSpace line 103     bzero (machine->mainMemory, size);
+
+-  progtest.cc StartProcess () lines 38 - 42
+
+    space->InitRegisters ();	// set the initial register values
+    space->RestoreState ();	// load page table register
+
+    machine->Run ();		// jump to the user progam
+
+
+- Machine::Run in mipssim.cc line 31
+Machine::OneInstruction(Instruction *instr) line 106
+
+halt.c calls Halt () which is defined in syscall.h.
+Halt as defined in syscall.h is implemented in assembly in file Start.S
+The assembly code puts the relevant syscall number into register 2; and calls the "syscall" instruction.
+If we go to OneInstruction () which simulates MIPS hardware we see that for case OP_SYSCALL, 
+RaiseException is called with parameter SyscallException.
+RaiseException calls the exception handler.
+For now, this handler only handles halt, and fails any other syscall
+If syscall is halt, interrupt->halt is called.
+
+
+
+3.4
+-Following execution of nachos-threads with gdb:
+In SimpleThread:
+After each Yield call, by printing content of currentThread struct (p *currentThread) we can see that
+we are indeed switching from main to forked thread. This context switch is done by the call to schaduler->run.( and also "automatically" after re-enabling interrupts (call to ThreadRoot assembly rouitne)
+
+-In order to regain control when NachOS executes a context switch we can put a breakpoint at the call to SWITCH function (b SWITCH).
+
+3.5
+(meh)
+
+
+
+
+
+####
+######
+########
+########## STEP 2
+Partie II
+- Error to read before check avail because without doing check avail, there will be nothing in the incoming variable.
+-need to wait for previous write to be done otherwise BUSY will still be true, assertion in write will fail
+
+1) 
+what happens when running console test?  ./nachos-userprog -c
+console is created which schedules a consoleReadPoll interrupt.
+then in progtest.cc ConsoleTest we wait on the readAvail semaphore.
+This will get incremented by the console::checkCharAvail function, by calling the readHandler which we said was the posting function of the readAvail semaphore.
+etc... for write...
+
+2)see code
+3) see code
+4)  see code
+
+
+III
+1)
+
+IV
+
+V
+when string bigger than buffer, bad luck: we write what we can (buffsize - 1 for terminator character) and the rest is not written.
+
+VI
+Error: unexcpected syscall
+main of putchar program finishes, which tries to call exit syscall which is not yet implemented. Cand't find corresponding case in the switch statement, so fails.
+We can implement the exit syscall, and we can read a register to get the return value to re-use it.
+error code? or something
+
+VII
+1) 
+
+
+####
+######
+########
+########## STEP 3
+
+Part I
+
+note about stack:
+thread:	class:	       in SWITCH: save reg sx at a0 + SX   where a0 = thrdPtr
+thrdPtr=-stackTop			sw sp, SP(a0)
+	-reg0				sw s0, S0(a0)
+	-reg1				sw s1, S1a0)
+ 	-... 				...
+1)Creation and init:
+Creation: creating a new thread object ( t = new Thread )
+Initialisation: done at startprocess or fork
+Stack of NachOS kernel thread: StackTop points to Kernel memory (REAL)
+Stack of User Thread ("MIPS interpreter instance"): is in Machine->mainMemory
+saveState = save state of address space / kernel registers
+//.....
+
+
+part about not calling halt until threads done:
+for now: busy waiting in Exit syscall:
+initial thread of each proces will end up here. 
+works with one process (does not check if it's own tid is null)
+but with multiple, if several processes are waiting to end, they will deadlock
++ also tids table not protected.
+
+
+PARTIE II:
+what happens if main thread calls halt before threads have exited? program halts, threads don't finish.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

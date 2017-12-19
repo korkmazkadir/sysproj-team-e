@@ -24,6 +24,7 @@
 #include "copyright.h"
 #include "system.h"
 #include "syscall.h"
+#include "userthread.h"
 
 //----------------------------------------------------------------------
 // UpdatePC : Increments the Program Counter register in order to resume
@@ -73,6 +74,15 @@ static void copyStringToMachine(char *from, int to, unsigned size) {
     }
 }
 
+
+void printTids() {
+    int i;
+    printf("Printing tids[]\n");
+    for(i = 0; i < MAX_NUM_THREADS; i++) {
+        printf(" %d %d\n", i, (int)tids[i]);
+    }
+    printf("END of tids[]\n");
+}
 //----------------------------------------------------------------------
 // ExceptionHandler
 //      Entry point into the Nachos kernel.  Called when a user program
@@ -97,6 +107,8 @@ static void copyStringToMachine(char *from, int to, unsigned size) {
 //----------------------------------------------------------------------
 void ExceptionHandler (ExceptionType which)
 {
+    //TEAME 
+    //printTids();
     int type = machine->ReadRegister (SYSCALL_ID_REGISTER);
 
     if (SyscallException == which) {
@@ -164,15 +176,55 @@ void ExceptionHandler (ExceptionType which)
 
             case SC_Exit:
             {
+                //currentThread->waitChildren();
+                int b = 1;
+                int i;
+                while (b) {
+                    for (i = 0; i < currentThread->tid && tids[i] == NULL; i++);
+                    //don't check our own tid, of course it won't be null...
+                    for (i = i+1; i < MAX_NUM_THREADS && tids[i] == NULL; i++);
+                    //printf("thread %d waiting for children\n", currentThread->tid);
+                    //printTids();
+                    if (i == MAX_NUM_THREADS) {
+                        b = 0;
+                    }
+                }
                 int retValue = machine->ReadRegister(FIRST_PARAM_REGISTER);
                 printf("Application exited with code %d \n", retValue);
+                Exit(retValue);
+            } break;
+            
+            case SC_UserThreadCreate:
+            {
+                int f = machine->ReadRegister(4);
+                int arg = machine->ReadRegister(5);
+                int tid = do_UserThreadCreate(f, arg);
+                machine->WriteRegister(RET_VALUE_REGISTER, tid);
             } break;
 
+            case SC_UserThreadExit:
+            {
+                do_UserThreadExit();   
+            } break;
+            
+            case SC_Yield:
+            {
+                currentThread->Yield();
+            } break;
+            
+            case SC_UserThreadJoin:
+            {
+                int tid = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                int ret = do_UserThreadJoin(tid);
+                machine->WriteRegister(RET_VALUE_REGISTER, ret);
+            } break;
+            
             default:
             {
                 printf ("Unexpected SYSCALL %d %d\n", which, type);
                 ASSERT (FALSE);
             } break;
+            
         }
     } else {
         printf ("Unexpected user mode exception %d %d\n", which, type);

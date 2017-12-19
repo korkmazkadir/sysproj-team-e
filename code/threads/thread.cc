@@ -17,7 +17,6 @@
 #include "copyright.h"
 #include "thread.h"
 #include "switch.h"
-#include "synch.h"
 #include "system.h"
 
 #define STACK_FENCEPOST 0xdeadbeef	// this is put at the top of the
@@ -38,6 +37,17 @@ Thread::Thread (const char *threadName)
     stackTop = NULL;
     stack = NULL;
     status = JUST_CREATED;
+    ClaimTid();
+    l_tT->P();
+    totalThreads ++;
+    l_tT->V();
+    /*std::string msg = "runningChildren of ";
+    std::string dbgName = msg + std::to_string(tid);
+    runningChildren = new Condition(dbgName);
+    numRC = 0;
+    msg = "rCL of";
+    dbgName = msg + std::to_string(tid);
+    rCL = new Lock(dbgName);*/
 #ifdef USER_PROGRAM
     space = NULL;
     // FBT: Need to initialize special registers of simulator to 0
@@ -65,6 +75,10 @@ Thread::~Thread ()
     DEBUG ('t', "Deleting thread \"%s\"\n", name);
 
     ASSERT (this != currentThread);
+    tids[tid] = NULL;
+    l_tT->P();
+    totalThreads --;
+    l_tT->V();
     if (stack != NULL)
 	DeallocBoundedArray ((char *) stack, StackSize * sizeof (int));
 }
@@ -92,6 +106,7 @@ Thread::~Thread ()
 void
 Thread::Fork (VoidFunctionPtr func, int arg)
 {
+    
     DEBUG ('t', "Forking thread \"%s\" with func = 0x%x, arg = %d\n",
 	   name, (int) func, arg);
 
@@ -106,6 +121,12 @@ Thread::Fork (VoidFunctionPtr func, int arg)
     
     // LB: Observe that currentThread->space may be NULL at that time.
     this->space = currentThread->space;
+    this->space->l_nbThreads->P();
+    this->space->nbThreads++;
+    //printf("TEAME nbthreads on this space =%d\n", this->space->nbThreads);
+    this->space->l_nbThreads->V();
+
+
 
 #endif // USER_PROGRAM
 
@@ -144,7 +165,7 @@ Thread::CheckOverflow ()
 //----------------------------------------------------------------------
 // Thread::Finish
 //      Called by ThreadRoot when a thread is done executing the 
-//      forked procedure.
+//      forkedV procedure.
 //
 //      NOTE: we don't immediately de-allocate the thread data structure 
 //      or the execution stack, because we're still running in the thread 
@@ -373,6 +394,27 @@ Thread::StackAllocate (VoidFunctionPtr func, int arg)
     machineState[InitialArgState] = arg;
     machineState[WhenDonePCState] = (int) ThreadFinish;
 }
+
+void 
+Thread::ClaimTid() {
+    int i;
+    for (i = 0; i < MAX_NUM_THREADS && tids[i] != NULL; i++);
+    if (i == MAX_NUM_THREADS) {
+        printf("claimtid i = max...\nthis is not supposed to happen\n");
+    }
+    tid = i;
+    tids[i] = this;
+}
+
+/*void
+Thread::waitChildren() {
+    rCL->Acquire;
+    while (numRC != 0) {
+        runningChildren->Wait(rCL);
+    }
+    rCL->Release;
+}*/
+
 
 #ifdef USER_PROGRAM
 #include "machine.h"

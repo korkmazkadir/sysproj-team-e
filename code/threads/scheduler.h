@@ -28,6 +28,7 @@ class Scheduler
     // list, if any, and return thread.
     void Run (Thread * nextThread);	// Cause nextThread to start running
     void Print ();		// Print contents of ready list
+    int ClaimTid(); //return a free tid or -1 if there are none
 
   private:
       List * readyList;		// queue of threads that are ready to run,

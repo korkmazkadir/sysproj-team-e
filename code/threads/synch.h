@@ -13,12 +13,13 @@
 // Copyright (c) 1992-1993 The Regents of the University of California.
 // All rights reserved.  See copyright.h for copyright notice and limitation 
 // synch.h -- synchronization primitives.  
+//TEAME#include "thread.h"
 
 #ifndef SYNCH_H
 #define SYNCH_H
 
 #include "copyright.h"
-#include "thread.h"
+//TEAME#include "thread.h"
 #include "list.h"
 
 // The following class defines a "semaphore" whose value is a non-negative

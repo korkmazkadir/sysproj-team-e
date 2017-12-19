@@ -39,6 +39,8 @@
 
 #include "copyright.h"
 #include "utility.h"
+#include "synch.h"
+
 
 #ifdef USER_PROGRAM
 #include "machine.h"
@@ -73,6 +75,7 @@ extern void ThreadPrint (int arg);
 //    
 //  Some threads also belong to a user address space; threads
 //  that only run in the kernel have a NULL address space.
+
 
 class Thread
 {
@@ -112,6 +115,15 @@ class Thread
     {
 	printf ("%s, ", name);
     }
+    void waitChildren();
+    
+    void ClaimTid();
+    
+    int tid;
+    /*Condition runningChildren;
+    int numRC;
+    Lock rCL;*/
+    
 
   private:
     // some of the private data for this class is listed above
@@ -125,6 +137,7 @@ class Thread
     void StackAllocate (VoidFunctionPtr func, int arg);
     // Allocate a stack for thread.
     // Used internally by Fork()
+    void claimTid();
 
 #ifdef USER_PROGRAM
 // A thread running a user program actually has *two* sets of CPU registers -- 
@@ -138,6 +151,7 @@ class Thread
     void RestoreUserState ();	// restore user-level register state
 
     AddrSpace *space;		// User code this thread is running.
+    
 #endif
 };
 
