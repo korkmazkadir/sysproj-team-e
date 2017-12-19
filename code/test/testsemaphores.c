@@ -3,6 +3,7 @@
 #include "nachos_stdio.h"
 
 #define N 40
+#define WRITELN_INT(param) do { SynchPutInt(param); PutChar('\n'); } while(0);
 
 sem_t fillSem;
 sem_t emptSem;
@@ -67,9 +68,7 @@ void consumer(void *_) {
 
         SemWait(&outputMutex);
         {
-            SynchPutString("Thread "); SynchPutInt(UserThreadSelfId()); SynchPutString(" outputs: ");
-            SynchPutInt(data);
-            PutChar('\n');
+            WRITELN_INT(data);
         }
         SemPost(&outputMutex);
 
@@ -77,30 +76,30 @@ void consumer(void *_) {
     }
 }
 
+
 int main() {
 
     int semInitStatus = 0;
-    _printf("%d Kadir Korkmaz %s", 1234, "Hello There :) \n");
 
     // Expect successful initialization - output 0
     semInitStatus = SemInit(&fillSem, 0);
-    _printf("K %d \n", semInitStatus);
+    WRITELN_INT(semInitStatus);
 
     // Expect successful initialization - output 0
     semInitStatus = SemInit(&emptSem, N);
-    _printf("K %d\n", semInitStatus);
+    WRITELN_INT(semInitStatus);
 
     // Expect successful initialization - output 0
     semInitStatus = SemInit(&mutex, 1);
-    _printf("K %d\n", semInitStatus);
+    WRITELN_INT(semInitStatus);
 
     // Expect successful initialization - output 0
     semInitStatus = SemInit(&outputMutex, 1);
-    _printf("K %d\n", semInitStatus);
+    WRITELN_INT(semInitStatus);
 
     // Expect -3 error code
     semInitStatus = SemInit(&outputMutex, 1);
-    _printf("%d\n", semInitStatus);
+    WRITELN_INT(semInitStatus);
 
     int prodId = UserThreadCreate(&producer, 0);
 

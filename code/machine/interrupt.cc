@@ -254,7 +254,7 @@ Interrupt::Halt()
 //----------------------------------------------------------------------
 void
 Interrupt::AssertionFailed(char *fileName, int lineNumber){
-    fprintf(stderr,"\nERORR : Assertion failed. FILE : %s LINE : %d\n\n",fileName,lineNumber);
+    fprintf(stderr,"\nERROR : Assertion failed. FILE : %s LINE : %d\n\n",fileName,lineNumber);
     Exit (123);
 }
 

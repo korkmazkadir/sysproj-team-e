@@ -75,8 +75,6 @@ AddrSpace::AddrSpace (OpenFile * executable)
     m_endOfNoff = noffH.code.size + noffH.initData.size + noffH.uninitData.size;
     size = m_endOfNoff + UserStackSize;	// we need to increase the size
 
-    printf("NOFF SIZE is %d \n", m_endOfNoff);
-
     // to leave room for the stack
     numPages = divRoundUp (size, PageSize);
     size = numPages * PageSize;
@@ -111,8 +109,10 @@ AddrSpace::AddrSpace (OpenFile * executable)
       {
 	  DEBUG ('a', "Initializing code segment, at 0x%x, size %d\n",
 		 noffH.code.virtualAddr, noffH.code.size);
+#if 0
       printf( "Initializing code segment, at 0x%x, size %d\n",
          noffH.code.virtualAddr, noffH.code.size);
+#endif
 	  executable->ReadAt (&(machine->mainMemory[noffH.code.virtualAddr]),
 			      noffH.code.size, noffH.code.inFileAddr);
       }
@@ -120,8 +120,10 @@ AddrSpace::AddrSpace (OpenFile * executable)
       {
 	  DEBUG ('a', "Initializing data segment, at 0x%x, size %d\n",
 		 noffH.initData.virtualAddr, noffH.initData.size);
+#if 0
       printf( "Initializing data segment, at 0x%x, size %d\n",
          noffH.initData.virtualAddr, noffH.initData.size);
+#endif
 	  executable->ReadAt (&
 			      (machine->mainMemory
 			       [noffH.initData.virtualAddr]),
@@ -175,9 +177,10 @@ AddrSpace::InitRegisters ()
     machine->WriteRegister (StackReg, stackPtr);
     DEBUG ('a', "Initializing stack register to %d\n",
        stackPtr);
-
+#if 0
     printf("Initializing stack register to %d\n",
            stackPtr);
+#endif
 }
 
 //----------------------------------------------------------------------

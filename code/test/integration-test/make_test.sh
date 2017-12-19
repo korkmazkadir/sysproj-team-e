@@ -19,12 +19,12 @@ printf "\n\n### Testing ###\n\n"
 
 #----------------------------------------------------------------------------
 printf "${NC}>> stdio input test ${RED}\t"
-../../build/nachos-step2 -x  ../../build/test_stdio_input < ./io/input_test_stdio
+../../build/nachos-step3 -x  ../../build/test_stdio_input < ./io/input_test_stdio
 Check_Result
 
 #----------------------------------------------------------------------------
 printf "${NC}>> stdio output/input test ${RED}\t"
-../../build/nachos-step2 -x  ../../build/test_stdio_output_input  > ./io/global_output < ./io/global_output
+../../build/nachos-step3 -x  ../../build/test_stdio_output_input  > ./io/global_output < ./io/global_output
 Check_Result
 
 

@@ -74,10 +74,15 @@ void numberToString( int number, int base, char *stringBuffer){
         stringBuffer[index + 1] = END_OF_LINE;
     }
     
-    while(number > 0){
+    while(number >= 0){
        int remainder = number % base;
        number = number / base;
        stringBuffer[index] = '0' + remainder;
+
+       if (0 == number) {
+           break;
+       }
+
        index--;
     }
     

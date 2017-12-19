@@ -9,15 +9,12 @@ void aFailed(char *fileName, int line) {
 }
 
 
-int stringCompare(char *str1, char *str2){
-    for(int i = 0; i < MAX_STRING_SIZE ; i++){
-        if(str1[i] == str2[i] ){
-            if(str1[i] == '\0'){
-                return 0;
-            }
-        }
-    }
-    return -1;
+int stringCompare(const char *s1, const char *s2)
+{
+    for ( ; *s1 == *s2; s1++, s2++)
+    if (*s1 == '\0')
+        return 0;
+    return ((*(unsigned char *)s1 < *(unsigned char *)s2) ? -1 : +1);
 }
 
 int
