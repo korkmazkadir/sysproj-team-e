@@ -89,3 +89,7 @@ code/userprog/usersemaphore.h
 code/userprog/usersemaphore.cc
 code/userprog/semaphore.h
 code/test/testsemaphores.c
+code/test/nachos_stdio.h
+code/test/printf_test.c
+code/test/test_stdio_input.c
+code/test/test_stdio_output_input.c

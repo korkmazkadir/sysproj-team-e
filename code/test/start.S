@@ -183,7 +183,7 @@ AssertionFailed :
     addiu $2,$0,SC_AssertionFailed
     syscall
     j	$31
-    .end SynchGetInt
+    .end AssertionFailed
 
     .global UserThreadCreate
     .ent UserThreadCreate
