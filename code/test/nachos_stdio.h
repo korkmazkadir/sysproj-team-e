@@ -15,6 +15,7 @@
 #define NACHOS_STDIO_H
 
 #include "syscall.h"
+#include "utility.h"
 
 #define MAX_STRING_SIZE 99
 
@@ -23,17 +24,10 @@
 
 #define END_OF_LINE '\0'
 
-#define _ASSERT(expr) if (!(expr)) aFailed(__FILE__, __LINE__)
-
 
 typedef unsigned char *va_list;
 #define va_start(list, param) (list = (((va_list)&param) + sizeof(param)))
 #define va_arg(list, type)    (*(type *)((list += 4) - 4))
-
-
-void aFailed(char *fileName, int line) {
-    AssertionFailed(fileName, line);
-}
 
 int copyString(char *src, char *dest) {
 

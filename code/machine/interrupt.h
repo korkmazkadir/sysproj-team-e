@@ -95,8 +95,6 @@ class Interrupt {
     
     void YieldOnReturn();		// cause a context switch on return 
 					// from an interrupt handler
-
-    void AssertionFailed(char *fileName, int lineNumber);
     
     MachineStatus getStatus() { return status; } // idle, kernel, user
     void setStatus(MachineStatus st) { status = st; }

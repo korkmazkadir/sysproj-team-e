@@ -245,9 +245,9 @@ void ExceptionHandler (ExceptionType which)
                 int lineNumber = machine->ReadRegister(SECOND_PARAM_REGISTER);
                 char fileName [MAX_WRITE_BUF_SIZE];
                 copyStringFromMachine(fileNameAddress, fileName, MAX_WRITE_BUF_SIZE);
-                interrupt->AssertionFailed(fileName,lineNumber);
-                break;
-            }
+                fprintf(stderr,"\nERROR : Assertion failed. FILE : %s LINE : %d\n\n", fileName, lineNumber);
+                Exit (123);
+            } break;
             
             default:
             {

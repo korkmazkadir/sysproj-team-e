@@ -47,7 +47,7 @@ int SemaphoreManager::DoSemInit(sem_t *semPtr, int val) {
  * \param semPtr <- virtual address of the semaphore ID
  * \return  0 if post operation is performed successfully
  *         -1 if invalid semPtr is specified
- *         -2 if the samephore would overflow after performing post
+ *         -2 if the semaphore would overflow after performing post
  */
 int SemaphoreManager::DoSemPost(sem_t *semPtr) {
     int retVal = 0;
