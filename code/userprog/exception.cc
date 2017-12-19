@@ -172,7 +172,6 @@ void ExceptionHandler (ExceptionType which)
             {
                 int retValue = machine->ReadRegister(FIRST_PARAM_REGISTER);
                 haltSync.P();
-                printf("Application exited with code %d \n", retValue);
                 exit(retValue);
             } break;
 
@@ -240,6 +239,16 @@ void ExceptionHandler (ExceptionType which)
                 machine->WriteRegister(RET_VALUE_REGISTER, tid);
             } break;
 
+            case SC_AssertionFailed:
+            {
+                int fileNameAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                int lineNumber = machine->ReadRegister(SECOND_PARAM_REGISTER);
+                char fileName [MAX_WRITE_BUF_SIZE];
+                copyStringFromMachine(fileNameAddress, fileName, MAX_WRITE_BUF_SIZE);
+                interrupt->AssertionFailed(fileName,lineNumber);
+                break;
+            }
+            
             default:
             {
                 printf ("Unexpected SYSCALL %d %d\n", which, type);

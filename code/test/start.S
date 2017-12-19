@@ -177,6 +177,14 @@ SynchGetInt:
     j   $31
     .end SynchGetInt
 
+    .globl AssertionFailed
+    .ent    AssertionFailed
+AssertionFailed :
+    addiu $2,$0,SC_AssertionFailed
+    syscall
+    j	$31
+    .end SynchGetInt
+
     .global UserThreadCreate
     .ent UserThreadCreate
 UserThreadCreate:

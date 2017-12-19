@@ -45,6 +45,10 @@
 #define SC_SemDestroy 23
 #define SC_UserThreadSelfId 24
 
+
+#define SC_AssertionFailed     100
+
+
 #ifdef IN_USER_MODE
 
 // LB: This part is read only on compiling the test/*.c files.
@@ -160,6 +164,12 @@ void Fork (void (*func) ());
  * or not. 
  */
 void Yield ();
+
+/* Assertion failure
+ * 
+ */
+void AssertionFailed(char *fileName, int lineNumber);
+
 
 #endif // IN_USER_MODE
 
