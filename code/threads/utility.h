@@ -35,6 +35,8 @@
 // Divide and either round up or down 
 #define divRoundDown(n,s)  ((n) / (s))
 #define divRoundUp(n,s)    (((n) / (s)) + ((((n) % (s)) > 0) ? 1 : 0))
+#define likely(x)       __builtin_expect((x),1)
+#define unlikely(x)     __builtin_expect((x),0)
 
 // This declares the type "VoidFunctionPtr" to be a "pointer to a
 // function taking an integer argument and returning nothing".  With

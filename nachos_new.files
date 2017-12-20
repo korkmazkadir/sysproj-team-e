@@ -63,6 +63,8 @@ code/threads/synch.cc
 code/threads/synch.h
 code/threads/synchlist.cc
 code/threads/synchlist.h
+code/threads/synchtests.cc
+code/threads/synchtests.h
 code/threads/system.cc
 code/threads/system.h
 code/threads/thread.cc

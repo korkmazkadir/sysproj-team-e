@@ -53,18 +53,18 @@ int SemaphoreManager::DoSemPost(sem_t *semPtr) {
     int retVal = 0;
     int semIx = getSemaphoreIxByVirtMem(semPtr);
     Semaphore *curSemaphore = nullptr;
+    int semRetVal = 0;
     if (semIx < 0) {
         retVal = -1;
         goto early_exit;
     }
     curSemaphore = m_semaphores[semIx];
 
-    if (curSemaphore->value == INT_MAX) {
+    semRetVal = curSemaphore->V();
+    if (semRetVal == -1) {
         retVal = -2;
         goto early_exit;
     }
-
-    curSemaphore->V();
 
     early_exit:
     return retVal;

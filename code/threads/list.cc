@@ -42,6 +42,7 @@ ListElement::ListElement (void *itemPtr, long long sortKey)
 
 List::List ()
 {
+    size = 0;
     first = last = NULL;
 }
 
@@ -79,15 +80,17 @@ List::Append (void *item)
     ListElement *element = new ListElement (item, 0);
 
     if (IsEmpty ())
-      {				// list is empty
-	  first = element;
-	  last = element;
-      }
+    {				// list is empty
+        first = element;
+        last = element;
+    }
     else
-      {				// else put it after last
-	  last->next = element;
-	  last = element;
-      }
+    {				// else put it after last
+        last->next = element;
+        last = element;
+    }
+
+    ++size;
 }
 
 //----------------------------------------------------------------------
@@ -108,15 +111,17 @@ List::Prepend (void *item)
     ListElement *element = new ListElement (item, 0);
 
     if (IsEmpty ())
-      {				// list is empty
-	  first = element;
-	  last = element;
-      }
+    {				// list is empty
+        first = element;
+        last = element;
+    }
     else
-      {				// else put it before first
-	  element->next = first;
-	  first = element;
-      }
+    {				// else put it before first
+        element->next = first;
+        first = element;
+    }
+
+    ++size;
 }
 
 //----------------------------------------------------------------------
@@ -164,7 +169,11 @@ List::IsEmpty ()
     if (first == NULL)
 	return TRUE;
     else
-	return FALSE;
+        return FALSE;
+}
+
+int List::Size() const {
+    return size;
 }
 
 //----------------------------------------------------------------------
@@ -188,31 +197,27 @@ List::SortedInsert (void *item, long long sortKey)
     ListElement *element = new ListElement (item, sortKey);
     ListElement *ptr;		// keep track
 
-    if (IsEmpty ())
-      {				// if list is empty, put
-	  first = element;
-	  last = element;
-      }
-    else if (sortKey < first->key)
-      {
-	  // item goes on front of list
-	  element->next = first;
-	  first = element;
-      }
-    else
-      {				// look for first elt in list bigger than item
-	  for (ptr = first; ptr->next != NULL; ptr = ptr->next)
-	    {
-		if (sortKey < ptr->next->key)
-		  {
-		      element->next = ptr->next;
-		      ptr->next = element;
-		      return;
-		  }
-	    }
-	  last->next = element;	// item goes at end of list
-	  last = element;
-      }
+    if (IsEmpty ()) {				// if list is empty, put
+        first = element;
+        last = element;
+    } else if (sortKey < first->key) {
+        // item goes on front of list
+        element->next = first;
+        first = element;
+    } else {				// look for first elt in list bigger than item
+        for (ptr = first; ptr->next != NULL; ptr = ptr->next)
+        {
+            if (sortKey < ptr->next->key)
+            {
+                element->next = ptr->next;
+                ptr->next = element;
+                return;
+            }
+        }
+        last->next = element;	// item goes at end of list
+        last = element;
+    }
+    ++size;
 }
 
 //----------------------------------------------------------------------
@@ -234,21 +239,24 @@ List::SortedRemove (long long *keyPtr)
     ListElement *element = first;
     void *thing;
 
-    if (IsEmpty ())
-	return NULL;
+    if (IsEmpty ()) {
+        return NULL;
+    }
 
     thing = first->item;
-    if (first == last)
-      {				// list had one item, now has none 
-	  first = NULL;
-	  last = NULL;
-      }
-    else
-      {
-	  first = element->next;
-      }
-    if (keyPtr != NULL)
-	*keyPtr = element->key;
+    if (first == last) {				// list had one item, now has none
+        first = NULL;
+        last = NULL;
+    } else {
+        first = element->next;
+    }
+
+    if (keyPtr != NULL) {
+        *keyPtr = element->key;
+    }
+
+    --size;
+
     delete element;
     return thing;
 }
