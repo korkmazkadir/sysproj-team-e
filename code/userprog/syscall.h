@@ -44,6 +44,7 @@
 #define SC_SemWait 22
 #define SC_SemDestroy 23
 #define SC_UserThreadSelfId 24
+#define SC_ForkExec 25
 
 
 #define SC_AssertionFailed     100
@@ -86,6 +87,7 @@ int SemInit(sem_t *semPtr, int val);
 int SemPost(sem_t *semPtr);
 int SemWait(sem_t *semPtr);
 int SemDestroy(sem_t *semPtr);
+int ForkExec(char *s);
 
 /* Address space control operations: Exit, Exec, and Join */
 

@@ -248,7 +248,11 @@ void ExceptionHandler (ExceptionType which)
                 interrupt->AssertionFailed(fileName,lineNumber);
                 break;
             }
-            
+            case SC_ForkExec:
+            {
+                
+                break;
+            }
             default:
             {
                 printf ("Unexpected SYSCALL %d %d\n", which, type);

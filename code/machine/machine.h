@@ -25,6 +25,7 @@
 #include "utility.h"
 #include "translate.h"
 #include "disk.h"
+#include "frameprovider.h"
 
 // Definitions related to the size, and format of user memory
 
@@ -186,6 +187,8 @@ class Machine {
 
     TranslationEntry *pageTable;
     unsigned int pageTableSize;
+
+    FrameProvider *frameprovider; //should this be here?
 
   private:
     bool singleStep;		// drop back into the debugger after each

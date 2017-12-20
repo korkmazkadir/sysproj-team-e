@@ -73,6 +73,8 @@ Machine::Machine(bool debug)
 
     singleStep = debug;
     CheckEndian();
+
+    frameprovider = new FrameProvider(NumPhysPages); //should this be here?
 }
 
 //----------------------------------------------------------------------

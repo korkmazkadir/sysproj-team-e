@@ -22,6 +22,33 @@
 
 #include <strings.h>		/* for bzero */
 
+
+//----------------------------------------------------------------------
+// ReadAtVirtual
+//      Protect maim memory from addrspace initialization for every executable.
+//----------------------------------------------------------------------
+static void ReadAtVirtual(OpenFile *executable, int virtualaddr, int numBytes, 
+  int position, TranslationEntry *pageTable,unsigned numPages) {
+
+    char tempBuff[numBytes];
+
+    //Read code from executable file
+    executable->ReadAt(tempBuff, numBytes, position);
+
+    //Set current context pagetable - must be before writemem
+    machine->pageTable = pageTable;
+    machine->pageTableSize = numPages;
+
+
+    //Write code to main memory
+    for(int i = 0; i < numBytes; i++) {
+
+        //Write mem translates virtual into physical
+        machine->WriteMem(virtualaddr++, 1, tempBuff[i]);
+
+    }
+}
+
 //----------------------------------------------------------------------
 // SwapHeader
 //      Do little endian to big endian conversion on the bytes in the 
@@ -93,7 +120,7 @@ AddrSpace::AddrSpace (OpenFile * executable)
     for (i = 0; i < numPages; i++)
       {
 	  pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
-	  pageTable[i].physicalPage = i;
+	  pageTable[i].physicalPage = machine->frameprovider->GetEmptyFrame();
 	  pageTable[i].valid = TRUE;
 	  pageTable[i].use = FALSE;
 	  pageTable[i].dirty = FALSE;
@@ -109,12 +136,13 @@ AddrSpace::AddrSpace (OpenFile * executable)
 // then, copy in the code and data segments into memory
     if (noffH.code.size > 0)
       {
-	  DEBUG ('a', "Initializing code segment, at 0x%x, size %d\n",
+	   DEBUG ('a', "Initializing code segment, at 0x%x, size %d\n",
 		 noffH.code.virtualAddr, noffH.code.size);
-      printf( "Initializing code segment, at 0x%x, size %d\n",
+        printf( "Initializing code segment, at 0x%x, size %d\n",
          noffH.code.virtualAddr, noffH.code.size);
-	  executable->ReadAt (&(machine->mainMemory[noffH.code.virtualAddr]),
-			      noffH.code.size, noffH.code.inFileAddr);
+	    //executable->ReadAt (&(machine->mainMemory[noffH.code.virtualAddr]),noffH.code.size, noffH.code.inFileAddr);
+        ReadAtVirtual(executable, noffH.code.virtualAddr, noffH.code.size, 
+            noffH.code.inFileAddr, pageTable, numPages);
       }
     if (noffH.initData.size > 0)
       {
@@ -122,11 +150,14 @@ AddrSpace::AddrSpace (OpenFile * executable)
 		 noffH.initData.virtualAddr, noffH.initData.size);
       printf( "Initializing data segment, at 0x%x, size %d\n",
          noffH.initData.virtualAddr, noffH.initData.size);
-	  executable->ReadAt (&
+	  /*executable->ReadAt (&
 			      (machine->mainMemory
 			       [noffH.initData.virtualAddr]),
-			      noffH.initData.size, noffH.initData.inFileAddr);
+			      noffH.initData.size, noffH.initData.inFileAddr);*/
+      ReadAtVirtual(executable, noffH.initData.virtualAddr, noffH.initData.size, 
+        noffH.initData.inFileAddr, pageTable, numPages);
       }
+    
 
 }
 
@@ -137,10 +168,14 @@ AddrSpace::AddrSpace (OpenFile * executable)
 
 AddrSpace::~AddrSpace ()
 {
-  // LB: Missing [] for delete
-  // delete pageTable;
-  delete [] pageTable;
-  // End of modification
+    // LB: Missing [] for delete
+    // delete pageTable;
+    for(unsigned int i = 0; i < numPages; i++) {
+        machine->frameprovider->ReleaseFrame(pageTable[i].physicalPage);
+    }
+    
+    delete [] pageTable;
+    // End of modification
 }
 
 //----------------------------------------------------------------------
