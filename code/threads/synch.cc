@@ -141,7 +141,7 @@ void Lock::Release ()
         goto early_exit;
     }
 
-    thread = (Thread *) m_queue.Remove ();
+    thread = static_cast<Thread *>(m_queue.Remove ());
     if (likely(thread != nullptr))	{	// make thread ready, consuming the V immediately
         scheduler->ReadyToRun (thread);
     }
@@ -160,6 +160,7 @@ bool Lock::isHeldByCurrentThread() const
 
 Condition::Condition (const char *debugName):
     m_name(debugName)
+  , m_threadToUnlock(nullptr)
     { /* do nothing */ }
 
 Condition::~Condition () {
