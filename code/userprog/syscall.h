@@ -44,7 +44,7 @@
 #define SC_SemWait 22
 #define SC_SemDestroy 23
 #define SC_UserThreadSelfId 24
-
+#define SC_ForkExec 25
 
 #define SC_AssertionFailed     100
 
@@ -170,6 +170,11 @@ void Yield ();
  */
 void AssertionFailed(char *fileName, int lineNumber);
 
+
+/* Fork Exec syscal
+ * 
+ */
+int ForkExec(char *fileName);
 
 #endif // IN_USER_MODE
 

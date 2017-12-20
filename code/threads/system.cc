@@ -177,6 +177,39 @@ Initialize (int argc, char **argv)
 #endif
 }
 
+static void startProcess(int arg){
+    AddrSpace *addrSpace = (AddrSpace *)arg;
+    addrSpace->RestoreState();
+    addrSpace->InitRegisters();
+    machine->Run();
+}
+
+
+
+
+int createProcess(char *filename){
+
+    OpenFile *executable = fileSystem->Open(filename);
+    AddrSpace *space;
+
+    if (executable == NULL) {
+        printf("Unable to open file %s\n", filename);
+        return 0;
+    }
+    
+    Thread *thread = new Thread("Thread 1");
+    space = new AddrSpace(executable);
+    thread->space = space;
+
+    delete executable; // close file
+
+    thread->Fork(&startProcess , (int)space);
+
+    return 0;
+}
+
+ 
+
 //----------------------------------------------------------------------
 // Cleanup
 //      Nachos is halting.  De-allocate global data structures.
