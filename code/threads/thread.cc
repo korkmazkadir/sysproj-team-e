@@ -32,7 +32,8 @@
 //      "threadName" is an arbitrary string, useful for debugging.
 //----------------------------------------------------------------------
 
-Thread::Thread (const char *threadName)
+Thread::Thread (const char *threadName):
+    tid(0)
 {
     name = threadName;
     stackTop = NULL;
@@ -139,6 +140,16 @@ Thread::CheckOverflow ()
 #else
 	ASSERT (*stack == (int) STACK_FENCEPOST);
 #endif
+}
+
+void Thread::SetTID(int _tid)
+{
+    tid = _tid;
+}
+
+int Thread::Tid() const
+{
+    return tid;
 }
 
 //----------------------------------------------------------------------

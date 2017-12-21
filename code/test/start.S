@@ -24,8 +24,8 @@
 	.ent	__start
 __start:
 	jal	main
-	move	$4,$0		
-	jal	Exit	 /* if we return from main, exit(0) */
+    move	$4,$2
+    jal	Exit	 /* exit with the value returned from main */
 	.end __start
 
 /* -------------------------------------------------------------
@@ -129,6 +129,126 @@ Yield:
 	j	$31
 	.end Yield
 
+    .globl PutChar
+    .ent PutChar
+PutChar:
+    addiu $2,$0,SC_PutChar
+    syscall
+    j   $31
+    .end PutChar
+
+    .globl SynchPutString
+    .ent SynchPutString
+SynchPutString:
+    addiu $2,$0,SC_SynchPutString
+    syscall
+    j   $31
+    .end SynchPutString
+
+    .globl SynchGetChar
+    .ent SynchGetChar
+SynchGetChar:
+    addiu $2,$0,SC_SynchGetChar
+    syscall
+    j   $31
+    .end SynchGetChar
+
+    .globl SynchGetString
+    .ent SynchGetString
+SynchGetString:
+    addiu $2,$0,SC_SynchGetString
+    syscall
+    j   $31
+    .end SynchGetString
+
+    .globl SynchPutInt
+    .ent SynchPutInt
+SynchPutInt:
+    addiu $2,$0,SC_SynchPutInt
+    syscall
+    j   $31
+    .end SynchPutInt
+
+    .globl SynchGetInt
+    .ent SynchGetInt
+SynchGetInt:
+    addiu $2,$0,SC_SynchGetInt
+    syscall
+    j   $31
+    .end SynchGetInt
+
+    .globl AssertionFailed
+    .ent    AssertionFailed
+AssertionFailed :
+    addiu $2,$0,SC_AssertionFailed
+    syscall
+    j	$31
+    .end SynchGetInt
+
+    .global UserThreadCreate
+    .ent UserThreadCreate
+UserThreadCreate:
+    addiu $2,$0,SC_UserThreadCreate
+    addiu $8,$0,UserThreadExit
+    syscall
+    j   $31
+    .end UserThreadCreate
+
+    .globl UserThreadExit
+    .ent UserThreadExit
+UserThreadExit:
+    addiu $2,$0,SC_UserThreadExit
+    syscall
+    j   $31
+    .end UserThreadExit
+
+    .globl UserThreadJoin
+    .ent UserThreadJoin
+UserThreadJoin:
+    addiu $2,$0,SC_UserThreadJoin
+    syscall
+    j   $31
+    .end UserThreadJoin
+
+    .globl SemInit
+    .ent SemInit
+SemInit:
+    addiu $2,$0,SC_SemInit
+    syscall
+    j   $31
+    .end SemInit
+
+    .globl SemPost
+    .ent SemPost
+SemPost:
+    addiu $2,$0,SC_SemPost
+    syscall
+    j   $31
+    .end SemPost
+
+    .globl SemWait
+    .ent SemWait
+SemWait:
+    addiu $2,$0,SC_SemWait
+    syscall
+    j   $31
+    .end SemWait
+
+    .globl SemDestroy
+    .ent SemDestroy
+SemDestroy:
+    addiu $2,$0,SC_SemDestroy
+    syscall
+    j   $31
+    .end SemDestroy
+
+    .globl UserThreadSelfId
+    .ent UserThreadSelfId
+UserThreadSelfId:
+    addiu $2,$0,SC_UserThreadSelfId
+    syscall
+    j   $31
+    .end UserThreadSelfId
 /* dummy function to keep gcc happy */
         .globl  __main
         .ent    __main

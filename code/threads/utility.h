@@ -51,7 +51,7 @@ typedef void (*VoidNoArgFunctionPtr) ();
 
 // Include interface that isolates us from the host machine system library.
 // Requires definition of bool, and VoidFunctionPtr
-#include "sysdep.h"
+#include "../machine/sysdep.h"
 
 // Interface to debugging routines.
 
@@ -77,6 +77,11 @@ extern void DEBUG (char flag, const char *format, ...);	// Print debug message
 	fflush(stderr);							      \
         Abort();                                                              \
     }
+
+#define DEBUG_MSG(msg) \
+    do { \
+    printf("%s %s %d %s", __FILE__, __FUNCTION__, __LINE__, msg); \
+    } while(0);
 
 
 #endif /* UTILITY_H */

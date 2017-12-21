@@ -1,0 +1,33 @@
+CMake version >= 2.8 is required to build unit tests
+
+==========================================================
+Building and running existing unit tests (execute in the current directory):
+
+1.   cmake CMakeLists.txt
+2.   make validate
+==========================================================
+
+==========================================================
+Adding a new unit test:
+
+1.   Create a sub-directory (e.g. new_test)
+2.   Add your source file(s) and CMakeLists.txt to this subdirectory.
+     CMakeLists.txt should contain the following
+
+     *************************************
+
+     cmake_minimum_required(VERSION 2.8)
+     project(new_test)
+
+
+     include(${CMAKE_CURRENT_SOURCE_DIR}/../common/CMakeLists.txt)
+
+     #do test-specific stuff here
+
+     set(SOURCES ${src} %YOUR SOURCES%)
+
+
+     add_executable(new_test ${SOURCES}) 
+
+     *************************************
+3.   In this directory modify CMakeLists.txt to include new subdirectory and run the respective command

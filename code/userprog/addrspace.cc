@@ -1,4 +1,4 @@
-// addrspace.cc 
+// addrspace.cc
 //      Routines to manage address spaces (executing user programs).
 //
 //      In order to run a user program, you must:
@@ -72,7 +72,11 @@ AddrSpace::AddrSpace (OpenFile * executable)
     ASSERT (noffH.noffMagic == NOFFMAGIC);
 
 // how big is address space?
-    size = noffH.code.size + noffH.initData.size + noffH.uninitData.size + UserStackSize;	// we need to increase the size
+    m_endOfNoff = noffH.code.size + noffH.initData.size + noffH.uninitData.size;
+    size = m_endOfNoff + UserStackSize;	// we need to increase the size
+
+    printf("NOFF SIZE is %d \n", m_endOfNoff);
+
     // to leave room for the stack
     numPages = divRoundUp (size, PageSize);
     size = numPages * PageSize;
@@ -107,6 +111,8 @@ AddrSpace::AddrSpace (OpenFile * executable)
       {
 	  DEBUG ('a', "Initializing code segment, at 0x%x, size %d\n",
 		 noffH.code.virtualAddr, noffH.code.size);
+      printf( "Initializing code segment, at 0x%x, size %d\n",
+         noffH.code.virtualAddr, noffH.code.size);
 	  executable->ReadAt (&(machine->mainMemory[noffH.code.virtualAddr]),
 			      noffH.code.size, noffH.code.inFileAddr);
       }
@@ -114,6 +120,8 @@ AddrSpace::AddrSpace (OpenFile * executable)
       {
 	  DEBUG ('a', "Initializing data segment, at 0x%x, size %d\n",
 		 noffH.initData.virtualAddr, noffH.initData.size);
+      printf( "Initializing data segment, at 0x%x, size %d\n",
+         noffH.initData.virtualAddr, noffH.initData.size);
 	  executable->ReadAt (&
 			      (machine->mainMemory
 			       [noffH.initData.virtualAddr]),
@@ -163,9 +171,13 @@ AddrSpace::InitRegisters ()
     // Set the stack register to the end of the address space, where we
     // allocated the stack; but subtract off a bit, to make sure we don't
     // accidentally reference off the end!
-    machine->WriteRegister (StackReg, numPages * PageSize - 16);
+    int stackPtr = GetStack();
+    machine->WriteRegister (StackReg, stackPtr);
     DEBUG ('a', "Initializing stack register to %d\n",
-	   numPages * PageSize - 16);
+       stackPtr);
+
+    printf("Initializing stack register to %d\n",
+           stackPtr);
 }
 
 //----------------------------------------------------------------------
@@ -194,4 +206,13 @@ AddrSpace::RestoreState ()
 {
     machine->pageTable = pageTable;
     machine->pageTableSize = numPages;
+}
+
+int AddrSpace::GetStack() const {
+    int retVal = numPages * PageSize - 16;
+    return retVal;
+}
+
+int AddrSpace::GetEndOfNoff() const {
+    return m_endOfNoff;
 }

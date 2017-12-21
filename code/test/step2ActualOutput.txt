@@ -1,0 +1,12 @@
+a
+hello world
+helloApplication exited with code 0 
+Machine halting!
+
+Ticks: total 2245, idle 1900, system 260, user 85
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 19
+Paging: faults 0
+Network I/O: packets received 0, sent 0
+
+Cleaning up...
