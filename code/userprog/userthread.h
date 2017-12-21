@@ -10,6 +10,7 @@ typedef void (*ThreadFun_t)(void *);
 typedef struct ThreadParam_t {
     ThreadFun_t functionPtr;
     void *functionParam;
+    AddrSpace *space;
     int retAddress;
     int topOfStack;
 } ThreadParam_t;
@@ -32,7 +33,8 @@ typedef struct ThreadDescriptor_t {
     }
 } ThreadDescriptor_t;
 
-int do_UserThreadCreate(int funPtr, int arg, int retAddress);
+int do_UserThreadCreate(int funPtr, int arg, int retAddress, AddrSpace *space, bool kernelRequest = false);
+int do_KernelThreadCreate(AddrSpace *space);
 void do_UserThreadExit();
 int do_UserThreadJoin(int tid);
 

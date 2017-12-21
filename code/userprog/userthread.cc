@@ -44,9 +44,10 @@ static void InitializeThreadStructs() {
  * threads stacks)
  *
  * The thread stack size is assumed to be fixed and be multiple of PageSize
+ *
  */
-static void SetUpAvailThreadStacks(AddrSpace *addrSpace) {
-    int begin = addrSpace->GetStack() - THREAD_STACK_SIZE;
+static void SetUpAvailThreadStacks(AddrSpace *addrSpace, bool kernelRequest = false) {
+    int begin = addrSpace->GetStack() - (kernelRequest ? 0 : THREAD_STACK_SIZE);
     int end = addrSpace->GetEndOfNoff();
     List &listOfStacks = threadStacks[addrSpace];
     while (begin - end > THREAD_STACK_SIZE) {
@@ -73,6 +74,8 @@ static void StartUserThread(int f) {
         machine->WriteRegister (i, 0);
     }
 
+    cvtParam->space->RestoreState();
+
     //FIXME: Restore state when virtual memory is implemented
 
     int instr = (int)cvtParam->functionPtr;
@@ -88,10 +91,13 @@ static void StartUserThread(int f) {
 /*!
  * Sets up a new kernel thread associated with the new user thread
  *
- * \param funPtr     <- pointer to function of type \c ThreadFun_t
- * \param arg        <- argument to be passed to \a funPtr when calling it
- * \param retAddress <- address of a function that shall be called when
- *                      funPtr finishes executing
+ * \param funPtr            <- pointer to function of type \c ThreadFun_t
+ * \param arg               <- argument to be passed to \a funPtr when calling it
+ * \param retAddress        <- address of a function that shall be called when
+ *                             funPtr finishes executing
+ * \param kernelRequest     <- whether this function is used for creating a new process
+ *                             if this parameter is set to \c true the function will
+ *                             allow 0 address for \a funPtr
  *
  *
  * \return thread ID if thread creation was successful
@@ -100,7 +106,7 @@ static void StartUserThread(int f) {
  *         -3 if there is no space left on stack for a new thread
  *         -4 ran out of memory
  */
-int do_UserThreadCreate(int funPtr, int arg, int retAddress) {
+int do_UserThreadCreate(int funPtr, int arg, int retAddress, AddrSpace *space, bool kernelRequest) {
 
     int retVal = -1;
     static bool firstTime = true;
@@ -111,7 +117,7 @@ int do_UserThreadCreate(int funPtr, int arg, int retAddress) {
         InitializeThreadStructs();
     }
 
-    if (0 == funPtr) {
+    if (!kernelRequest && (0 == funPtr)) {
         /* The call should fail and return -1 */
         retVal = -1;
         goto early_exit;
@@ -125,7 +131,7 @@ int do_UserThreadCreate(int funPtr, int arg, int retAddress) {
         if (currentThread->space) {
             auto it = threadStacks.find(currentThread->space);
             if (it == threadStacks.end()) {
-                SetUpAvailThreadStacks(currentThread->space);
+                SetUpAvailThreadStacks(currentThread->space, kernelRequest);
             }
         } else {
             DEBUG_MSG("Current thread Address space is NULL. \n");
@@ -147,6 +153,7 @@ int do_UserThreadCreate(int funPtr, int arg, int retAddress) {
         }
 
         serializedThreadParam->functionPtr = (ThreadFun_t)funPtr;
+        serializedThreadParam->space = space;
         serializedThreadParam->functionParam = (void *)arg;
         serializedThreadParam->retAddress = retAddress;
         serializedThreadParam->topOfStack = (int)topOfThreadStack;
@@ -163,6 +170,7 @@ int do_UserThreadCreate(int funPtr, int arg, int retAddress) {
 
         Thread *newThread = new (std::nothrow) Thread(buf);
 
+        /* Memory allocation failed */
         if (!newThread) {
             retVal = -4;
             goto early_exit;
@@ -176,10 +184,8 @@ int do_UserThreadCreate(int funPtr, int arg, int retAddress) {
         thread_args[threadNum - 1].argPtr = (int)serializedThreadParam;
         thread_args[threadNum - 1].waitingForJoin = true;
         newThread->SetTID(threadNum);
-        /* Memory allocation failed */
-
+        newThread->space = space;
         newThread->Fork(StartUserThread, (int)serializedThreadParam);
-//        currentThread->Yield();
         retVal = threadNum;
         ++numThreads;
         if (1 == numThreads) {
@@ -240,5 +246,11 @@ int do_UserThreadJoin(int tid) {
     freeThreadIds.Append((void *)tid);
     retVal = 0;
 early_exit:
+    return retVal;
+}
+
+
+int do_KernelThreadCreate(AddrSpace *space) {
+    int retVal = do_UserThreadCreate(0, 0, 0, space, true);
     return retVal;
 }

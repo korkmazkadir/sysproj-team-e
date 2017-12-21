@@ -183,7 +183,7 @@ void ExceptionHandler (ExceptionType which)
 
                 int retAddress = machine->ReadRegister(8);
 
-                int threadRetVal = do_UserThreadCreate(funPtr, arg, retAddress);
+                int threadRetVal = do_UserThreadCreate(funPtr, arg, retAddress, currentThread->space);
                 machine->WriteRegister(RET_VALUE_REGISTER, threadRetVal);
             } break;
 
@@ -239,6 +239,16 @@ void ExceptionHandler (ExceptionType which)
                 machine->WriteRegister(RET_VALUE_REGISTER, tid);
             } break;
 
+            case SC_ForkExec:
+            {
+                int fileNameAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                char fileName [MAX_WRITE_BUF_SIZE];
+                copyStringFromMachine(fileNameAddress, fileName, MAX_WRITE_BUF_SIZE);
+                int result = createProcess(fileName);
+                machine->WriteRegister(RET_VALUE_REGISTER,result);
+                break;
+            }
+            
             case SC_AssertionFailed:
             {
                 int fileNameAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);

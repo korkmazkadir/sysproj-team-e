@@ -96,3 +96,8 @@ code/test/printf_test.c
 code/test/test_stdio_input.c
 code/test/test_stdio_output_input.c
 code/test/utility.h
+code/test/exec_test.c
+code/test/prog_1.c
+code/test/prog_2.c
+code/userprog/frameprovider.cc
+code/userprog/frameprovider.h

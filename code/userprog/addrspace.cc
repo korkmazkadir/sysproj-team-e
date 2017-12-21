@@ -19,8 +19,12 @@
 #include "system.h"
 #include "addrspace.h"
 #include "noff.h"
+#include "frameprovider.h"
+#include "machine.h"
 
 #include <strings.h>		/* for bzero */
+
+static FrameProvider frameProvider;
 
 //----------------------------------------------------------------------
 // SwapHeader
@@ -43,6 +47,27 @@ SwapHeader (NoffHeader * noffH)
     noffH->uninitData.virtualAddr =
 	WordToHost (noffH->uninitData.virtualAddr);
     noffH->uninitData.inFileAddr = WordToHost (noffH->uninitData.inFileAddr);
+}
+
+
+static void ReadAtVirtual( OpenFile *executable, int virtualaddr,int numBytes, int position, TranslationEntry *pageTable, unsigned numPages)
+{
+    char memoryBuffer[numBytes];
+    executable->ReadAt (memoryBuffer, numBytes, position);
+
+    TranslationEntry *previousPageTable = machine->pageTable;
+    int previousPageTableSize = machine->pageTableSize;
+    
+    machine->pageTable = pageTable;
+    machine->pageTableSize = numPages;
+    
+    for(int i = 0; i < numBytes ; i++){
+        machine->WriteMem(virtualaddr + i, sizeof(char) ,memoryBuffer[i]);
+    }
+    
+    machine->pageTable = previousPageTable;
+    machine->pageTableSize = previousPageTableSize;
+    
 }
 
 //----------------------------------------------------------------------
@@ -73,9 +98,7 @@ AddrSpace::AddrSpace (OpenFile * executable)
 
 // how big is address space?
     m_endOfNoff = noffH.code.size + noffH.initData.size + noffH.uninitData.size;
-    size = m_endOfNoff + UserStackSize;	// we need to increase the size
-
-    // to leave room for the stack
+    size = m_endOfNoff + UserStackSize;	// we need to increase the size to leave room for the stack
     numPages = divRoundUp (size, PageSize);
     size = numPages * PageSize;
 
@@ -90,8 +113,8 @@ AddrSpace::AddrSpace (OpenFile * executable)
     pageTable = new TranslationEntry[numPages];
     for (i = 0; i < numPages; i++)
       {
-	  pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
-	  pageTable[i].physicalPage = i;
+	  pageTable[i].virtualPage = i;
+	  pageTable[i].physicalPage = frameProvider.GetEmptyFrame();
 	  pageTable[i].valid = TRUE;
 	  pageTable[i].use = FALSE;
 	  pageTable[i].dirty = FALSE;
@@ -100,34 +123,21 @@ AddrSpace::AddrSpace (OpenFile * executable)
 	  // pages to be read-only
       }
 
-// zero out the entire address space, to zero the unitialized data segment 
-// and the stack segment
-    bzero (machine->mainMemory, size);
 
 // then, copy in the code and data segments into memory
     if (noffH.code.size > 0)
       {
 	  DEBUG ('a', "Initializing code segment, at 0x%x, size %d\n",
 		 noffH.code.virtualAddr, noffH.code.size);
-#if 0
-      printf( "Initializing code segment, at 0x%x, size %d\n",
-         noffH.code.virtualAddr, noffH.code.size);
-#endif
-	  executable->ReadAt (&(machine->mainMemory[noffH.code.virtualAddr]),
-			      noffH.code.size, noffH.code.inFileAddr);
+            
+        ReadAtVirtual(executable,noffH.code.virtualAddr,noffH.code.size,noffH.code.inFileAddr,pageTable,numPages);
       }
     if (noffH.initData.size > 0)
       {
 	  DEBUG ('a', "Initializing data segment, at 0x%x, size %d\n",
 		 noffH.initData.virtualAddr, noffH.initData.size);
-#if 0
-      printf( "Initializing data segment, at 0x%x, size %d\n",
-         noffH.initData.virtualAddr, noffH.initData.size);
-#endif
-	  executable->ReadAt (&
-			      (machine->mainMemory
-			       [noffH.initData.virtualAddr]),
-			      noffH.initData.size, noffH.initData.inFileAddr);
+        
+        ReadAtVirtual(executable,noffH.initData.virtualAddr,noffH.initData.size, noffH.initData.inFileAddr,pageTable,numPages);
       }
 
 }
@@ -139,6 +149,12 @@ AddrSpace::AddrSpace (OpenFile * executable)
 
 AddrSpace::~AddrSpace ()
 {
+  
+  //Releases all the frames
+  for(unsigned int i = 0; i < numPages ; i++){
+        frameProvider.ReleaseFrame(pageTable[i].physicalPage);
+  }
+    
   // LB: Missing [] for delete
   // delete pageTable;
   delete [] pageTable;
