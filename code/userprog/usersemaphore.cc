@@ -10,6 +10,7 @@
  * \return      0 when semaphore was initialized successfully
  *             -1 when semaphore quota is reached and no more semaphores can be created
  *             -2 when a negative value is passed
+ *             -3 attempt to initialize the same semaphore multiple times
  */
 int SemaphoreManager::DoSemInit(sem_t *semPtr, int val) {
     int retVal = -1;
@@ -26,6 +27,12 @@ int SemaphoreManager::DoSemInit(sem_t *semPtr, int val) {
         goto error_exit;
     }
 
+    if (m_initializedSemaphores.find(semPtr) != m_initializedSemaphores.end()) {
+        retVal = -3;
+        goto error_exit;
+    }
+
+    m_initializedSemaphores.insert(semPtr);
     *firstFreeSemaphore = new Semaphore("", val);
     machine->WriteMem((int)semPtr, sizeof(int), (int)std::distance(m_semaphores.begin(), firstFreeSemaphore));
     retVal = 0;
@@ -40,24 +47,24 @@ int SemaphoreManager::DoSemInit(sem_t *semPtr, int val) {
  * \param semPtr <- virtual address of the semaphore ID
  * \return  0 if post operation is performed successfully
  *         -1 if invalid semPtr is specified
- *         -2 if the samephore would overflow after performing post
+ *         -2 if the semaphore would overflow after performing post
  */
 int SemaphoreManager::DoSemPost(sem_t *semPtr) {
     int retVal = 0;
     int semIx = getSemaphoreIxByVirtMem(semPtr);
     Semaphore *curSemaphore = nullptr;
+    int semRetVal = 0;
     if (semIx < 0) {
         retVal = -1;
         goto early_exit;
     }
     curSemaphore = m_semaphores[semIx];
 
-    if (curSemaphore->value == INT_MAX) {
+    semRetVal = curSemaphore->V();
+    if (semRetVal == -1) {
         retVal = -2;
         goto early_exit;
     }
-
-    curSemaphore->V();
 
     early_exit:
     return retVal;
@@ -102,6 +109,7 @@ int SemaphoreManager::DoSemDestroy(sem_t *semPtr) {
 
     delete m_semaphores[semIx];
     m_semaphores[semIx] = nullptr;
+    m_initializedSemaphores.erase(semPtr);
 
     early_exit:
     return retVal;

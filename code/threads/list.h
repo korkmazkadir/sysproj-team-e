@@ -53,8 +53,8 @@ class List
 
     void Mapcar (VoidFunctionPtr func);	// Apply "func" to every element 
     // on the list
-    bool IsEmpty ();		// is the list empty? 
-
+    bool IsEmpty ();		// is the list empty?
+    int Size() const;
 
     // Routines to put/get items on/off list in order (sorted by key)
     void SortedInsert (void *item, long long sortKey);	// Put item into list
@@ -63,6 +63,7 @@ class List
   private:
       ListElement * first;	// Head of the list, NULL if list is empty
     ListElement *last;		// Last element of list
+    int size;
 };
 
 #endif // LIST_H
