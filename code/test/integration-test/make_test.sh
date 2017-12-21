@@ -6,12 +6,12 @@
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
-EXECUTABLE="../../build/nachos-step3 -x"
-EXECUTABLE_RAND="../../build/nachos-step3 -rs -x"
+EXECUTABLE="../../build/nachos-step4 -x"
+EXECUTABLE_RAND="../../build/nachos-step4 -rs -x"
 
 nbFails=0
 Check_Result(){
-    if [ "$?" -ne "123" ] 
+    if [ "$?" -eq "0" ] 
     then
         printf "${GREEN}OK\n\n"
     else
