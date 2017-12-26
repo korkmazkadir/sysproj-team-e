@@ -178,17 +178,6 @@ Initialize (int argc, char **argv)
 #endif
 }
 
-#if 0
-static void startProcess(int arg){
-    AddrSpace *addrSpace = (AddrSpace *)arg;
-    addrSpace->RestoreState();
-    addrSpace->InitRegisters();
-    machine->Run();
-}
-#endif
-
-
-
 int createProcess(char *filename){
 
     OpenFile *executable = fileSystem->Open(filename);
@@ -201,6 +190,11 @@ int createProcess(char *filename){
     
 
     space = new AddrSpace(executable);
+
+    if (!currentThread->space) {
+        currentThread->space = space;
+    }
+
     int retVal = do_KernelThreadCreate(space);
 
     delete executable; // close file

@@ -117,7 +117,7 @@ AddrSpace::AddrSpace (OpenFile * executable)
 	  pageTable[i].physicalPage = frameProvider.GetEmptyFrame();
 	  pageTable[i].valid = TRUE;
 	  pageTable[i].use = FALSE;
-	  pageTable[i].dirty = FALSE;
+          pageTable[i].dirty = TRUE;
 	  pageTable[i].readOnly = FALSE;	// if the code segment was entirely on 
 	  // a separate page, we could set its 
 	  // pages to be read-only
@@ -190,6 +190,7 @@ AddrSpace::InitRegisters ()
     // allocated the stack; but subtract off a bit, to make sure we don't
     // accidentally reference off the end!
     int stackPtr = GetStack();
+
     machine->WriteRegister (StackReg, stackPtr);
     DEBUG ('a', "Initializing stack register to %d\n",
        stackPtr);

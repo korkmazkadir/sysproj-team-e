@@ -37,6 +37,7 @@ int do_UserThreadCreate(int funPtr, int arg, int retAddress, AddrSpace *space, b
 int do_KernelThreadCreate(AddrSpace *space);
 void do_UserThreadExit();
 int do_UserThreadJoin(int tid);
+void do_ExitCurrentProcess();
 
 extern Semaphore haltSync;
 

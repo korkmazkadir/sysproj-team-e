@@ -14,8 +14,6 @@
 //      Interrupts (which can also cause control to transfer from user
 //      code into the Nachos kernel) are handled elsewhere.
 //
-// For now, this only handles the Halt() system call.
-// Everything else core dumps.
 //
 // Copyright (c) 1992-1993 The Regents of the University of California.
 // All rights reserved.  See copyright.h for copyright notice and limitation 
@@ -108,8 +106,7 @@ void ExceptionHandler (ExceptionType which)
         switch (type) {
             case SC_Halt:
             {
-                DEBUG ('a', "Shutdown, initiated by user program.\n");
-                haltSync.P();
+                printf("SHUTDONW %d \n", currentThread->Tid());
                 interrupt->Halt ();
             } break;
 
@@ -171,8 +168,8 @@ void ExceptionHandler (ExceptionType which)
             case SC_Exit:
             {
                 int retValue = machine->ReadRegister(FIRST_PARAM_REGISTER);
-                haltSync.P();
-                exit(retValue);
+                printf("EXIT %d %d \n", currentThread->Tid(), retValue);
+                do_ExitCurrentProcess();
             } break;
 
             case SC_UserThreadCreate:
@@ -183,7 +180,7 @@ void ExceptionHandler (ExceptionType which)
 
                 int retAddress = machine->ReadRegister(8);
 
-                int threadRetVal = do_UserThreadCreate(funPtr, arg, retAddress, currentThread->space);
+                int threadRetVal = do_UserThreadCreate(funPtr, arg, retAddress, currentThread->space, false);
                 machine->WriteRegister(RET_VALUE_REGISTER, threadRetVal);
             } break;
 

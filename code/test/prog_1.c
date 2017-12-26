@@ -4,6 +4,8 @@
 int main() {
     
     SynchPutString("\nprog 1 is working\n");
-    while(1);
+    int ii = 0;
+    for (ii = 0; ii < 100000; ++ii) { ; }
+    return 84;
 }
 

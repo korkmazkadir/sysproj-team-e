@@ -9,9 +9,10 @@
 
 #define MAX_NUM_USERTHREADS 128
 
-static const int THREAD_STACK_SIZE = 3 * PageSize;
+static const int THREAD_STACK_SIZE = 5 * PageSize;
 
 static int numThreads = 0;
+static int numProcesses = 0;
 
 /*!
  * Mapping between address space and the list of available thread stacks
@@ -70,13 +71,8 @@ static void SetUpAvailThreadStacks(AddrSpace *addrSpace, bool kernelRequest = fa
 static void StartUserThread(int f) {
     ThreadParam_t *cvtParam = (ThreadParam_t *)f;
 
-    for (int i = 0; i < NumTotalRegs; i++) {
-        machine->WriteRegister (i, 0);
-    }
-
+    cvtParam->space->InitRegisters();
     cvtParam->space->RestoreState();
-
-    //FIXME: Restore state when virtual memory is implemented
 
     int instr = (int)cvtParam->functionPtr;
 
@@ -128,16 +124,16 @@ int do_UserThreadCreate(int funPtr, int arg, int retAddress, AddrSpace *space, b
     } else {
         /* Proceed with creating our thread */
 
-        if (currentThread->space) {
-            auto it = threadStacks.find(currentThread->space);
+        if (space) {
+            auto it = threadStacks.find(space);
             if (it == threadStacks.end()) {
-                SetUpAvailThreadStacks(currentThread->space, kernelRequest);
+                SetUpAvailThreadStacks(space, kernelRequest);
             }
         } else {
             DEBUG_MSG("Current thread Address space is NULL. \n");
         }
 
-        void *topOfThreadStack = threadStacks[currentThread->space].Remove();
+        void *topOfThreadStack = threadStacks[space].Remove();
 
         // Not enough space for this thread - fail the request
         if (!topOfThreadStack) {
@@ -162,13 +158,7 @@ int do_UserThreadCreate(int funPtr, int arg, int retAddress, AddrSpace *space, b
         // TODO: Remove after active dev phase
         int threadNum = (int)freeThreadIds.Remove();
 
-
-
-        const char *format = "User created thread %d";
-        char buf[35];
-        snprintf(buf, 35, format, threadNum);
-
-        Thread *newThread = new (std::nothrow) Thread(buf);
+        Thread *newThread = new (std::nothrow) Thread("");
 
         /* Memory allocation failed */
         if (!newThread) {
@@ -188,8 +178,12 @@ int do_UserThreadCreate(int funPtr, int arg, int retAddress, AddrSpace *space, b
         newThread->Fork(StartUserThread, (int)serializedThreadParam);
         retVal = threadNum;
         ++numThreads;
-        if (1 == numThreads) {
-            haltSync.P();
+
+        if (kernelRequest) {
+            ++numProcesses;
+            if (1 == numProcesses) {
+//                haltSync.P();
+            }
         }
     }
 
@@ -213,7 +207,7 @@ void do_UserThreadExit() {
     thread_args[tid - 1].synch->V();
     --numThreads;
     if (0 == numThreads) {
-        haltSync.V();
+//        haltSync.V();
     }
 
     //TODO: Consider removing threadPtr from the descriptor
@@ -253,4 +247,26 @@ early_exit:
 int do_KernelThreadCreate(AddrSpace *space) {
     int retVal = do_UserThreadCreate(0, 0, 0, space, true);
     return retVal;
+}
+
+
+void do_ExitCurrentProcess()
+{    
+    int tid = currentThread->Tid();
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);
+
+    scheduler->EvictThreadsById(tid);
+    delete currentThread->space;
+    currentThread->space = nullptr;
+
+    interrupt->SetLevel(oldLevel);
+
+    --numProcesses;
+    printf("xiting num proc %d %d \n", numProcesses, tid );
+    if (0 >= numProcesses) {
+//        haltSync.V();
+        interrupt->Halt();
+    }
+
+    currentThread->Finish();
 }

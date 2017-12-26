@@ -24,7 +24,7 @@ int FrameProvider::GetEmptyFrame() {
             physicalPageBitmap->Mark(i);
             // zero out the entire page, to zero the unitialized data segment
             //printf("Provided frame is %d \n",i);
-            bzero (&(machine->mainMemory[i]), PageSize);
+            bzero (&(machine->mainMemory[PageSize * i]), PageSize);
             return i;
         }
     }
