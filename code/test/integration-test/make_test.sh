@@ -39,7 +39,7 @@ printf "${NC}\n\n### STEP 3 ###\n"
 
 #----------------------------------------------------------------------------
 printf "${RED}"
-printf "${NC}>> Semaphore test (takes time to execute) ${RED}\n"
+printf "${NC}>> Semaphore test (takes order of 10 sec to execute) ${RED}\n"
 ${EXECUTABLE} ../../build/testsemaphores -rs 15
 Check_Result
 
@@ -67,11 +67,32 @@ printf "${NC}>> userThreadExit test ${RED}\n"
 ${EXECUTABLE_RAND} ../../build/userThreadExit
 Check_Result
 
+
+#----------------------------------------------------------------------------
+printf "${NC}>> earlyHalt test ${RED}\n"
+${EXECUTABLE_RAND} ../../build/earlyHalt >./io/earlyHaltOut < ./io/earlyHaltIn
+output=$(head -n -8 ./io/earlyHaltOut)
+expected="hellohellohellohelloMachine halting!"
+diff  <(echo "$output" ) <(echo "$expected")
+
+if [ "$output" == "hellohellohellohelloMachine halting!" ]
+then
+    printf "${GREEN}OK\n\n"
+else
+    printf "output and expected strings do not match\n"
+    printf "${RED}KO\n\n"
+    nbFails=$(($nbFails + 1))
+fi
+
+
 printf "${NC}\n\n### STEP 4 ###\n"
 
 printf "${NC}\n\n### STEP 5 ###\n"
 
 printf "${NC}\n\n### STEP 6 ###\n"
+
+
+
 
 
 #############################################

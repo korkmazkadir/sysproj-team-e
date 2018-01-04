@@ -172,7 +172,8 @@ void ExceptionHandler (ExceptionType which)
             {
                 int retValue = machine->ReadRegister(FIRST_PARAM_REGISTER);
                 haltSync.P();
-                exit(retValue);
+                //CAREFUL: was calling exit() directly without going via Exit() wrapper as defined in sysdep. was confusing
+                Exit(retValue);
             } break;
 
             case SC_UserThreadCreate:
