@@ -6,8 +6,8 @@
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
-EXECUTABLE="../../build/nachos-step4 -x"
-EXECUTABLE_RAND="../../build/nachos-step4 -rs -x"
+EXECUTABLE="../../build/nachos-step5 -x"
+EXECUTABLE_RAND="../../build/nachos-step5 -rs -x"
 
 nbFails=0
 Check_Result(){

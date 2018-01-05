@@ -1,0 +1,10 @@
+Notes
+
+Filesys initialized like the rest, in system.cc initialize function, possibly format disk if param -f passed.
+
+initially one dir: root, kept in filesys class as "directoryFile" (OpenFile type)
+"freeMapFile" tracks which disk sectors are free (OpenFile type).
+
+CAREFUL:
+Max file name length is 9 (directory.h)
+
