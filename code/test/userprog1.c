@@ -11,19 +11,14 @@ void writechars(void *_) {
 
 int main() {
 
-    SynchPutString("starting userprog0\n");
-	char a = 'a';
-	char b = 'b';
+    SynchPutString("starting userprog1\n");
+	char a = 'c';
+	char b = 'd';
     int pid = UserThreadCreate(&writechars, (void *)&a);
     int pid2 = UserThreadCreate(&writechars, (void *)&b);
 
-    SynchPutString("First tid userprog0: ");
-    SynchPutInt(pid);
-    SynchPutString("\nSecond tid userprog0: ");
-    SynchPutInt(pid2);
-    SynchPutString("\n");
     UserThreadJoin(pid);
     UserThreadJoin(pid2);
-    SynchPutString("end userprog0\n");
+    SynchPutString("end userprog1\n");
     return 0;
 }

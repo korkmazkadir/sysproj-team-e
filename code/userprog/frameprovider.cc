@@ -43,6 +43,9 @@ int FrameProvider::RandomAlloc()
 
         i++;
     } while((physicalPageBitmap->Test(r) == TRUE) && (i < 1000));
+
+    if(i == 1000) return -1;
+    
     physicalPageBitmap->Mark(r);
 
     return r;
@@ -65,7 +68,7 @@ int FrameProvider::GetEmptyFrame() {
         }
     }
     return -1;*/
-    return FrameProvider::RandomAlloc();
+    return FrameProvider::LinearAlloc();
 }
 
 void FrameProvider::ReleaseFrame(int frameIndex) {
