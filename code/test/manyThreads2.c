@@ -35,6 +35,7 @@ int test1(void (*fun) (void*)) {
 
 int main() {
     int ret = test1(&fun2);
+    SynchPutInt(ret);
     _ASSERT(ret == -3);
     return 0;
 }

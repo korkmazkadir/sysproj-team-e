@@ -25,6 +25,10 @@ public:
     int GetEmptyFrame();
     void ReleaseFrame(int frameIndex);
     int NumAvailFrame();
+
+    int RandomAlloc();
+    int LinearAlloc();
+    int MostConsecutiveAlloc(int lastPhysPage);
     
 private:
     int numberOfPhysicalPages;
