@@ -8,6 +8,7 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 EXECUTABLE="../../build/nachos-step4 -x"
 EXECUTABLE_RAND="../../build/nachos-step4 -rs -x"
+EXECUTABLE_RAND_SEED="../../build/nachos-step4 -rs 1 -x"
 
 nbFails=0
 Check_Result(){
@@ -68,6 +69,54 @@ ${EXECUTABLE_RAND} ../../build/userThreadExit
 Check_Result
 
 printf "${NC}\n\n### STEP 4 ###\n"
+
+#----------------------------------------------------------------------------
+printf "${NC}>> Two sub-processes with userthreads - no joins${RED}\n"
+${EXECUTABLE_RAND_SEED} ../../build/twoProcessesNoJoins >./io/twoProcessesNoJoinsOut
+output=$(head -n -8 ./io/twoProcessesNoJoinsOut)
+expected="abcdMachine halting!"
+diff  <(echo "$output" ) <(echo "$expected")
+
+if [ "$output" == "abcdMachine halting!" ]
+then
+    printf "${GREEN}OK\n\n"
+else
+    printf "output and expected strings do not match\n"
+    printf "${RED}KO\n\n"
+    nbFails=$(($nbFails + 1))
+fi
+
+#----------------------------------------------------------------------------
+printf "${NC}>> Two sub-processes with userthreads - first joins${RED}\n"
+${EXECUTABLE_RAND_SEED} ../../build/twoProcessesFirstOneJoins >./io/twoProcessesFirstOneJoinsOut
+output=$(head -n -8 ./io/twoProcessesFirstOneJoinsOut)
+expected="abcdMachine halting!"
+diff  <(echo "$output" ) <(echo "$expected")
+
+if [ "$output" == "abcdMachine halting!" ]
+then
+    printf "${GREEN}OK\n\n"
+else
+    printf "output and expected strings do not match\n"
+    printf "${RED}KO\n\n"
+    nbFails=$(($nbFails + 1))
+fi
+
+#----------------------------------------------------------------------------
+printf "${NC}>> Two sub-processes with userthreads - second joins${RED}\n"
+${EXECUTABLE_RAND_SEED} ../../build/twoProcessesSecondOneJoins >./io/twoProcessesSecondOneJoinsOut
+output=$(head -n -8 ./io/twoProcessesSecondOneJoinsOut)
+expected="abcdMachine halting!"
+diff  <(echo "$output" ) <(echo "$expected")
+
+if [ "$output" == "abcdMachine halting!" ]
+then
+    printf "${GREEN}OK\n\n"
+else
+    printf "output and expected strings do not match\n"
+    printf "${RED}KO\n\n"
+    nbFails=$(($nbFails + 1))
+fi
 
 printf "${NC}\n\n### STEP 5 ###\n"
 

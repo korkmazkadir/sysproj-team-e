@@ -309,7 +309,7 @@ void do_ExitCurrentProcess()
 
     --numProcesses;
     //--numThreads; //deleting thread from count?
-    printf("xiting num proc %d %d \n", numProcesses, tid );
+    //printf("xiting num proc %d %d \n", numProcesses, tid );
     if (0 >= numProcesses) {
 //        haltSync.V();
         interrupt->Halt();
