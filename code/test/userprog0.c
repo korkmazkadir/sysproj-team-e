@@ -14,16 +14,16 @@ int main() {
     SynchPutString("starting userprog0\n");
 	char a = 'a';
 	char b = 'b';
-    int pid = UserThreadCreate(&writechars, (void *)&a);
-    int pid2 = UserThreadCreate(&writechars, (void *)&b);
+    UserThreadCreate(&writechars, (void *)&a);
+    UserThreadCreate(&writechars, (void *)&b);
 
     SynchPutString("First tid userprog0: ");
-    SynchPutInt(pid);
+    //SynchPutInt(pid);
     SynchPutString("\nSecond tid userprog0: ");
-    SynchPutInt(pid2);
+    //SynchPutInt(pid2);
     SynchPutString("\n");
-    UserThreadJoin(pid);
-    UserThreadJoin(pid2);
+    //UserThreadJoin(pid);
+    //UserThreadJoin(pid2);
     SynchPutString("end userprog0\n");
     return 0;
 }

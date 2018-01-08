@@ -20,10 +20,9 @@ typedef struct ThreadDescriptor_t {
     int argPtr;
     Semaphore *synch;
     bool waitingForJoin;
-    bool kThread;
     List children;
 
-    ThreadDescriptor_t(): threadPtr(0), argPtr(0), synch(0), waitingForJoin(false), kThread(false), children(List()) {
+    ThreadDescriptor_t(): threadPtr(0), argPtr(0), synch(0), waitingForJoin(false), children(List()) {
         synch = new Semaphore("t", 0);
     }
 

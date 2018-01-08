@@ -14,11 +14,11 @@ int main() {
     SynchPutString("starting userprog1\n");
 	char a = 'c';
 	char b = 'd';
-    int pid = UserThreadCreate(&writechars, (void *)&a);
-    int pid2 = UserThreadCreate(&writechars, (void *)&b);
+    UserThreadCreate(&writechars, (void *)&a);
+    UserThreadCreate(&writechars, (void *)&b);
 
-    UserThreadJoin(pid);
-    UserThreadJoin(pid2);
+    //UserThreadJoin(pid);
+    //UserThreadJoin(pid2);
     SynchPutString("end userprog1\n");
     return 0;
 }

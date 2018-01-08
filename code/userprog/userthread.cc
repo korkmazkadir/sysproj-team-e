@@ -173,7 +173,7 @@ int do_UserThreadCreate(int funPtr, int arg, int retAddress, AddrSpace *space, b
         thread_args[threadNum - 1].threadPtr = newThread;
         thread_args[threadNum - 1].argPtr = (int)serializedThreadParam;
         thread_args[threadNum - 1].waitingForJoin = true;
-        thread_args[threadNum - 1].kThread = kernelRequest;
+        //thread_args[threadNum - 1].kThread = kernelRequest;
         
         
 
@@ -241,7 +241,7 @@ void do_SomeUserThreadExit(Thread* thread) {
 
     //TODO: Consider removing threadPtr from the descriptor
     //descriptor->threadPtr->Finish();
-    //delete descriptor->threadPtr;
+    delete descriptor->threadPtr;
 
     // Do not delete descriptor.threadPtr explicitly since it will be done by the scheduler
 }
@@ -282,26 +282,28 @@ int do_KernelThreadCreate(AddrSpace *space) {
 
 void do_ExitCurrentProcess()
 {    
-
-    IntStatus oldLevel = interrupt->SetLevel(IntOff);
-
     int tid = currentThread->Tid();
 
     //Check if it has userlevel threads
     while(!thread_args[tid - 1].children.IsEmpty()) {
         int childTid = (int)thread_args[tid - 1].children.Remove(); //Get child tid
+        //Thread* thread = thread_args[childTid - 1].threadPtr;
         if(thread_args[childTid - 1].waitingForJoin) {
             do_UserThreadJoin(childTid); //consider deleting them
-            printf("Waiting for children left behind %d\n", childTid);
+
+            //For deletion, doesn't work yet(tries to access thread after deleting it)
+            /*do_SomeUserThreadExit(thread);
+
+            scheduler->EvictThreadsById(childTid);
+
+            printf("Waiting for children left behind %d\n", childTid);*/
         }
     }
 
-    //IntStatus oldLevel = interrupt->SetLevel(IntOff);
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);
     scheduler->EvictThreadsById(tid);
     delete currentThread->space;
     currentThread->space = nullptr;
-
-    //interrupt->SetLevel(oldLevel);
 
     interrupt->SetLevel(oldLevel);
 
