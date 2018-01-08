@@ -109,7 +109,7 @@ class Interrupt {
     void SynchGetInt(int *n);
     
     void AssertionFailed(char *fileName, int lineNumber);
-    
+
     MachineStatus getStatus() { return status; } // idle, kernel, user
     void setStatus(MachineStatus st) { status = st; }
 

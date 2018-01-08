@@ -1,151 +1,114 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/* 
- * File:   synchconsole.c
- * Author: kadir
- *
- * Created on December 12, 2017, 1:12 PM
- */
-
-#include "copyright.h"
-#include "system.h"
 #include "synchconsole.h"
-#include "synch.h"
 
-#define READ_ACCESS  0
-#define WRITE_ACCESS  1
+static Semaphore readAvail("synch_console_read_avail", 0);
+static Semaphore writeAvail("synch_console_write_avail", 0);
 
-static Semaphore *readAvail;
-static Semaphore *writeDone;
-static Semaphore *readAccessConsole;
-static Semaphore *writeAccessConsole;
+static Semaphore readMutex("SynchConsole:ReadMutex", 1);
+static Semaphore writeMutex("SynchConsole:WriteMutex", 1);
 
-//----------------------------------------------------------------------
-// ConsoleInterruptHandlers
-//      Wake up the thread that requested the I/O.
-//----------------------------------------------------------------------
 
-static void
-ReadAvail(int arg) {
-    readAvail->V();
+SynchConsole::SynchConsole(char *readFile, char *writeFile)
+{
+    m_Console = new Console(readFile, writeFile, &SynchConsole::ReadAvail, &SynchConsole::WriteDone, 0);
 }
 
-static void
-WriteDone(int arg) {
-    writeDone->V();
+SynchConsole::~SynchConsole()
+{
+    delete m_Console;
 }
 
-SynchConsole::SynchConsole(char *readFile, char *writeFile) {
-    console = new Console(readFile, writeFile, ReadAvail, WriteDone, 0);
-    readAvail = new Semaphore("read avail", 0);
-    writeDone = new Semaphore("write done", 0);
-    readAccessConsole = new Semaphore("Console Semaphore", 0);
-    writeAccessConsole = new Semaphore("Console Semaphore", 0);
-}
-
-SynchConsole::~SynchConsole() {
-    delete console;
-    delete writeDone;
-    delete readAvail;
-    delete readAccessConsole;
-    delete writeAccessConsole;
-}
-
-void SynchConsole::SynchPutChar(const char ch) {
-    
-    getAccessToConsole(WRITE_ACCESS);
-    
-    _SynchPutChar(ch);
-    
-    endAccessToConsole(WRITE_ACCESS);
-    
-}
-
-char SynchConsole::SynchGetChar() {
-    
-    getAccessToConsole(READ_ACCESS);
-    
-    return _SynchGetChar();
-    
-    endAccessToConsole(READ_ACCESS);
-    
-}
-
-void SynchConsole::_SynchPutChar(const char ch){
-    console->PutChar(ch);
-    writeDone->P();
-}
-char SynchConsole::_SynchGetChar(){
-    readAvail->P();
-    return console->GetChar();
-}
-
-void SynchConsole::SynchPutString(const char *s) {
-    
-    getAccessToConsole(WRITE_ACCESS);
-            
-    for (int i = 0; s[i] != '\0'; i++) {
-        _SynchPutChar(s[i]);
+/*!
+ * A version of put char that grabs a lock on write operations to console
+ * Should only be used from outside (i.e. not from this class)
+ */
+void SynchConsole::SynchPutChar(char ch)
+{
+    writeMutex.P();
+    {
+        synchPutChar(ch);
     }
-    
-    endAccessToConsole(WRITE_ACCESS);
+    writeMutex.V();
 }
 
-void SynchConsole::SynchGetString(char *s, int n) {
-    
-    getAccessToConsole(READ_ACCESS);
-    
-    int i=0;
-    for (; i < n; i++) {
-                
-        s[i] = _SynchGetChar();
-        
-        if(s[i] == EOF){
-            s[i] = '\0';
-            break;
+/*!
+ * A version of get char that grabs a lock on read operations to console
+ * Should only be used from outside (i.e. not from this class)
+ */
+int SynchConsole::SynchGetChar()
+{
+    int retVal;
+    readMutex.P();
+    {
+        retVal = synchGetChar();
+    }
+    readMutex.V();
+    return retVal;
+}
+
+void SynchConsole::SynchPutString(const char *s)
+{
+    writeMutex.P();
+    {
+        while (0 != *s) {
+            synchPutChar(*s);
+            ++s;
         }
-        
-        if(s[i] == '\n')
-            break;
     }
-    
-    if(s[i] != '\0'){
-        s[i+1] = '\0';
-    }
-
-    endAccessToConsole(READ_ACCESS);
-    
+    writeMutex.V();
 }
 
-
-void SynchConsole::SynchPutInt(int n){
-    char buffer[MAX_INT_STRING_SIZE];
-    snprintf(buffer,MAX_INT_STRING_SIZE,"%d",n);
-    SynchPutString(buffer);
-}
-
-void SynchConsole::SynchGetInt(int *n){
-    char buffer[MAX_INT_STRING_SIZE];
-    SynchGetString(buffer,MAX_INT_STRING_SIZE);
-    sscanf(buffer,"%d",n);
-}
-
-void SynchConsole::getAccessToConsole(int type){
-    if(type == READ_ACCESS){
-        readAccessConsole->V();
-    }else if(type == WRITE_ACCESS){
-        writeAccessConsole->V();
+void SynchConsole::SynchGetString(char *s, int n)
+{
+    readMutex.P();
+    {
+        int ii = 0;
+        for (ii = 0; ii < n - 1; ++ii) {
+            int nextChar = synchGetChar();
+            char cvtChar = (char)nextChar;
+            if (EOF == nextChar) {
+                break;
+            }
+            *(s + ii) = cvtChar;
+            if ('\n' == cvtChar) {
+                ++ii;
+                break;
+            }
+        }
+        *(s + ii) = 0;
     }
+    readMutex.V();
 }
 
-void SynchConsole::endAccessToConsole(int type){
-    if(type == READ_ACCESS){
-        readAccessConsole->P();
-    }else if(type == WRITE_ACCESS){
-        writeAccessConsole->P();
-    }
+void SynchConsole::ReadAvail(int arg)
+{
+    (void)arg;
+    readAvail.V ();
+}
+
+void SynchConsole::WriteDone(int arg)
+{
+    (void)arg;
+    writeAvail.V();
+}
+
+/*!
+ * Private version of putchar function that contains
+ * actual put char functionality without using any mutexes
+ */
+void SynchConsole::synchPutChar(char ch)
+{
+    m_Console->PutChar(ch);
+    writeAvail.P();
+}
+
+/*!
+ * Private version of getChar function that contains
+ * actual getChar functionality without using any mutexes
+ */
+int SynchConsole::synchGetChar()
+{
+    readAvail.P();
+
+    int retVal = (int)m_Console->GetChar();
+    return retVal;
 }

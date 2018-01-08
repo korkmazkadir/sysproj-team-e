@@ -20,8 +20,13 @@
 #include "addrspace.h"
 #include "noff.h"
 #include "frameprovider.h"
+#include "machine.h"
 
 #include <strings.h>		/* for bzero */
+
+#define MachineState 10
+
+static FrameProvider frameProvider;
 
 //----------------------------------------------------------------------
 // SwapHeader
@@ -52,12 +57,18 @@ static void ReadAtVirtual( OpenFile *executable, int virtualaddr,int numBytes, i
     char memoryBuffer[numBytes];
     executable->ReadAt (memoryBuffer, numBytes, position);
 
+    TranslationEntry *previousPageTable = machine->pageTable;
+    int previousPageTableSize = machine->pageTableSize;
+    
     machine->pageTable = pageTable;
     machine->pageTableSize = numPages;
     
     for(int i = 0; i < numBytes ; i++){
         machine->WriteMem(virtualaddr + i, sizeof(char) ,memoryBuffer[i]);
     }
+    
+    machine->pageTable = previousPageTable;
+    machine->pageTableSize = previousPageTableSize;
     
 }
 
@@ -102,11 +113,11 @@ AddrSpace::AddrSpace (OpenFile * executable)
 	   numPages, size);
 // first, set up the translation 
     pageTable = new TranslationEntry[numPages];
-    frameProvider = new FrameProvider();
+    //frameProvider = new FrameProvider();
     for (i = 0; i < numPages; i++)
       {
 	  pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
-	  pageTable[i].physicalPage = frameProvider->GetEmptyFrame();
+	  pageTable[i].physicalPage = frameProvider.GetEmptyFrame();
 	  pageTable[i].valid = TRUE;
 	  pageTable[i].use = FALSE;
 	  pageTable[i].dirty = FALSE;
@@ -133,7 +144,7 @@ AddrSpace::AddrSpace (OpenFile * executable)
 		 noffH.initData.virtualAddr, noffH.initData.size);
           ReadAtVirtual(executable,noffH.initData.virtualAddr,noffH.initData.size, noffH.initData.inFileAddr,pageTable,numPages);
       }
-
+    
 }
 
 //----------------------------------------------------------------------
@@ -146,7 +157,7 @@ AddrSpace::~AddrSpace ()
 
     //Releases all the frames
     for(unsigned int i = 0; i < numPages ; i++){
-        frameProvider->ReleaseFrame(pageTable[i].physicalPage);
+        frameProvider.ReleaseFrame(pageTable[i].physicalPage);
     }
   
     // LB: Missing [] for delete
@@ -199,6 +210,7 @@ AddrSpace::InitRegisters ()
 void
 AddrSpace::SaveState ()
 {
+
 }
 
 //----------------------------------------------------------------------

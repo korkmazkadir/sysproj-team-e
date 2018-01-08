@@ -36,7 +36,7 @@
 #define SC_SynchPutInt     15
 #define SC_SynchGetInt     16
 #define SC_AssertionFailed     100
-
+#define SC_ForkExec 120
 
 #ifdef IN_USER_MODE
 
@@ -172,6 +172,11 @@ void SynchGetInt( int * n );
  * 
  */
 void AssertionFailed(char *fileName, int lineNumber);
+
+/* Fork Exec syscal
+ * 
+ */
+int ForkExec(char *fileName);
 
 #endif // IN_USER_MODE
 

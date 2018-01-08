@@ -58,7 +58,19 @@
 #define ra      $31     /* return address */
 
         .text   
-        .align  2
+        .align  2Loading second program...
+Provided frame is 27 
+Provided frame is 28 
+Provided frame is 29 
+Provided frame is 30 
+Provided frame is 31 
+Provided frame is 32 
+Provided frame is 33 
+Provided frame is 34 
+Provided frame is 35 
+Provided frame is 36 
+Provided frame is 37 
+Provided frame is 38 
 
 	.globl ThreadRoot
 	.ent	ThreadRoot,0

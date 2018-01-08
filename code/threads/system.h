@@ -16,6 +16,7 @@
 #include "stats.h"
 #include "timer.h"
 #include "synchconsole.h"
+#include "process.h"
 
 // Initialization and cleanup routines
 extern void Initialize (int argc, char **argv);	// Initialization,
@@ -31,11 +32,14 @@ extern Statistics *stats;	// performance metrics
 extern Timer *timer;		// the hardware alarm clock
 extern SynchConsole *synchconsole;
 
+extern int processCount;
+
+const int MAX_PROCESS_COUNT = 10;
 const int MAX_STRING_SIZE = 100;
 const int MAX_INT_STRING_SIZE = 15;
 
 
-
+int createProcess(char *filename);
 
 #ifdef USER_PROGRAM
 #include "machine.h"

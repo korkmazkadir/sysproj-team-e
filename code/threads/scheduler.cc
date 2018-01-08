@@ -118,6 +118,7 @@ Scheduler::Run (Thread * nextThread)
     // a bit to figure out what happens after this, both from the point
     // of view of the thread and from the perspective of the "outside world".
 
+    //printf ("Switching from thread \"%s\" to thread \"%s\"\n", oldThread->getName (), nextThread->getName ());
     SWITCH (oldThread, nextThread);
 
     DEBUG ('t', "Now in thread \"%s\"\n", currentThread->getName ());

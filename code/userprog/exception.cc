@@ -114,6 +114,7 @@ ExceptionHandler(ExceptionType which) {
             case SC_Halt:
             {
                 DEBUG('a', "Shutdown, initiated by user program.\n");
+                printf("Halt... %s \n", currentThread->getName());
                 interrupt->Halt();
                 break;
             }
@@ -186,6 +187,22 @@ ExceptionHandler(ExceptionType which) {
                 interrupt->AssertionFailed(fileName,lineNumber);
                 break;
             }
+            
+            case SC_ForkExec:
+            {
+                int fileNameAddress = machine->ReadRegister(4);
+                char fileName [MAX_STRING_SIZE];
+                copyStringFromMachine(fileNameAddress, fileName, MAX_STRING_SIZE);
+                int result = createProcess(fileName);
+                machine->WriteRegister(2,result);
+                break;
+            }
+                    
+             case SC_Yield:
+             {
+                 currentThread->Yield();
+                 break;
+             }
             
             default:
             {

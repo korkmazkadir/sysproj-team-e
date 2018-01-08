@@ -33,6 +33,7 @@ int FrameProvider::GetEmptyFrame() {
 
 void FrameProvider::ReleaseFrame(int frameIndex) {
     physicalPageBitmap->Clear(frameIndex);
+    printf("Released frame is %d \n",frameIndex);
 }
 
 

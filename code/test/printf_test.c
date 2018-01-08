@@ -16,6 +16,8 @@ main() {
     _printf("Address of C2 : %d \n", &c2);
     _printf("%c -- %d -- %s -- %b\n", 'a', 0, "K.Korkmaz", 7);
 
+    _printf("number 0 : %d",0);
+    
     _ASSERT(3 > 5);
     
 }

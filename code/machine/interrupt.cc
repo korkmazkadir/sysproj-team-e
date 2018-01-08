@@ -299,7 +299,7 @@ Interrupt::SynchGetString( char *s, int n){
 void 
 Interrupt::SynchPutInt(int n){
     //printf("Putting integer!\n\n");
-    synchconsole->SynchPutInt(n);
+    //synchconsole->SynchPutInt(n);
 }
 
 //----------------------------------------------------------------------
@@ -309,7 +309,7 @@ Interrupt::SynchPutInt(int n){
 void
 Interrupt::SynchGetInt(int *n){
     //printf("Getting integer!\n\n");
-    synchconsole->SynchGetInt(n);
+    //synchconsole->SynchGetInt(n);
 }
 
 //----------------------------------------------------------------------
@@ -321,6 +321,7 @@ Interrupt::AssertionFailed(char *fileName, int lineNumber){
     fprintf(stderr,"\nERORR : Assertion failed. FILE : %s LINE : %d\n\n",fileName,lineNumber);
     Exit (123);
 }
+
 
 //----------------------------------------------------------------------
 // Interrupt::Schedule

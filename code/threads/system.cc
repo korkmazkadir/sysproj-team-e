@@ -7,7 +7,12 @@
 
 #include "copyright.h"
 #include "system.h"
-
+#include "synchlist.h"
+#include "process.h"
+#include "addrspace.h"
+#include "machine.h"
+#include <sysdep.h>
+#define MAX_NUMBER_OF_PROCESSES 10
 
 // This defines *all* of the global data structures used by Nachos.
 // These are all initialized and de-allocated by this file.
@@ -20,6 +25,9 @@ Statistics *stats;		// performance metrics
 Timer *timer;			// the hardware timer device,
 					// for invoking context switches
 SynchConsole *synchconsole;
+
+//We have main process always
+int processCount = 1;
 
 #ifdef FILESYS_NEEDED
 FileSystem *fileSystem;
@@ -154,6 +162,8 @@ Initialize (int argc, char **argv)
     // But if it ever tries to give up the CPU, we better have a Thread
     // object to save its state. 
     currentThread = new Thread ("main");
+    
+    
     currentThread->setStatus (RUNNING);
 
     interrupt->Enable ();
@@ -174,6 +184,38 @@ Initialize (int argc, char **argv)
 #ifdef NETWORK
     postOffice = new PostOffice (netname, rely, 10);
 #endif
+}
+
+static void startProcess(int arg){
+    AddrSpace *addrSpace = (AddrSpace *)arg;
+    addrSpace->RestoreState();
+    addrSpace->InitRegisters();
+    machine->Run();
+}
+
+
+
+
+int createProcess(char *filename){
+
+    OpenFile *executable = fileSystem->Open(filename);
+    AddrSpace *space;
+
+    if (executable == NULL) {
+        printf("Unable to open file %s\n", filename);
+        return 0;
+    }
+    
+    Thread *thread = new Thread("Thread 1");
+    space = new AddrSpace(executable);
+    thread->space = space;
+
+    delete executable; // close file
+
+    thread->Fork(&startProcess , (int)space);
+    processCount++;
+    
+    return 0;
 }
 
 
