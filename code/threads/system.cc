@@ -185,7 +185,7 @@ int createProcess(char *filename){
 
     if (executable == NULL) {
         printf("Unable to open file %s\n", filename);
-        return 0;
+        return -1;
     }
     
 
