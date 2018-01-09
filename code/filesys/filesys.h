@@ -86,9 +86,9 @@ class FileSystem {
     void List();			                        // List all the files in the file system
 
     void Print();	                                // List all the files and their contents
-    bool Mkdir(const char *name);
-    bool Rmdir(const char *name);
-    void Chdir(const char *name);
+    bool Mkdir(const char *dirName);
+    bool Rmdir(const char *dirName);
+    std::string Chdir(std::string path);
     const char* GetWorkingPath();
     const char* GetWorkingDir();
 

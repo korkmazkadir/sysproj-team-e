@@ -25,6 +25,7 @@
 #include "userthread.h"
 #include "addrspace.h"
 #include "usersemaphore.h"
+#include <string>
 
 Semaphore haltSync("HaltSync", 1);
 
@@ -286,7 +287,9 @@ void ExceptionHandler (ExceptionType which)
                 int fromAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
                 char local_buf[MAX_WRITE_BUF_SIZE];
                 copyStringFromMachine(fromAddress, local_buf, MAX_WRITE_BUF_SIZE);
-                fileSystem->Chdir(local_buf);
+                std::string path(local_buf);
+                //std::string oppositePath =
+                 fileSystem->Chdir(path);
             } break;
             
             //      ---- End File System ----

@@ -295,8 +295,7 @@ FileSystem::Remove(const char *name)
 void
 FileSystem::List()
 {
-    printf("List: contents of %s:\n", GetWorkingDir());
-    printf("workingdir:\n%s\n", workingPath.c_str());
+    printf("List: workingdir is:%s  dirname is:%s  Contents is:\n", GetWorkingPath(), GetWorkingDir());
     Directory *directory = new Directory(NumDirEntries);
     directory->FetchFrom(directoryFile);
     directory->List();
@@ -346,10 +345,26 @@ FileSystem::Print()
 //creates an empty directory called name in the current directory
 
 bool
-FileSystem::Mkdir(const char* name) {
+FileSystem::Mkdir(const char* dirName) {
+        //TODO: for paths: save path, call chdir, create dir, call chdir again on saved path
+
+    //get path:
+    std::string path(dirName);
+    std::string backTrackPath;
+    int pos = path.find_last_of("/"); 
+    if (pos == -1) {
+        //no / in path so whole path is a name
+        pos = 0;
+    }
+    std::string name = path.substr(pos, std::string::npos);
+    path.erase(pos, std::string::npos);
+    //change to the right dir, and keep opposite path to be able to come back
+    if (!path.empty())
+        backTrackPath = Chdir(path);
+
     //create file representing the new dir in our current directory
-    if (!Create(name, DirectoryFileSize, 1))  {
-        printf("fileSys::mkdir: could not create newDir file %s\n", name);
+    if (!Create(name.c_str(), DirectoryFileSize, 1))  {
+        printf("fileSys::mkdir: could not create newDir file %s\n", dirName);
         return 0;
     }
     
@@ -363,7 +378,7 @@ FileSystem::Mkdir(const char* name) {
     }
     
     //get sector of our newly created directory file
-    int nDSector = currentDir->Find(name);
+    int nDSector = currentDir->Find(name.c_str());
     if (nDSector <= 0) {
         printf("fileSys::Mkdir: newDir sector is bad\n");
         return 0;
@@ -378,12 +393,16 @@ FileSystem::Mkdir(const char* name) {
     //write changes back to current directory
     currentDir->WriteBack(directoryFile);
 
-    OpenFile * newDirFile = Open(name);
+    OpenFile * newDirFile = Open(name.c_str());
     if (newDirFile == NULL) {
-        printf("fileSys::Mkdir: could not open newDirFile %s\n", name);
+        printf("fileSys::Mkdir: could not open newDirFile %s\n", dirName);
         return 0;
     }
     newDir->WriteBack(newDirFile);
+    
+    if (!backTrackPath.empty())
+        Chdir(backTrackPath);
+    
     return 1;
 
  }
@@ -391,65 +410,91 @@ FileSystem::Mkdir(const char* name) {
  
 //Rmdir
 //pre: directory must be empty
-//removes the directory called name in the current directory
+//removes the directory called name in the current directory"
 
 bool
-FileSystem::Rmdir(const char* name) {
+FileSystem::Rmdir(const char* dirName) {
+    
+    //get path:
+    std::string path(dirName);
+    std::string backTrackPath;
+    int pos = path.find_last_of("/"); 
+    std::string name = path.substr(pos, std::string::npos);
+    path.erase(pos, std::string::npos);
+    //change to the right dir, and keep opposite path to be able to come back
+    if (!path.empty())
+        backTrackPath = Chdir(path);
+    
     //create directory object for the dir in memory
     Directory *rmDir = new Directory(NumDirEntries);
-    OpenFile *rmDirFile = Open(name);
+    OpenFile *rmDirFile = Open(name.c_str());
     if (rmDirFile == NULL) {
-        printf("fileSys::Rmdir: could not open rmDirFile %s\n", name);
+        printf("fileSys::Rmdir: could not open rmDirFile %s\n", dirName);
         return 0;
     }
     rmDir->FetchFrom(rmDirFile);
     
     //check dir is empty
     if (!rmDir->Empty()) {
-        printf("filesys::Rmdir: directory %s is not empty\n", name);
+        printf("filesys::Rmdir: directory %s is not empty\n", dirName);
         return 0;
     }
-    Remove(name);
-    /*
-    //get relevant info on our current directory
-    Directory *currentDir = new Directory(NumDirEntries);
-    currentDir->FetchFrom(directoryFile);
+    Remove(name.c_str());
     
-    //remove the directory
-    currentDir->Remove(name);
-    
-    //write changes back to current directory
-    currentDir->WriteBack(directoryFile);
-    */
+    //return to initial dir
+    if (!backTrackPath.empty())
+        Chdir(backTrackPath);
+        
     return 1;
 
  }
  
-void 
-FileSystem::Chdir(const char *name) {
-    // TODO: unsure of this...   what to do for "." ?
-    if (!strcmp(name, ".")) {
-       return;
-    }
-    OpenFile *destDirFile = Open(name);
-    if (destDirFile == NULL) {
-       printf("filesys::Chdir: cannot open directory %s\n", name);
-       return;
-    }
-    directoryFile = destDirFile;
+ 
+ //TODO: maybe change so that on failure, doesn't change working dir?
+std::string
+FileSystem::Chdir(std::string path) {
+        
+    std::string oppositePath(".");
+    do {
+        int pos = path.find_first_of("/"); 
+        std::string name = path.substr(0, pos);
+        path.erase(0, pos);
+        path.erase(0, 1); //remove /
+        
+        printf("chdir remaining path is %s    changing to name:%s\n", path.c_str(), name.c_str());
 
-//update current working path and directory name
-    if (!strcmp(name, "..")) {
-       int pos = workingPath.find_last_of('/');
-       workingDirName = workingPath.substr(pos+1, std::string::npos);
-       workingPath.erase(pos);
-       return;
-    }
-    else {
-        workingPath.append("/");
-        workingPath.append(name);
-        workingDirName = name;
-    }
+        
+        // TODO: unsure of this...   what to do for "." ?
+        if (name == ".") {
+           continue;
+        }
+        
+        OpenFile *destDirFile = Open(name.c_str());
+        if (destDirFile == NULL) {
+           printf("filesys::Chdir: cannot open directory %s\n", name.c_str());
+           return NULL;
+        }
+        directoryFile = destDirFile;
+
+        //update current working path and directory name
+        if (name =="..") {
+            oppositePath.append("/");
+            oppositePath.append(workingDirName);
+            
+            pos = workingPath.find_last_of('/');
+            workingPath.erase(pos, std::string::npos);
+            pos = workingPath.find_last_of('/');
+            workingDirName = workingPath.substr(pos+1, std::string::npos);
+        }
+        else {
+            oppositePath.append("/..");
+            
+            workingPath.append("/");
+            workingPath.append(name);
+            workingDirName = name;
+        }
+    } while (!path.empty());
+    return oppositePath;
 }
 
 const char *
