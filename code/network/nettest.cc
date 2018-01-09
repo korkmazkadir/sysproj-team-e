@@ -77,9 +77,56 @@ MailTest(int farAddr)
            printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.from);
            fflush(stdout);
         }
-
     }
 
     // Then we're done!
     interrupt->Halt();
+}
+
+void
+RingTopology(int myID, int n) {
+
+    PacketHeader outPktHdr, inPktHdr;
+    MailHeader outMailHdr, inMailHdr;
+    const char *data = "Tokensito";
+    char buffer[MaxMailSize];
+    int next = (myID + 1) % n;
+    
+    if(myID == 0) {
+        outPktHdr.to = next;     
+        outMailHdr.length = strlen(data) + 1;
+        outMailHdr.to = 0;
+        outMailHdr.from = 1;
+
+        // Send the token
+        postOffice->Send(outPktHdr, outMailHdr, data);
+    }
+
+    postOffice->Receive(0, &inPktHdr, &inMailHdr, buffer);
+    printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.to);
+    fflush(stdout);
+
+    if(myID == 0) {
+
+        interrupt->Halt();
+
+    } else {
+
+        Delay(3);
+
+        printf("Next is %d\n", next);
+        fflush(stdout);
+
+        outPktHdr.to = next;     
+        outMailHdr.length = inMailHdr.length;
+        outMailHdr.to = 0;
+        outMailHdr.from = 1;
+
+        // Send the token
+        postOffice->Send(outPktHdr, outMailHdr, buffer);
+
+        interrupt->Halt();
+    }
+
+    
 }

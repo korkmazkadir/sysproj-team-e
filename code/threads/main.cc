@@ -63,6 +63,7 @@ extern void StartProcess (char *file);
 extern void ConsoleTest (char *in, char *out);
 extern void SynchConsoleTest(char *, char *);
 extern void MailTest (int networkID);
+extern void RingTopology (int myID, int n);
 
 //----------------------------------------------------------------------
 // main
@@ -83,6 +84,7 @@ main (int argc, char **argv)
 {
     int argCount;		// the number of arguments 
     // for a particular command
+    int netID = 0;
 
     DEBUG ('t', "Entering main");
     (void) Initialize (argc, argv);
@@ -164,6 +166,18 @@ main (int argc, char **argv)
             // to give the user time to
             // start up another nachos
             MailTest (atoi (*(argv + 1)));
+            argCount = 2;
+        } else if(!strcmp (*argv, "-rt")) {
+            ASSERT (argc > 1);
+            Delay (3);  // delay for 5 seconds
+            // to give the user time to
+            // start up another nachos
+            RingTopology(netID, atoi(*(argv + 1)));
+            argCount = 2;
+        } else if(!strcmp (*argv, "-m")) {
+            ASSERT (argc > 1);
+
+            netID = atoi(*(argv + 1));
             argCount = 2;
         }
 #endif // NETWORK
