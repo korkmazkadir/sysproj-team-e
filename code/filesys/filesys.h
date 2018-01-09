@@ -75,7 +75,7 @@ class FileSystem {
                                                     // the disk, so initialize the directory
                                                     // and the bitmap of free blocks.
 
-    bool Create(const char *name, int initialSize); // Create a file (UNIX creat)
+    bool Create(const char *name, int initialSize, bool isDir); // Create a file (UNIX creat)
                                                     
 
     OpenFile* Open(const char *name); 	            // Open a file (UNIX open)
@@ -85,12 +85,20 @@ class FileSystem {
     void List();			                        // List all the files in the file system
 
     void Print();			                        // List all the files and their contents
+    bool mkdir(const char* name);
+
+
+    OpenFile* GetWorkingDir();
+    void CdParentDir();                             //change to parent directory
+    void CdSubDir(const char *name);                //change to specified subdirectory
+
 
   private:
    OpenFile* freeMapFile;		                    // Bit map of free disk blocks,
                                                     // represented as a file
    OpenFile* directoryFile;		                    // "Root" directory -- list of 
                                                     // file names, represented as a file
+                                                    
 };
 
 #endif // FILESYS

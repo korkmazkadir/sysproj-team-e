@@ -168,7 +168,7 @@ FileSystem::FileSystem(bool format)
 //----------------------------------------------------------------------
 
 bool
-FileSystem::Create(const char *name, int initialSize)
+FileSystem::Create(const char *name, int initialSize, bool isDir)
 {
     Directory *directory;
     BitMap *freeMap;
@@ -189,7 +189,7 @@ FileSystem::Create(const char *name, int initialSize)
         sector = freeMap->Find();	// find a sector to hold the file header
     	if (sector == -1) 		
             success = FALSE;		// no free block for file header 
-        else if (!directory->Add(name, sector))
+        else if (!directory->Add(name, sector, isDir))
                 success = FALSE;	// no space in directory
              else {
                 hdr = new FileHeader;
@@ -334,3 +334,83 @@ FileSystem::Print()
     delete freeMap;
     delete directory;
 } 
+
+
+
+OpenFile* 
+FileSystem::GetWorkingDir() {
+    return directoryFile;
+}
+
+
+//mkdir
+//creates an empty directory called name in the current directory
+
+bool
+FileSystem::mkdir(const char* name) {
+    //create file representing the new dir in our current directory
+    if (!Create(name, DirectoryFileSize, 1))  {
+        printf("fileSys::mkdir: could not create newDir file %s\n", name);
+        return 0;
+    }
+    
+    //get relevant info on our current directory
+    Directory *currentDir = new Directory(NumDirEntries);
+    currentDir->FetchFrom(directoryFile);
+    int cDSector = directoryFile->getSector();
+    if (cDSector <= 0) {
+        printf("fileSys::mkdir: currentDir sector is bad\n");
+        return 0;
+    }
+    
+    //get sector of our newly created directory file
+    int nDSector = currentDir->Find(name);
+    if (nDSector <= 0) {
+        printf("fileSys::mkdir: newDir sector is bad\n");
+        return 0;
+    }
+    
+    //create directory object for the new dir in memory
+    Directory *newDir = new Directory(NumDirEntries);
+    //add the two dirs . and ..
+    newDir->Add(".", nDSector, 1);
+    newDir->Add("..", cDSector, 1);
+
+    //write changes back to current directory
+    currentDir->WriteBack(directoryFile);
+
+    OpenFile * newDirFile = Open(name);
+    if (newDirFile == NULL) {
+        printf("fileSys::mkdir: could not open newDirFile %s\n", name);
+        return 0;
+    }
+    newDir->WriteBack(newDirFile);
+    return 1;
+
+ }
+ 
+ 
+ //recursive print
+ /*
+         if (table[i].isDir) {
+            Directory * subDir = new Directory(NumDirEntries);
+            subDir->FetchFrom(Open(table[i].name));
+            subDir->Print();
+        }
+    }
+    * */
+//----------------------------------------------------------------------
+//change to specified subdirectory
+//----------------------------------------------------------------------
+/*
+void 
+FileSystem::CdSubDir(const char *name) {
+    if (name == NULL || !strcmp(name, ""))
+        printf("filesys CdSubDir: bad file name\n");
+        return 1;
+    }
+    OpenFile temp = Open(name);
+    Close(directoryFile);
+    directoryFile = temp;
+}        */
+

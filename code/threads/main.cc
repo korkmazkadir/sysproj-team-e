@@ -59,6 +59,7 @@
 
 extern void ThreadTest (void), Copy (const char *unixFile, const char *nachosFile);
 extern void Print (char *file), PerformanceTest (void);
+extern void mkdirTest (const char *name);
 extern void StartProcess (char *file);
 extern void ConsoleTest (char *in, char *out);
 extern void SynchConsoleTest(char *, char *);
@@ -154,6 +155,12 @@ main (int argc, char **argv)
         else if (!strcmp (*argv, "-t"))
         {			// performance test
             PerformanceTest ();
+        }
+        else if (!strcmp (*argv, "-mkdirTest"))
+        {			// mkdirTest
+            ASSERT (argc > 1);
+            mkdirTest (*(argv + 1));
+            argCount = 2;
         }
 #endif // FILESYS
 #ifdef NETWORK

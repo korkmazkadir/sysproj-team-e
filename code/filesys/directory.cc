@@ -24,6 +24,7 @@
 #include "utility.h"
 #include "filehdr.h"
 #include "directory.h"
+#include "filesys.h"
 
 //----------------------------------------------------------------------
 // Directory::Directory
@@ -127,7 +128,7 @@ Directory::Find(const char *name)
 //----------------------------------------------------------------------
 
 bool
-Directory::Add(const char *name, int newSector)
+Directory::Add(const char *name, int newSector, bool dir)
 { 
     if (FindIndex(name) != -1)
         return FALSE;
@@ -135,6 +136,7 @@ Directory::Add(const char *name, int newSector)
     for (int i = 0; i < tableSize; i++)
         if (!table[i].inUse) {
             table[i].inUse = TRUE;
+            table[i].isDir = dir;
             strncpy(table[i].name, name, FileNameMaxLen); 
             table[i].sector = newSector;
             return TRUE;
@@ -169,9 +171,11 @@ Directory::Remove(const char *name)
 void
 Directory::List()
 {
+    //TODO should start from 2 to to skip . and ..
    for (int i = 0; i < tableSize; i++)
 	if (table[i].inUse)
 	    printf("%s\n", table[i].name);
+
 }
 
 //----------------------------------------------------------------------
@@ -195,4 +199,9 @@ Directory::Print()
     }
     printf("\n");
     delete hdr;
+}
+
+const char * 
+Directory::GetName() {
+    return dirName;
 }
