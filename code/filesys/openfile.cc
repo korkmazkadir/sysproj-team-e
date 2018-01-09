@@ -203,3 +203,8 @@ int
 OpenFile::getSector() {
     return sector;
 }
+
+char * 
+OpenFile::getName() {
+    return name;
+}

@@ -139,6 +139,7 @@ Directory::Add(const char *name, int newSector, bool dir)
             table[i].isDir = dir;
             strncpy(table[i].name, name, FileNameMaxLen); 
             table[i].sector = newSector;
+            fileCount++;
             return TRUE;
         }
     return FALSE;	// no space.  Fix when we have extensible files.
@@ -160,6 +161,7 @@ Directory::Remove(const char *name)
     if (i == -1)
         return FALSE; 		// name not in directory
     table[i].inUse = FALSE;
+    fileCount--;
     return TRUE;	
 }
 
@@ -171,10 +173,9 @@ Directory::Remove(const char *name)
 void
 Directory::List()
 {
-    //TODO should start from 2 to to skip . and ..
    for (int i = 0; i < tableSize; i++)
 	if (table[i].inUse)
-	    printf("%s\n", table[i].name);
+	    printf("    %s\n", table[i].name);
 
 }
 
@@ -204,4 +205,9 @@ Directory::Print()
 const char * 
 Directory::GetName() {
     return dirName;
+}
+
+bool
+Directory::Empty() {
+    return (fileCount == 2);
 }

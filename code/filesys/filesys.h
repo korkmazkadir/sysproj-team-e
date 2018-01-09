@@ -84,20 +84,20 @@ class FileSystem {
 
     void List();			                        // List all the files in the file system
 
-    void Print();			                        // List all the files and their contents
-    bool mkdir(const char* name);
+    void Print();	                                // List all the files and their contents
+    bool Mkdir(const char* name);
+    bool Rmdir(const char* name);
+    void Chdir(const char *name);
+    char* GetWorkingDir();
 
-
-    OpenFile* GetWorkingDir();
-    void CdParentDir();                             //change to parent directory
-    void CdSubDir(const char *name);                //change to specified subdirectory
 
 
   private:
-   OpenFile* freeMapFile;		                    // Bit map of free disk blocks,
+    OpenFile* freeMapFile;		                    // Bit map of free disk blocks,
                                                     // represented as a file
-   OpenFile* directoryFile;		                    // "Root" directory -- list of 
-                                                    // file names, represented as a file
+    OpenFile* directoryFile;		                // current directory -- list of 
+                                                     // file names, represented as a file
+    char workingDirName[9+1];                       //name of current directory (starts as root)
                                                     
 };
 

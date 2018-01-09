@@ -46,6 +46,12 @@
 #define SC_UserThreadSelfId 24
 #define SC_ForkExec 25
 
+//filesys
+#define SC_Mkdir 26
+#define SC_Rmdir 27
+#define SC_List 28
+#define SC_Chdir 29
+
 #define SC_AssertionFailed     100
 
 
@@ -149,7 +155,29 @@ int Read (char *buffer, int size, OpenFileId id);
 /* Close the file, we're done reading and writing to it. */
 void Close (OpenFileId id);
 
+/* Mkdir
+ * creates directory "name" in the current directory.
+ * returns 0 on failure 1 on success
+ */
+int Mkdir(const char* name);
 
+/* Rmdir
+ * removes directory "name" in the current directory.
+ * returns 0 on failure 1 on success
+ */
+int Rmdir(const char* name);
+
+/* List
+ * lists contents of filesystem
+ */
+void List();
+
+/* Chdir
+ * change to subdirectory "name"
+ */
+void Chdir(const char* name);
+
+//--- end filesystem ---
 
 /* User-level thread operations: Fork and Yield.  To allow multiple
  * threads to run within a user program. 
@@ -175,6 +203,8 @@ void AssertionFailed(char *fileName, int lineNumber);
  * 
  */
 int ForkExec(char *fileName);
+
+
 
 #endif // IN_USER_MODE
 

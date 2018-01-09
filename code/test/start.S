@@ -257,6 +257,41 @@ ForkExec :
     syscall
     j	$31
     .end ForkExec
+    
+/* FileSystem */
+
+    .globl Mkdir
+    .ent    Mkdir
+Mkdir :
+    addiu $2,$0,SC_Mkdir
+    syscall
+    j	$31
+    .end Mkdir
+    
+    .globl Rmdir
+    .ent    Rmdir
+Rmdir :
+    addiu $2,$0,SC_Rmdir
+    syscall
+    j	$31
+    .end Rmdir
+    
+    .globl List
+    .ent    List
+List :
+    addiu $2,$0,SC_List
+    syscall
+    j	$31
+    .end List
+    
+    .globl Chdir
+    .ent    Chdir
+Chdir :
+    addiu $2,$0,SC_Chdir
+    syscall
+    j	$31
+    .end Chdir
+    
 /* dummy function to keep gcc happy */
         .globl  __main
         .ent    __main

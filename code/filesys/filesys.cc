@@ -121,6 +121,9 @@ FileSystem::FileSystem(bool format)
         DEBUG('f', "Writing bitmap and directory back to disk.\n");
         freeMap->WriteBack(freeMapFile);	 // flush changes to disk
         directory->WriteBack(directoryFile);
+        
+        //set currentDirectory name
+        strcpy(workingDirName, "/");
 
         if (DebugIsEnabled('f')) {
             freeMap->Print();
@@ -291,6 +294,7 @@ FileSystem::Remove(const char *name)
 void
 FileSystem::List()
 {
+    printf("List: contents of %s:\n", GetWorkingDir());
     Directory *directory = new Directory(NumDirEntries);
     directory->FetchFrom(directoryFile);
     directory->List();
@@ -336,18 +340,11 @@ FileSystem::Print()
 } 
 
 
-
-OpenFile* 
-FileSystem::GetWorkingDir() {
-    return directoryFile;
-}
-
-
-//mkdir
+//Mkdir
 //creates an empty directory called name in the current directory
 
 bool
-FileSystem::mkdir(const char* name) {
+FileSystem::Mkdir(const char* name) {
     //create file representing the new dir in our current directory
     if (!Create(name, DirectoryFileSize, 1))  {
         printf("fileSys::mkdir: could not create newDir file %s\n", name);
@@ -359,14 +356,14 @@ FileSystem::mkdir(const char* name) {
     currentDir->FetchFrom(directoryFile);
     int cDSector = directoryFile->getSector();
     if (cDSector <= 0) {
-        printf("fileSys::mkdir: currentDir sector is bad\n");
+        printf("fileSys::Mkdir: currentDir sector is bad\n");
         return 0;
     }
     
     //get sector of our newly created directory file
     int nDSector = currentDir->Find(name);
     if (nDSector <= 0) {
-        printf("fileSys::mkdir: newDir sector is bad\n");
+        printf("fileSys::Mkdir: newDir sector is bad\n");
         return 0;
     }
     
@@ -381,7 +378,7 @@ FileSystem::mkdir(const char* name) {
 
     OpenFile * newDirFile = Open(name);
     if (newDirFile == NULL) {
-        printf("fileSys::mkdir: could not open newDirFile %s\n", name);
+        printf("fileSys::Mkdir: could not open newDirFile %s\n", name);
         return 0;
     }
     newDir->WriteBack(newDirFile);
@@ -390,27 +387,57 @@ FileSystem::mkdir(const char* name) {
  }
  
  
- //recursive print
- /*
-         if (table[i].isDir) {
-            Directory * subDir = new Directory(NumDirEntries);
-            subDir->FetchFrom(Open(table[i].name));
-            subDir->Print();
-        }
+//Rmdir
+//pre: directory must be empty
+//removes the directory called name in the current directory
+
+bool
+FileSystem::Rmdir(const char* name) {
+    //create directory object for the dir in memory
+    Directory *rmDir = new Directory(NumDirEntries);
+    OpenFile *rmDirFile = Open(name);
+    if (rmDirFile == NULL) {
+        printf("fileSys::Rmdir: could not open rmDirFile %s\n", name);
+        return 0;
     }
-    * */
-//----------------------------------------------------------------------
-//change to specified subdirectory
-//----------------------------------------------------------------------
-/*
+    rmDir->FetchFrom(rmDirFile);
+    
+    //check dir is empty
+    if (!rmDir->Empty()) {
+        printf("filesys::Rmdir: directory %s is not empty\n", name);
+        return 0;
+    }
+    
+    //get relevant info on our current directory
+    Directory *currentDir = new Directory(NumDirEntries);
+    currentDir->FetchFrom(directoryFile);
+    
+    //remove the directory
+    currentDir->Remove(name);
+    
+    //write changes back to current directory
+    currentDir->WriteBack(directoryFile);
+
+    return 1;
+
+ }
+ 
 void 
-FileSystem::CdSubDir(const char *name) {
-    if (name == NULL || !strcmp(name, ""))
-        printf("filesys CdSubDir: bad file name\n");
-        return 1;
-    }
-    OpenFile temp = Open(name);
-    Close(directoryFile);
-    directoryFile = temp;
-}        */
+FileSystem::Chdir(const char *name) {
+   OpenFile *tmp = Open(name);
+   if (tmp == NULL) {
+       printf("filesys::Chdir: cannot open directory %s\n", name);
+       return;
+   }
+   directoryFile = tmp;
+   strcpy(workingDirName, name);
+}
+
+char *
+FileSystem::GetWorkingDir() {
+    return workingDirName;
+}
+ 
+ 
+ 
 

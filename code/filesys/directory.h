@@ -50,12 +50,12 @@ class DirectoryEntry {
 class Directory {
   public:
     Directory(int size); 		                // Initialize an empty directory
-                                                // with space for "size" files
+                                                //  with space for "size" files
     ~Directory();			                    // De-allocate the directory
         
     void FetchFrom(OpenFile *file);  	        // Init directory contents from disk
     void WriteBack(OpenFile *file);	            // Write modifications to 
-                                                // directory contents back to disk
+                                                //  directory contents back to disk
         
     int Find(const char *name);		            // Find the sector number of the 
                                                 // FileHeader for file: "name"
@@ -70,12 +70,15 @@ class Directory {
                                                 //  of the directory -- all the file
                                                 //  names and their contents
     const char * GetName();                     // return name of this directory
+    
+    bool Empty();                               // is directory empty?
   private:
-    int tableSize;                               // Number of directory entries
+    int tableSize;                              // Number of directory entries
     char *dirName;
-                                               
+    int fileCount = 2;                          // number of files in directory
+                                                //  including .. and .
     DirectoryEntry *table;		                // Table of pairs: 
-                                                // <file name, file header location> 
+                                                //  <file name, file header location> 
 
     int FindIndex(const char *name);	        // Find the index into the directory 
                                                 //  table corresponding to "name"

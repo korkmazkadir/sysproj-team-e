@@ -256,6 +256,40 @@ void ExceptionHandler (ExceptionType which)
                 Exit (123);
             } break;
             
+            
+            //        ---- File System ---
+            case SC_Mkdir:
+            {
+                int fromAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                char local_buf[MAX_WRITE_BUF_SIZE];
+                copyStringFromMachine(fromAddress, local_buf, MAX_WRITE_BUF_SIZE);
+                int result = fileSystem->Mkdir(local_buf);
+                machine->WriteRegister(RET_VALUE_REGISTER, result);
+            } break;
+            
+            case SC_Rmdir:
+            {
+                int fromAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                char local_buf[MAX_WRITE_BUF_SIZE];
+                copyStringFromMachine(fromAddress, local_buf, MAX_WRITE_BUF_SIZE);
+                int result = fileSystem->Rmdir(local_buf);
+                machine->WriteRegister(RET_VALUE_REGISTER, result);
+            } break;
+            
+            case SC_List:
+            {
+                fileSystem->List();
+            } break;
+            
+            case SC_Chdir:
+            {
+                int fromAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                char local_buf[MAX_WRITE_BUF_SIZE];
+                copyStringFromMachine(fromAddress, local_buf, MAX_WRITE_BUF_SIZE);
+                fileSystem->Chdir(local_buf);
+            } break;
+            
+            //      ---- End File System ----
             default:
             {
                 printf ("Unexpected SYSCALL %d %d\n", which, type);

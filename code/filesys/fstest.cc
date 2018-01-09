@@ -188,7 +188,7 @@ PerformanceTest()
 void 
 mkdirTest(const char* name) {
     //make a new directory
-    if (!fileSystem->mkdir(name)) {
+    if (!fileSystem->Mkdir(name)) {
         printf("-- MKDIR FAILED --\n");
     }
     fileSystem->Print();
