@@ -123,7 +123,8 @@ FileSystem::FileSystem(bool format)
         directory->WriteBack(directoryFile);
         
         //set currentDirectory name
-        strcpy(workingDirName, "/");
+        workingDirName = "/";
+        workingPath = "/";
 
         if (DebugIsEnabled('f')) {
             freeMap->Print();
@@ -295,6 +296,7 @@ void
 FileSystem::List()
 {
     printf("List: contents of %s:\n", GetWorkingDir());
+    printf("workingdir:\n%s\n", workingPath.c_str());
     Directory *directory = new Directory(NumDirEntries);
     directory->FetchFrom(directoryFile);
     directory->List();
@@ -407,7 +409,8 @@ FileSystem::Rmdir(const char* name) {
         printf("filesys::Rmdir: directory %s is not empty\n", name);
         return 0;
     }
-    
+    Remove(name);
+    /*
     //get relevant info on our current directory
     Directory *currentDir = new Directory(NumDirEntries);
     currentDir->FetchFrom(directoryFile);
@@ -417,27 +420,48 @@ FileSystem::Rmdir(const char* name) {
     
     //write changes back to current directory
     currentDir->WriteBack(directoryFile);
-
+    */
     return 1;
 
  }
  
 void 
 FileSystem::Chdir(const char *name) {
-   OpenFile *tmp = Open(name);
-   if (tmp == NULL) {
+    // TODO: unsure of this...   what to do for "." ?
+    if (!strcmp(name, ".")) {
+       return;
+    }
+    OpenFile *destDirFile = Open(name);
+    if (destDirFile == NULL) {
        printf("filesys::Chdir: cannot open directory %s\n", name);
        return;
-   }
-   directoryFile = tmp;
-   strcpy(workingDirName, name);
+    }
+    directoryFile = destDirFile;
+
+//update current working path and directory name
+    if (!strcmp(name, "..")) {
+       int pos = workingPath.find_last_of('/');
+       workingDirName = workingPath.substr(pos+1, std::string::npos);
+       workingPath.erase(pos);
+       return;
+    }
+    else {
+        workingPath.append("/");
+        workingPath.append(name);
+        workingDirName = name;
+    }
 }
 
-char *
+const char *
+FileSystem::GetWorkingPath() {
+    return workingPath.c_str();
+}
+
+const char *
 FileSystem::GetWorkingDir() {
-    return workingDirName;
+    return workingDirName.c_str();
 }
  
- 
+
  
 

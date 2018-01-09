@@ -37,6 +37,7 @@
 
 #include "copyright.h"
 #include "openfile.h"
+#include <string>
 
 #ifdef FILESYS_STUB 		// Temporarily implement file system calls as 
 				// calls to UNIX, until the real file system
@@ -85,10 +86,11 @@ class FileSystem {
     void List();			                        // List all the files in the file system
 
     void Print();	                                // List all the files and their contents
-    bool Mkdir(const char* name);
-    bool Rmdir(const char* name);
+    bool Mkdir(const char *name);
+    bool Rmdir(const char *name);
     void Chdir(const char *name);
-    char* GetWorkingDir();
+    const char* GetWorkingPath();
+    const char* GetWorkingDir();
 
 
 
@@ -97,7 +99,8 @@ class FileSystem {
                                                     // represented as a file
     OpenFile* directoryFile;		                // current directory -- list of 
                                                      // file names, represented as a file
-    char workingDirName[9+1];                       //name of current directory (starts as root)
+    std::string workingPath;
+    std::string workingDirName;                       //name of current directory (starts as root)
                                                     
 };
 
