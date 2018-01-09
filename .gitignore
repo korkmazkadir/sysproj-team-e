@@ -3,7 +3,10 @@ code/bin/coff2noff
 code/bin/*.o
 code/bin/.*.d
 code/unit_tests/build/*
+code/unit_tests/build-*
 code/unit_tests/*.pro.user
 code/unit_tests/*.txt.user
-code/test/integration_test/io/*
+code/test/integration-test/io/*
+**/*.txt.user
+**/*.pro.user
 **/CMakeFiles
