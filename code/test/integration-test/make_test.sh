@@ -87,23 +87,6 @@ else
     nbFails=$(($nbFails + 1))
 fi
 
-#----------------------------------------------------------------------------
-printf "${NC}>> earlyHalt test ${RED}\n"
-${EXECUTABLE_RAND} ../../build/earlyHalt >./io/earlyHaltOut < ./io/earlyHaltIn
-output=$(head -n -8 ./io/earlyHaltOut)
-expected="hellohellohellohelloMachine halting!"
-diff  <(echo "$output" ) <(echo "$expected")
-
-if [ "$output" == "hellohellohellohelloMachine halting!" ]
-then
-    printf "${GREEN}OK\n\n"
-else
-    printf "output and expected strings do not match\n"
-    printf "${RED}KO\n\n"
-    nbFails=$(($nbFails + 1))
-fi
-
-
 
 printf "${NC}>> Two sub-processes with userthreads - first joins${RED}\n"
 ${EXECUTABLE_RAND_SEED} ../../build/twoProcessesFirstOneJoins >./io/twoProcessesFirstOneJoinsOut
