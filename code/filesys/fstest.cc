@@ -31,9 +31,10 @@
 void
 Copy(const char *from, const char *to)
 {
+    printf("\n*  *   *    *    * START COPY *  *   *   *   *\n\n\n");
     FILE *fp;
     OpenFile* openFile;
-    int amountRead, fileLength;
+    int amountRead, amountWritten, fileLength;
     char *buffer;
 
 // Open UNIX file
@@ -49,7 +50,7 @@ Copy(const char *from, const char *to)
 
 // Create a Nachos file of the same length
     DEBUG('f', "Copying file %s, size %d, to file %s\n", from, fileLength, to);
-    if (!fileSystem->Create(to, fileLength, 0)) {	 // Create Nachos file
+    if (-1 == fileSystem->Create(to, fileLength, 0)) {	 // Create Nachos file
         printf("Copy: couldn't create output file %s\n", to);
         fclose(fp);
         return;
@@ -58,15 +59,24 @@ Copy(const char *from, const char *to)
     openFile = fileSystem->Open(to);
     ASSERT(openFile != NULL);
     
+
 // Copy the data in TransferSize chunks
     buffer = new char[TransferSize];
-    while ((amountRead = fread(buffer, sizeof(char), TransferSize, fp)) > 0)
-        openFile->Write(buffer, amountRead);	
+    while ((amountRead = fread(buffer, sizeof(char), TransferSize, fp)) > 0) {
+        amountWritten = openFile->Write(buffer, amountRead);	
+        if (amountWritten == -1) {
+            printf("write to copy of file failed\n");
+            Exit(1);
+        }
+    }
     delete [] buffer;
+    printf("\n*  *   *    *    * out of loop *  *   *   *   *\n\n\n");
 
 // Close the UNIX and the Nachos files
-    delete openFile;
+    fileSystem->Close(openFile);
     fclose(fp);
+    printf("\n*  *   *    *    * END COPY *  *   *   *   *\n\n\n");
+
 }
 
 //----------------------------------------------------------------------

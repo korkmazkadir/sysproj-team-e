@@ -26,6 +26,7 @@
 #include "addrspace.h"
 #include "usersemaphore.h"
 #include <string>
+#include "filehdr.h"
 
 Semaphore haltSync("HaltSync", 1);
 
@@ -289,9 +290,103 @@ void ExceptionHandler (ExceptionType which)
                 copyStringFromMachine(fromAddress, local_buf, MAX_WRITE_BUF_SIZE);
                 std::string path(local_buf);
                 //std::string oppositePath =
-                 fileSystem->Chdir(path);
+                fileSystem->Chdir(path);
             } break;
             
+            case SC_Create:
+            {
+                int fromAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                char local_buf[MAX_WRITE_BUF_SIZE];
+                copyStringFromMachine(fromAddress, local_buf, MAX_WRITE_BUF_SIZE);
+                std::string path(local_buf);
+                int result = fileSystem->Create(path, MaxFileSize, 0);
+                machine->WriteRegister(RET_VALUE_REGISTER, result);                
+            } break;
+            
+            case SC_Open:
+            {
+                int fromAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                char local_buf[MAX_WRITE_BUF_SIZE];
+                copyStringFromMachine(fromAddress, local_buf, MAX_WRITE_BUF_SIZE);
+                std::string path(local_buf);
+                int ofid = (int) fileSystem->Open(path);
+                machine->WriteRegister(RET_VALUE_REGISTER, ofid);
+            } break;
+
+
+            case SC_Read:
+            {// TODO: don't deref pointer direclty. 
+             //keep a global open file table with IDs mapped to ptrs, translate between them here
+                int toVirtualAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                int numBytes = machine->ReadRegister(SECOND_PARAM_REGISTER);
+                if (numBytes > MAX_WRITE_BUF_SIZE) {
+                    numBytes = MAX_WRITE_BUF_SIZE;
+                }
+                OpenFile *ofid = (OpenFile*) machine->ReadRegister(THIRD_PARAM_REGISTER);
+                char local_buf[MAX_WRITE_BUF_SIZE];
+                int result = ofid->Read(local_buf, numBytes);
+                copyStringToMachine(local_buf, toVirtualAddress, numBytes);
+                machine->WriteRegister(RET_VALUE_REGISTER, result);
+            } break;
+            
+                
+            case SC_Write:
+            {
+                int fromAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                int numBytes = machine->ReadRegister(SECOND_PARAM_REGISTER);
+
+                if (numBytes > MAX_WRITE_BUF_SIZE) {
+                    numBytes = MAX_WRITE_BUF_SIZE;
+                }
+                OpenFile *ofid = (OpenFile*) machine->ReadRegister(THIRD_PARAM_REGISTER);
+                char local_buf[MAX_WRITE_BUF_SIZE];
+                copyStringFromMachine(fromAddress, local_buf, MAX_WRITE_BUF_SIZE);
+                int result = ofid->Write(local_buf, numBytes);
+                machine->WriteRegister(RET_VALUE_REGISTER, result);
+            } break;
+            
+            
+            case SC_ReadAt:
+            {// TODO: don't deref pointer direclty. 
+             //keep a global open file table with IDs mapped to ptrs, translate between them here
+                int toVirtualAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                int numBytes = machine->ReadRegister(SECOND_PARAM_REGISTER);
+                if (numBytes > MAX_WRITE_BUF_SIZE) {
+                    numBytes = MAX_WRITE_BUF_SIZE;
+                }
+                OpenFile *ofid = (OpenFile*) machine->ReadRegister(THIRD_PARAM_REGISTER);
+                int pos = machine->ReadRegister(FOURTH_PARAM_REGISTER);
+                char local_buf[MAX_WRITE_BUF_SIZE];
+                int result = ofid->ReadAt(local_buf, numBytes, pos);
+                copyStringToMachine(local_buf, toVirtualAddress, numBytes);
+                machine->WriteRegister(RET_VALUE_REGISTER, result);
+            } break;
+            
+                
+            case SC_WriteAt:
+            {
+                int fromAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                int numBytes = machine->ReadRegister(SECOND_PARAM_REGISTER);
+
+                if (numBytes > MAX_WRITE_BUF_SIZE) {
+                    numBytes = MAX_WRITE_BUF_SIZE;
+                }
+                OpenFile *ofid = (OpenFile*) machine->ReadRegister(THIRD_PARAM_REGISTER);
+                int pos = machine->ReadRegister(FOURTH_PARAM_REGISTER);
+                char local_buf[MAX_WRITE_BUF_SIZE];
+                copyStringFromMachine(fromAddress, local_buf, MAX_WRITE_BUF_SIZE);
+                int result = ofid->WriteAt(local_buf, numBytes, pos);
+                machine->WriteRegister(RET_VALUE_REGISTER, result);
+            } break;
+            
+            case SC_Close:
+            {
+                OpenFile *ofid = (OpenFile*) machine->ReadRegister(FIRST_PARAM_REGISTER);
+                int result = fileSystem->Close(ofid);
+                machine->WriteRegister(RET_VALUE_REGISTER, result);
+            } break;
+
+
             //      ---- End File System ----
             default:
             {

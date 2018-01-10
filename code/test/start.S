@@ -292,6 +292,22 @@ Chdir :
     j	$31
     .end Chdir
     
+	.globl ReadAt
+	.ent	ReadAt
+ReadAt:
+	addiu $2,$0,SC_ReadAt
+	syscall
+	j	$31
+	.end ReadAt
+
+	.globl WriteAt
+	.ent	WriteAt
+WriteAt:
+	addiu $2,$0,SC_WriteAt
+	syscall
+	j	$31
+	.end WriteAt
+    
 /* dummy function to keep gcc happy */
         .globl  __main
         .ent    __main

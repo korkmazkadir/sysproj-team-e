@@ -51,6 +51,8 @@
 #define SC_Rmdir 27
 #define SC_List 28
 #define SC_Chdir 29
+#define SC_ReadAt 30
+#define SC_WriteAt 31
 
 #define SC_AssertionFailed     100
 
@@ -134,7 +136,7 @@ typedef int OpenFileId;
 #define ConsoleOutput	1
 
 /* Create a Nachos file, with "name" */
-void Create (char *name);
+int Create (char *name);
 
 /* Open the Nachos file "name", and return an "OpenFileId" that can 
  * be used to read and write to the file.
@@ -142,7 +144,10 @@ void Create (char *name);
 OpenFileId Open (char *name);
 
 /* Write "size" bytes from "buffer" to the open file. */
-void Write (char *buffer, int size, OpenFileId id);
+int Write (char *buffer, int size, OpenFileId id);
+
+/* Write "size" bytes from "buffer" to the open file at position pos. */
+int  WriteAt (char *buffer, int size, OpenFileId id, int pos);
 
 /* Read "size" bytes from the open file into "buffer".  
  * Return the number of bytes actually read -- if the open file isn't
@@ -152,17 +157,25 @@ void Write (char *buffer, int size, OpenFileId id);
  */
 int Read (char *buffer, int size, OpenFileId id);
 
+/* Read "size" bytes from the open file at position pos into "buffer".  
+ * Return the number of bytes actually read -- if the open file isn't
+ * long enough, or if it is an I/O device, and there aren't enough 
+ * characters to read, return whatever is available (for I/O devices, 
+ * you should always wait until you can return at least one character).
+ */
+int ReadAt (char *buffer, int size, OpenFileId id, int pos);
+
 /* Close the file, we're done reading and writing to it. */
-void Close (OpenFileId id);
+int Close (OpenFileId id);
 
 /* Mkdir
- * creates directory "name" in the current directory.
+ * creates directory specified by the path "name".
  * returns 0 on failure 1 on success
  */
 int Mkdir(const char* name);
 
 /* Rmdir
- * removes directory "name" in the current directory.
+ * removes directory specified by the path"name".
  * returns 0 on failure 1 on success
  */
 int Rmdir(const char* name);
@@ -173,7 +186,7 @@ int Rmdir(const char* name);
 void List();
 
 /* Chdir
- * change to subdirectory "name"
+ * change to subdirectory specified by the path "name"
  */
 void Chdir(const char* name);
 

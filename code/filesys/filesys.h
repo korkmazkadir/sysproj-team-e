@@ -76,22 +76,25 @@ class FileSystem {
                                                     // the disk, so initialize the directory
                                                     // and the bitmap of free blocks.
 
-    bool Create(const char *name, int initialSize, bool isDir); // Create a file (UNIX creat)
+    int Create(std::string fileName, int initialSize, bool isDir); // Create a file (UNIX creat)
                                                     
 
-    OpenFile* Open(const char *name); 	            // Open a file (UNIX open)
+    OpenFile* Open(std::string fileName); 	         // Open a file (UNIX open)
+    
+    int Close(OpenFile *ofid);
+    int Remove(std::string fileName);  	         // Delete a file (UNIX unlink)
 
-    bool Remove(const char *name);  	            // Delete a file (UNIX unlink)
+    void List();			                         // List all the files in the file system
 
-    void List();			                        // List all the files in the file system
-
-    void Print();	                                // List all the files and their contents
-    bool Mkdir(const char *dirName);
-    bool Rmdir(const char *dirName);
+    void Print();	                                 // List all the files and their contents
+    int Mkdir(const char *dirName);
+    int Rmdir(const char *dirName);
     std::string Chdir(std::string path);
     const char* GetWorkingPath();
     const char* GetWorkingDir();
-
+    void switchProcess(OpenFile **openFileTable, OpenFile *directoryFile);
+                                                    // called upon context switch
+                                                     // changes open files table and current directory
 
 
   private:
@@ -99,6 +102,7 @@ class FileSystem {
                                                     // represented as a file
     OpenFile* directoryFile;		                // current directory -- list of 
                                                      // file names, represented as a file
+    OpenFile** openFiles;                           //table of currently open files
     std::string workingPath;
     std::string workingDirName;                       //name of current directory (starts as root)
                                                     

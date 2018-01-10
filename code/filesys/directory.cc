@@ -139,7 +139,6 @@ Directory::Add(const char *name, int newSector, bool dir)
             table[i].isDir = dir;
             strncpy(table[i].name, name, FileNameMaxLen); 
             table[i].sector = newSector;
-            fileCount++;
             return TRUE;
         }
     return FALSE;	// no space.  Fix when we have extensible files.
@@ -161,7 +160,6 @@ Directory::Remove(const char *name)
     if (i == -1)
         return FALSE; 		// name not in directory
     table[i].inUse = FALSE;
-    fileCount--;
     return TRUE;	
 }
 
@@ -202,12 +200,13 @@ Directory::Print()
     delete hdr;
 }
 
-const char * 
-Directory::GetName() {
-    return dirName;
-}
 
 bool
 Directory::Empty() {
+    int fileCount = 0;
+    for (int i = 0; i < tableSize; i++)
+        if (table[i].inUse)
+            fileCount++;
+    printf("directory::empty: fileCount = %d\n", fileCount);
     return (fileCount == 2);
 }

@@ -61,7 +61,7 @@ OpenFile::Seek(int position)
 //----------------------------------------------------------------------
 // OpenFile::Read/Write
 // 	Read/write a portion of a file, starting from seekPosition.
-//	Return the number of bytes actually written or read, and as a
+//	Return the number of bytes actually written or read (or -1 on error), and as a
 //	side effect, increment the current position within the file.
 //
 //	Implemented using the more primitive ReadAt/WriteAt.
@@ -90,7 +90,7 @@ OpenFile::Write(const char *into, int numBytes)
 //----------------------------------------------------------------------
 // OpenFile::ReadAt/WriteAt
 // 	Read/write a portion of a file, starting at "position".
-//	Return the number of bytes actually written or read, but has
+//	Return the number of bytes actually written or read (or -1 on error), but has
 //	no side effects (except that Write modifies the file, of course).
 //
 //	There is no guarantee the request starts or ends on an even disk sector
@@ -120,8 +120,8 @@ OpenFile::ReadAt(char *into, int numBytes, int position)
     int i, firstSector, lastSector, numSectors;
     char *buf;
 
-    if ((numBytes <= 0) || (position >= fileLength))
-    	return 0; 				// check request
+    if ((numBytes <= 0) || (position >= fileLength) || (position < 0))
+    	return -1; 				// check request
     if ((position + numBytes) > fileLength)		
         numBytes = fileLength - position;
     DEBUG('f', "Reading %d bytes at %d, from file of length %d.\n", 	
@@ -151,8 +151,8 @@ OpenFile::WriteAt(const char *from, int numBytes, int position)
     bool firstAligned, lastAligned;
     char *buf;
 
-    if ((numBytes <= 0) || (position >= fileLength))
-        return 0;				// check request
+    if ((numBytes <= 0) || (position >= fileLength) || (position < 0))
+        return -1;				// check request
         
     if ((position + numBytes) > fileLength)
         numBytes = fileLength - position;

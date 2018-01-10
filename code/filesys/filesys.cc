@@ -122,9 +122,7 @@ FileSystem::FileSystem(bool format)
         freeMap->WriteBack(freeMapFile);	 // flush changes to disk
         directory->WriteBack(directoryFile);
         
-        //set currentDirectory name
-        workingDirName = "/";
-        workingPath = "/";
+
 
         if (DebugIsEnabled('f')) {
             freeMap->Print();
@@ -139,6 +137,17 @@ FileSystem::FileSystem(bool format)
     // the bitmap and directory; these are left open while Nachos is running
         freeMapFile = new OpenFile(FreeMapSector);
         directoryFile = new OpenFile(DirectorySector);
+    }
+    
+    //set currentDirectory name
+    workingDirName = "/";
+    workingPath = "/";
+    
+    //allocate space for openFiles table
+    openFiles = (OpenFile**) malloc(sizeof(OpenFile*) * 10);
+    if (openFiles == NULL) {
+        printf("FileSystem::constructor malloc for openFiles[] failed\n");
+        Exit(1);
     }
 }
 
@@ -156,7 +165,7 @@ FileSystem::FileSystem(bool format)
 //	  Store the new file header on disk 
 //	  Flush the changes to the bitmap and the directory back to disk
 //
-//	Return TRUE if everything goes ok, otherwise, return FALSE.
+//	Return 0 if everything goes ok, otherwise, return -1.
 //
 // 	Create fails if:
 //   		file is already in directory
@@ -171,36 +180,62 @@ FileSystem::FileSystem(bool format)
 //	"initialSize" -- size of file to be created
 //----------------------------------------------------------------------
 
-bool
-FileSystem::Create(const char *name, int initialSize, bool isDir)
+int
+FileSystem::Create(std::string fileName, int initialSize, bool isDir)
 {
+    if ((unsigned)initialSize > MaxFileSize) {
+        return -1;
+    }
+    //separate path and name
+    std::string path(fileName);
+    std::string name;
+    std::string backTrackPath;
+    int pos = path.find_last_of("/"); 
+    if (pos == -1) {
+        //no / in path so whole path is a name
+        pos = 0;
+        name = path;
+        path.erase(0, std::string::npos);
+    }
+    else {
+         name = path.substr(pos+1, std::string::npos);
+         path.erase(pos, std::string::npos);
+    }
+    //change to the right dir, and keep opposite path to be able to come back
+    if (!path.empty())
+        backTrackPath = Chdir(path);
+    
+    
     Directory *directory;
     BitMap *freeMap;
     FileHeader *hdr;
     int sector;
     bool success;
 
-    DEBUG('f', "Creating file %s, size %d\n", name, initialSize);
+    DEBUG('f', "Creating file %s, size %d\n", name.c_str(), initialSize);
 
     directory = new Directory(NumDirEntries);
     directory->FetchFrom(directoryFile);
 
-    if (directory->Find(name) != -1)
-      success = FALSE;			// file is already in directory
+    if (directory->Find(name.c_str()) != -1) {
+        success = -1;			// file is already in directory
+    }
     else {	
         freeMap = new BitMap(NumSectors);
         freeMap->FetchFrom(freeMapFile);
         sector = freeMap->Find();	// find a sector to hold the file header
-    	if (sector == -1) 		
-            success = FALSE;		// no free block for file header 
-        else if (!directory->Add(name, sector, isDir))
-                success = FALSE;	// no space in directory
+    	if (sector == -1) {		
+            success = -1;	        // no free block for file header 
+        }	
+        else if (!directory->Add(name.c_str(), sector, isDir)) {
+                success = -1;	    // no space in directory
+             }
              else {
                 hdr = new FileHeader;
                 if (!hdr->Allocate(freeMap, initialSize))
-                    success = FALSE;	// no space on disk for data
+                    success = -1;	// no space on disk for data
                 else {	
-                    success = TRUE;
+                    success = 0;
                     // everthing worked, flush all changes back to disk
                     hdr->WriteBack(sector); 		
                     directory->WriteBack(directoryFile);
@@ -211,6 +246,9 @@ FileSystem::Create(const char *name, int initialSize, bool isDir)
             delete freeMap;
     }
     delete directory;
+    //go back to initial dir
+    if (!backTrackPath.empty())
+        Chdir(backTrackPath);
     return success;
 }
 
@@ -224,20 +262,105 @@ FileSystem::Create(const char *name, int initialSize, bool isDir)
 //	"name" -- the text name of the file to be opened
 //----------------------------------------------------------------------
 
+
+//write a close function...??
+//TODO: convert Open Close etc to use paths
 OpenFile *
-FileSystem::Open(const char *name)
+FileSystem::Open(std::string fileName)
 { 
+    //separate path and name
+    std::string path(fileName);
+    std::string name;
+    std::string backTrackPath;
+    int pos = path.find_last_of("/"); 
+    if (pos == -1) {
+        //no / in path so whole path is a name
+        pos = 0;
+        name = path;
+        path.erase(0, std::string::npos);
+    }
+    else {
+         name = path.substr(pos+1, std::string::npos);
+         path.erase(pos, std::string::npos);
+    }
+    //change to the right dir, and keep opposite path to be able to come back
+    if (!path.empty())
+        backTrackPath = Chdir(path);
+    
+        
     Directory *directory = new Directory(NumDirEntries);
     OpenFile *openFile = NULL;
     int sector;
 
-    DEBUG('f', "Opening file %s\n", name);
+    DEBUG('f', "Opening file %s\n", name.c_str());
     directory->FetchFrom(directoryFile);
-    sector = directory->Find(name); 
+    sector = directory->Find(name.c_str()); 
+    
+    //check if is already opened
+    int i;
+    for (i = 0; i < 10; i++) {
+        if (openFiles[i] != NULL) {
+            int tmp = openFiles[i]->getSector();
+            if (sector == tmp) {
+                break;
+            }
+        }
+    }
+    
+    
+    if (i != 10) {
+        //file found
+        printf("FileSystem::Open the file %s is already open\n", name.c_str());
+        return NULL;
+    }
+    
     if (sector >= 0) 		
         openFile = new OpenFile(sector);	// name was found in directory 
     delete directory;
+    
+    //add to openFiles table
+    for (i = 0; i < 10 && openFiles[i] != NULL; i++);
+    if (i != 10) {
+        openFiles[i] = openFile;
+    }
+    else {
+        printf("FileSystem::Open max open file number reached. Cannot open %s\n", name.c_str());
+        return NULL;
+    }
+        
+    //go back to initial dir
+    if (!backTrackPath.empty())
+        Chdir(backTrackPath);
+        
+    printf("filesys::open opened file ptr is %d\n", (int)openFile);
     return openFile;				// return NULL if not found
+}
+
+
+// FileSystem::Close
+// 
+int
+FileSystem::Close(OpenFile *ofid) {
+    //check if is opened
+    int i;
+    bool found = FALSE;
+    for (i = 0; i < 10; i++) {
+        if (openFiles[i] == ofid) {
+            found = TRUE;
+            break;
+        }
+    }
+    
+    
+    if (!found) {
+        //file not found
+        printf("FileSystem::Close the file of id %d is not open\n", (int)ofid);
+        return -1;
+    }
+    
+    delete openFiles[i];
+    openFiles[i] = NULL;
+    return 0;
 }
 
 //----------------------------------------------------------------------
@@ -254,9 +377,29 @@ FileSystem::Open(const char *name)
 //	"name" -- the text name of the file to be removed
 //----------------------------------------------------------------------
 
-bool
-FileSystem::Remove(const char *name)
+int
+FileSystem::Remove(std::string fileName)
 { 
+    //separate path and name
+    std::string path(fileName);
+    std::string name;
+    std::string backTrackPath;
+    int pos = path.find_last_of("/"); 
+    if (pos == -1) {
+        //no / in path so whole path is a name
+        pos = 0;
+        name = path;
+        path.erase(0, std::string::npos);
+    }
+    else {
+         name = path.substr(pos+1, std::string::npos);
+         path.erase(pos, std::string::npos);
+    }
+    //change to the right dir, and keep opposite path to be able to come back
+    if (!path.empty())
+        backTrackPath = Chdir(path);
+        
+        
     Directory *directory;
     BitMap *freeMap;
     FileHeader *fileHdr;
@@ -264,10 +407,13 @@ FileSystem::Remove(const char *name)
     
     directory = new Directory(NumDirEntries);
     directory->FetchFrom(directoryFile);
-    sector = directory->Find(name);
+    sector = directory->Find(name.c_str());
     if (sector == -1) {
        delete directory;
-       return FALSE;			 // file not found 
+        //go back to initial dir
+        if (!backTrackPath.empty())
+        Chdir(backTrackPath);
+       return -1;			 // file not found 
     }
     fileHdr = new FileHeader;
     fileHdr->FetchFrom(sector);
@@ -277,14 +423,18 @@ FileSystem::Remove(const char *name)
 
     fileHdr->Deallocate(freeMap);  		// remove data blocks
     freeMap->Clear(sector);			// remove header block
-    directory->Remove(name);
+    directory->Remove(name.c_str());
 
     freeMap->WriteBack(freeMapFile);		// flush to disk
     directory->WriteBack(directoryFile);        // flush to disk
+    
     delete fileHdr;
     delete directory;
     delete freeMap;
-    return TRUE;
+    //go back to initial dir
+    if (!backTrackPath.empty())
+        Chdir(backTrackPath);
+    return 0;
 } 
 
 //----------------------------------------------------------------------
@@ -344,28 +494,32 @@ FileSystem::Print()
 //Mkdir
 //creates an empty directory called name in the current directory
 
-bool
+int
 FileSystem::Mkdir(const char* dirName) {
-        //TODO: for paths: save path, call chdir, create dir, call chdir again on saved path
-
-    //get path:
+    //separate path and name
     std::string path(dirName);
+    std::string name;
     std::string backTrackPath;
     int pos = path.find_last_of("/"); 
     if (pos == -1) {
         //no / in path so whole path is a name
         pos = 0;
+        name = path;
+        path.erase(0, std::string::npos);
     }
-    std::string name = path.substr(pos, std::string::npos);
-    path.erase(pos, std::string::npos);
+    else {
+         name = path.substr(pos+1, std::string::npos);
+         path.erase(pos, std::string::npos);
+    }
     //change to the right dir, and keep opposite path to be able to come back
     if (!path.empty())
         backTrackPath = Chdir(path);
 
     //create file representing the new dir in our current directory
-    if (!Create(name.c_str(), DirectoryFileSize, 1))  {
+    printf("creating file with name %s\n", name.c_str());
+    if (-1 == Create(name.c_str(), DirectoryFileSize, 1))  {
         printf("fileSys::mkdir: could not create newDir file %s\n", dirName);
-        return 0;
+        return -1;
     }
     
     //get relevant info on our current directory
@@ -374,14 +528,14 @@ FileSystem::Mkdir(const char* dirName) {
     int cDSector = directoryFile->getSector();
     if (cDSector <= 0) {
         printf("fileSys::Mkdir: currentDir sector is bad\n");
-        return 0;
+        return -1;
     }
     
     //get sector of our newly created directory file
     int nDSector = currentDir->Find(name.c_str());
     if (nDSector <= 0) {
         printf("fileSys::Mkdir: newDir sector is bad\n");
-        return 0;
+        return -1;
     }
     
     //create directory object for the new dir in memory
@@ -396,31 +550,39 @@ FileSystem::Mkdir(const char* dirName) {
     OpenFile * newDirFile = Open(name.c_str());
     if (newDirFile == NULL) {
         printf("fileSys::Mkdir: could not open newDirFile %s\n", dirName);
-        return 0;
+        return -1;
     }
     newDir->WriteBack(newDirFile);
+    Close(newDirFile);
     
     if (!backTrackPath.empty())
         Chdir(backTrackPath);
     
-    return 1;
-
+    return 0;
  }
  
  
 //Rmdir
 //pre: directory must be empty
-//removes the directory called name in the current directory"
+//removes the directory specifed by dirName
 
-bool
+int
 FileSystem::Rmdir(const char* dirName) {
-    
-    //get path:
+    //separate path and name
     std::string path(dirName);
+    std::string name;
     std::string backTrackPath;
     int pos = path.find_last_of("/"); 
-    std::string name = path.substr(pos, std::string::npos);
-    path.erase(pos, std::string::npos);
+    if (pos == -1) {
+        //no / in path so whole path is a name
+        pos = 0;
+        name = path;
+        path.erase(0, std::string::npos);
+    }
+    else {
+         name = path.substr(pos+1, std::string::npos);
+         path.erase(pos, std::string::npos);
+    }
     //change to the right dir, and keep opposite path to be able to come back
     if (!path.empty())
         backTrackPath = Chdir(path);
@@ -430,14 +592,15 @@ FileSystem::Rmdir(const char* dirName) {
     OpenFile *rmDirFile = Open(name.c_str());
     if (rmDirFile == NULL) {
         printf("fileSys::Rmdir: could not open rmDirFile %s\n", dirName);
-        return 0;
+        return -1;
     }
     rmDir->FetchFrom(rmDirFile);
+    Close(rmDirFile);
     
     //check dir is empty
     if (!rmDir->Empty()) {
         printf("filesys::Rmdir: directory %s is not empty\n", dirName);
-        return 0;
+        return -1;
     }
     Remove(name.c_str());
     
@@ -445,12 +608,13 @@ FileSystem::Rmdir(const char* dirName) {
     if (!backTrackPath.empty())
         Chdir(backTrackPath);
         
-    return 1;
+    return 0;
 
  }
  
  
  //TODO: maybe change so that on failure, doesn't change working dir?
+ 
 std::string
 FileSystem::Chdir(std::string path) {
         
@@ -474,6 +638,7 @@ FileSystem::Chdir(std::string path) {
            printf("filesys::Chdir: cannot open directory %s\n", name.c_str());
            return NULL;
         }
+        Close(directoryFile);
         directoryFile = destDirFile;
 
         //update current working path and directory name
@@ -507,6 +672,14 @@ FileSystem::GetWorkingDir() {
     return workingDirName.c_str();
 }
  
-
+ 
+void 
+FileSystem::switchProcess(OpenFile *openFileTable[10], OpenFile *currDirFile) {
+    /*for (int i = 0; i < 10; i++) {
+        if (openFiles[i] != NULL) {*/
+            
+    openFiles = openFileTable;
+    directoryFile = currDirFile;
+}
  
 

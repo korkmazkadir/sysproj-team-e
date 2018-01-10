@@ -68,15 +68,10 @@ class Directory {
                                                 //  in the directory
     void Print();			                    // Verbose print of the contents
                                                 //  of the directory -- all the file
-                                                //  names and their contents
-    const char * GetName();                     // return name of this directory
-    
+                                                //  names and their contents    
     bool Empty();                               // is directory empty?
   private:
     int tableSize;                              // Number of directory entries
-    char *dirName;
-    int fileCount = 2;                          // number of files in directory
-                                                //  including .. and .
     DirectoryEntry *table;		                // Table of pairs: 
                                                 //  <file name, file header location> 
 
