@@ -63,6 +63,8 @@ code/threads/synch.cc
 code/threads/synch.h
 code/threads/synchlist.cc
 code/threads/synchlist.h
+code/threads/synchtests.cc
+code/threads/synchtests.h
 code/threads/system.cc
 code/threads/system.h
 code/threads/thread.cc
@@ -89,3 +91,13 @@ code/userprog/usersemaphore.h
 code/userprog/usersemaphore.cc
 code/userprog/semaphore.h
 code/test/testsemaphores.c
+code/test/nachos_stdio.h
+code/test/printf_test.c
+code/test/test_stdio_input.c
+code/test/test_stdio_output_input.c
+code/test/utility.h
+code/test/exec_test.c
+code/test/prog_1.c
+code/test/prog_2.c
+code/userprog/frameprovider.cc
+code/userprog/frameprovider.h

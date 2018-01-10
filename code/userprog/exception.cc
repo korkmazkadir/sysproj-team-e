@@ -14,8 +14,6 @@
 //      Interrupts (which can also cause control to transfer from user
 //      code into the Nachos kernel) are handled elsewhere.
 //
-// For now, this only handles the Halt() system call.
-// Everything else core dumps.
 //
 // Copyright (c) 1992-1993 The Regents of the University of California.
 // All rights reserved.  See copyright.h for copyright notice and limitation 
@@ -108,8 +106,7 @@ void ExceptionHandler (ExceptionType which)
         switch (type) {
             case SC_Halt:
             {
-                DEBUG ('a', "Shutdown, initiated by user program.\n");
-                haltSync.P();
+                printf("SHUTDONW %d \n", currentThread->Tid());
                 interrupt->Halt ();
             } break;
 
@@ -170,10 +167,9 @@ void ExceptionHandler (ExceptionType which)
 
             case SC_Exit:
             {
-                int retValue = machine->ReadRegister(FIRST_PARAM_REGISTER);
-                haltSync.P();
-                //CAREFUL: was calling exit() directly without going via Exit() wrapper as defined in sysdep. was confusing
-                Exit(retValue);
+                machine->ReadRegister(FIRST_PARAM_REGISTER);
+                //printf("EXIT %d %d \n", currentThread->Tid(), retValue);
+                do_ExitCurrentProcess();
             } break;
 
             case SC_UserThreadCreate:
@@ -184,7 +180,7 @@ void ExceptionHandler (ExceptionType which)
 
                 int retAddress = machine->ReadRegister(8);
 
-                int threadRetVal = do_UserThreadCreate(funPtr, arg, retAddress);
+                int threadRetVal = do_UserThreadCreate(funPtr, arg, retAddress, currentThread->space, false);
                 machine->WriteRegister(RET_VALUE_REGISTER, threadRetVal);
             } break;
 
@@ -240,15 +236,25 @@ void ExceptionHandler (ExceptionType which)
                 machine->WriteRegister(RET_VALUE_REGISTER, tid);
             } break;
 
+            case SC_ForkExec:
+            {
+                int fileNameAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                char fileName [MAX_WRITE_BUF_SIZE];
+                copyStringFromMachine(fileNameAddress, fileName, MAX_WRITE_BUF_SIZE);
+                int result = createProcess(fileName);
+                machine->WriteRegister(RET_VALUE_REGISTER,result);
+                break;
+            }
+            
             case SC_AssertionFailed:
             {
                 int fileNameAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
                 int lineNumber = machine->ReadRegister(SECOND_PARAM_REGISTER);
                 char fileName [MAX_WRITE_BUF_SIZE];
                 copyStringFromMachine(fileNameAddress, fileName, MAX_WRITE_BUF_SIZE);
-                interrupt->AssertionFailed(fileName,lineNumber);
-                break;
-            }
+                fprintf(stderr,"\nERROR : Assertion failed. FILE : %s LINE : %d\n\n", fileName, lineNumber);
+                Exit (123);
+            } break;
             
             default:
             {

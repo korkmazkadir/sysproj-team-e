@@ -91,12 +91,12 @@ Parameters: semPtr    <- pointer to the semaphore
 Return value: 0 when semaphore was initialized successfully
              -1 when semaphore quota is reached and no more semaphores can be created
              -2 when a negative value is passed as an initial value
+             -3 when trying to initialize the same semaphore multiple times
 
 
 Description:
 
 Initializes the semaphore pointed to by semPtr with the initial value val
-Initializing the same semaphore multiple times results in an undefined behaviour (TBD)
 
 ========================================================================================
 

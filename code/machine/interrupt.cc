@@ -249,16 +249,6 @@ Interrupt::Halt()
 }
 
 //----------------------------------------------------------------------
-// Interrupt::AssertionFailed
-// 	Stops the program assertion failed.
-//----------------------------------------------------------------------
-void
-Interrupt::AssertionFailed(char *fileName, int lineNumber){
-    fprintf(stderr,"\nERORR : Assertion failed. FILE : %s LINE : %d\n\n",fileName,lineNumber);
-    Exit (123);
-}
-
-//----------------------------------------------------------------------
 // Interrupt::Schedule
 // 	Arrange for the CPU to be interrupted when simulated time
 //	reaches "now + when".

@@ -7,6 +7,7 @@
 
 #include "copyright.h"
 #include "system.h"
+#include "userthread.h"
 
 // This defines *all* of the global data structures used by Nachos.
 // These are all initialized and de-allocated by this file.
@@ -176,6 +177,33 @@ Initialize (int argc, char **argv)
     postOffice = new PostOffice (netname, rely, 10);
 #endif
 }
+
+int createProcess(char *filename){
+
+    OpenFile *executable = fileSystem->Open(filename);
+    AddrSpace *space;
+
+    if (executable == NULL) {
+        printf("Unable to open file %s\n", filename);
+        return -1;
+    }
+    
+
+    space = new AddrSpace(executable);
+
+    if (!currentThread->space) {
+        currentThread->space = space;
+    }
+
+    int retVal = do_KernelThreadCreate(space);
+
+    delete executable; // close file
+
+
+    return retVal;
+}
+
+ 
 
 //----------------------------------------------------------------------
 // Cleanup
