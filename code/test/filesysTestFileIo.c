@@ -3,10 +3,6 @@
 #define BUF_SIZE 1500
 
 int main() {
-     Exit(99);
-  
-  /*
-    
     char buf[BUF_SIZE];
     OpenFileId ofid;
     int numBytes;
@@ -17,7 +13,7 @@ int main() {
         _printf("userprogram: Create failed\n");
         Exit(1);
     }
-    //List();
+    List();
     ofid = Open("myfile");
     if (ofid == 0) {
         _printf("userprogram: Open failed\n");
@@ -29,7 +25,7 @@ int main() {
         _printf("userprogram: Write failed\n");
         Exit(3);
     }
-    if (Close(ofid) != -1) {
+    if (Close(ofid) == -1) {
         _printf("userprogram: Close failed\n");
         Exit(4);
     }
@@ -45,7 +41,7 @@ int main() {
     Close(ofid);
     
     
-//write 2 bytes at a specific location
+//write 2 bytes at location
     ofid = Open("myfile");
     if (ofid == 0) {
         _printf("userprogram: Open failed\n");
@@ -56,15 +52,23 @@ int main() {
         _printf("userprogram: WriteAt failed\n");
         Exit(7);
     }
+    
+//read 2 bytes from at location
     numBytes = ReadAt(buf, 10, ofid, 0);
     if (numBytes == -1) {
         _printf("userprogram: ReadAt failed\n");
         Exit(8);
     }
     _printf("userprogram: expect 01hi456789 buf contains %s\n", buf);
-    Close(ofid);
 
-//read 2 bytes from a specific location
-
-    return 0;*/
+    if (Close(ofid) == -1) {
+        _printf("userprogram: Close failed\n");
+        Exit(10);
+    }
+    
+    if (Remove("myfile") == -1) {
+        _printf("userprogram: Remove failed\n");
+        Exit(11);
+    }
+    return 0;
 }

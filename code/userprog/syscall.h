@@ -53,6 +53,7 @@
 #define SC_Chdir 29
 #define SC_ReadAt 30
 #define SC_WriteAt 31
+#define SC_Remove 32
 
 #define SC_AssertionFailed     100
 
@@ -172,13 +173,13 @@ int Close (OpenFileId id);
  * creates directory specified by the path "name".
  * returns 0 on failure 1 on success
  */
-int Mkdir(const char* name);
+int Mkdir(const char *name);
 
 /* Rmdir
  * removes directory specified by the path"name".
  * returns 0 on failure 1 on success
  */
-int Rmdir(const char* name);
+int Rmdir(const char *name);
 
 /* List
  * lists contents of filesystem
@@ -188,7 +189,12 @@ void List();
 /* Chdir
  * change to subdirectory specified by the path "name"
  */
-void Chdir(const char* name);
+void Chdir(const char *name);
+
+/* Remove
+ * remove the file specified by the path "name"
+ */
+int Remove(const char *name);
 
 //--- end filesystem ---
 

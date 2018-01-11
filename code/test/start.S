@@ -308,6 +308,14 @@ WriteAt:
 	j	$31
 	.end WriteAt
     
+	.globl Remove
+	.ent	Remove
+Remove:
+	addiu $2,$0,SC_Remove
+	syscall
+	j	$31
+	.end Remove
+    
 /* dummy function to keep gcc happy */
         .globl  __main
         .ent    __main

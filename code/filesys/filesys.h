@@ -66,6 +66,11 @@ class FileSystem {
 };
 
 #else // FILESYS
+class Semaphore;
+typedef struct S_fileInfo {
+    OpenFile *file;
+    Semaphore *sem;
+} FileInfo;
 
 class FileSystem {
   public:
@@ -102,7 +107,8 @@ class FileSystem {
                                                     // represented as a file
     OpenFile* directoryFile;		                // current directory -- list of 
                                                      // file names, represented as a file
-    OpenFile** openFiles;                           //table of currently open files
+    //OpenFile **openFiles;                           //table of currently open files
+    FileInfo **openFiles;
     std::string workingPath;
     std::string workingDirName;                       //name of current directory (starts as root)
                                                     

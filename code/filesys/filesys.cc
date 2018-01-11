@@ -50,6 +50,8 @@
 #include "directory.h"
 #include "filehdr.h"
 #include "filesys.h"
+#include "synch.h"
+
 
 // Sectors containing the file headers for the bitmap of free sectors,
 // and the directory of files.  These file headers are placed in well-known 
@@ -144,10 +146,15 @@ FileSystem::FileSystem(bool format)
     workingPath = "/";
     
     //allocate space for openFiles table
-    openFiles = (OpenFile**) malloc(sizeof(OpenFile*) * 10);
+    openFiles = (FileInfo**) malloc(sizeof(FileInfo*) * 10);
     if (openFiles == NULL) {
         printf("FileSystem::constructor malloc for openFiles[] failed\n");
         Exit(1);
+    }
+    for (int i = 0; i < 10; i++) {
+        openFiles[i] = (FileInfo*) malloc(sizeof(struct S_fileInfo));
+        openFiles[i]->file = NULL;
+        openFiles[i]->sem = NULL;
     }
 }
 
@@ -305,32 +312,31 @@ FileSystem::Open(std::string fileName)
     //check if is already opened
     int i;
     for (i = 0; i < 10; i++) {
-        if (openFiles[i] != NULL) {
-            int tmp = openFiles[i]->getSector();
+        if (openFiles[i]->file != NULL) {
+            int tmp = openFiles[i]->file->getSector();
             if (sector == tmp) {
                 break;
             }
         }
     }
-    
-    
     if (i != 10) {
         //file found
         printf("FileSystem::Open the file %s is already open\n", name.c_str());
-        //return to initial dir
-        if (!backTrackPath.empty())
-            Chdir(backTrackPath);
-        return NULL;
+        //wait for it to be closed
+        openFiles[i]->sem->P();
     }
+
     
-    if (sector >= 0) 		
+    if (sector >= 0) {	
         openFile = new OpenFile(sector);	// name was found in directory 
+    }
     delete directory;
     
     //add to openFiles table
-    for (i = 0; i < 10 && openFiles[i] != NULL; i++);
+    for (i = 0; i < 10 && openFiles[i]->file != NULL; i++);
     if (i != 10) {
-        openFiles[i] = openFile;
+        openFiles[i]->file = openFile;
+        openFiles[i]->sem = new Semaphore("openFile sem", 0);
     }
     else {
         printf("FileSystem::Open max open file number reached. Cannot open %s\n", name.c_str());
@@ -357,21 +363,20 @@ FileSystem::Close(OpenFile *ofid) {
     int i;
     bool found = FALSE;
     for (i = 0; i < 10; i++) {
-        if (openFiles[i] == ofid) {
+        if (openFiles[i]->file == ofid) {
             found = TRUE;
             break;
         }
     }
-    
-    
     if (!found) {
         //file not found
         printf("FileSystem::Close the file of id %d is not open\n", (int)ofid);
         return -1;
     }
     
-    delete openFiles[i];
-    openFiles[i] = NULL;
+    delete openFiles[i]->file;
+    openFiles[i]->file = NULL;
+    openFiles[i]->sem->V();
     return 0;
 }
 
@@ -383,8 +388,8 @@ FileSystem::Close(OpenFile *ofid) {
 //	    Delete the space for its data blocks
 //	    Write changes to directory, bitmap back to disk
 //
-//	Return TRUE if the file was deleted, FALSE if the file wasn't
-//	in the file system.
+//	Return 0 if the file was deleted, -1 if the file wasn't
+//	in the file system or was still open.
 //
 //	"name" -- the text name of the file to be removed
 //----------------------------------------------------------------------
@@ -411,6 +416,7 @@ FileSystem::Remove(std::string fileName)
     if (!path.empty())
         backTrackPath = Chdir(path);
         
+
         
     Directory *directory;
     BitMap *freeMap;
@@ -427,6 +433,24 @@ FileSystem::Remove(std::string fileName)
         Chdir(backTrackPath);
        return -1;			 // file not found 
     }
+    
+    //check if is opened
+    int i;
+    for (i = 0; i < 10; i++) {
+        if (openFiles[i]->file != NULL) {
+            int tmp = openFiles[i]->file->getSector();
+            if (sector == tmp) {
+                break;
+            }
+        }
+    }
+    if (i != 10) {
+        //file found
+        printf("FileSystem::Remove the file %s is still open\n", name.c_str());
+        //wait for it to be closed
+        openFiles[i]->sem->P();
+    }
+    
     fileHdr = new FileHeader;
     fileHdr->FetchFrom(sector);
 
@@ -706,10 +730,10 @@ FileSystem::GetWorkingDir() {
 void 
 FileSystem::switchProcess(OpenFile *openFileTable[10], OpenFile *currDirFile) {
     /*for (int i = 0; i < 10; i++) {
-        if (openFiles[i] != NULL) {*/
+        if (openFiles[i] != NULL) {
             
     openFiles = openFileTable;
-    directoryFile = currDirFile;
+    directoryFile = currDirFile;*/
 }
  
 

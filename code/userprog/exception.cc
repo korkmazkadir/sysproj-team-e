@@ -386,7 +386,15 @@ void ExceptionHandler (ExceptionType which)
                 machine->WriteRegister(RET_VALUE_REGISTER, result);
             } break;
 
-
+            case SC_Remove:
+            {
+                int fromAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                char local_buf[MAX_WRITE_BUF_SIZE];
+                copyStringFromMachine(fromAddress, local_buf, MAX_WRITE_BUF_SIZE);
+                int result = fileSystem->Remove(local_buf);
+                machine->WriteRegister(RET_VALUE_REGISTER, result);
+                
+            } break;
             //      ---- End File System ----
             default:
             {
