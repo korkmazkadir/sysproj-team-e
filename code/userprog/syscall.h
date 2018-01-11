@@ -46,6 +46,12 @@
 #define SC_UserThreadSelfId 24
 #define SC_ForkExec 25
 
+#define SC_ListDirectoryContent 50
+#define SC_CreateDirectory 51
+#define SC_RemoveDirectory 52
+#define SC_ChangeDirectory 53
+
+
 #define SC_AssertionFailed     100
 
 
@@ -175,6 +181,33 @@ void AssertionFailed(char *fileName, int lineNumber);
  * 
  */
 int ForkExec(char *fileName);
+
+
+
+//#define SC_ListDirectoryContent 50
+//#define SC_CreateDirectory 51
+//#define SC_DeleteDirectory 52
+
+/* Lists content of the current directory
+ * 
+ */
+void ListDirectoryContent();
+
+/* Lists content of the current directory
+ * 
+ */
+int CreateDirectory(char *directoryName);
+
+/* Changes directory
+ * 
+ */
+int ChangeDirectory(char *directoryName);
+
+/* Removes directory
+ * 
+ */
+int RemoveDirectory(char *directoryName);
+
 
 #endif // IN_USER_MODE
 

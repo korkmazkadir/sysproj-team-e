@@ -38,6 +38,12 @@ extern SemaphoreManager *semaphoreManager;
 
 int createProcess(char *filename);
 
+void listDirectoryContent(); // list directory (ls)
+int createDirectory(char *name); // change directory (cd)
+int changeDirectory(char *name); // create directory (mkdir)
+int removeDirectory(char *name); // remove directory (rm)
+
+
 #ifdef USER_PROGRAM
 #include "machine.h"
 extern Machine *machine;	// user program memory and registers

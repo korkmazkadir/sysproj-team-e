@@ -203,7 +203,34 @@ int createProcess(char *filename){
     return retVal;
 }
 
- 
+//----------------------------------------------------------------------
+// Lists directory content ls
+//----------------------------------------------------------------------
+void listDirectoryContent(){
+    fileSystem->List();
+}
+
+//----------------------------------------------------------------------
+// Creates new directory in the current director mkdir
+//----------------------------------------------------------------------
+int createDirectory(char *name){
+    return fileSystem->CreateDirectory(name);
+}
+
+//----------------------------------------------------------------------
+// Changes directory cd
+//----------------------------------------------------------------------
+int changeDirectory(char *name){
+    return fileSystem->ChangeDirectory(name);
+}
+
+
+//----------------------------------------------------------------------
+// Removes directory if it is empty rm
+//----------------------------------------------------------------------
+int removeDirectory(char *name){
+    return fileSystem->RemoveDirectory(name);
+}
 
 //----------------------------------------------------------------------
 // Cleanup

@@ -76,6 +76,15 @@ static void copyStringToMachine(char *from, int to, unsigned size) {
     }
 }
 
+static void removeNewLine(char *str) {
+    for(int i = 0;i<MAX_WRITE_BUF_SIZE && str[i] != '\0' ;i++){
+        if(str[i] == '\n'){
+            str[i] = '\0';
+            break;
+        }
+    }
+}
+
 //----------------------------------------------------------------------
 // ExceptionHandler
 //      Entry point into the Nachos kernel.  Called when a user program
@@ -242,6 +251,46 @@ void ExceptionHandler (ExceptionType which)
                 char fileName [MAX_WRITE_BUF_SIZE];
                 copyStringFromMachine(fileNameAddress, fileName, MAX_WRITE_BUF_SIZE);
                 int result = createProcess(fileName);
+                machine->WriteRegister(RET_VALUE_REGISTER,result);
+                break;
+            }
+            
+            case SC_ListDirectoryContent:
+            {
+                printf(">> Listing directory content...\n");
+                listDirectoryContent();
+                break;
+            }
+            
+            case SC_CreateDirectory:
+            {
+                int directoryNameAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                char directoryName [MAX_WRITE_BUF_SIZE];
+                copyStringFromMachine(directoryNameAddress, directoryName, MAX_WRITE_BUF_SIZE);
+                removeNewLine(directoryName);
+                int result = createDirectory(directoryName);
+                machine->WriteRegister(RET_VALUE_REGISTER,result);
+                break;
+            }
+            
+            case SC_ChangeDirectory:
+            {
+                int directoryNameAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                char directoryName [MAX_WRITE_BUF_SIZE];
+                copyStringFromMachine(directoryNameAddress, directoryName, MAX_WRITE_BUF_SIZE);
+                removeNewLine(directoryName);
+                int result = changeDirectory(directoryName);
+                machine->WriteRegister(RET_VALUE_REGISTER,result);
+                break;
+            }
+            
+            case SC_RemoveDirectory :
+            {
+                int directoryNameAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                char directoryName [MAX_WRITE_BUF_SIZE];
+                copyStringFromMachine(directoryNameAddress, directoryName, MAX_WRITE_BUF_SIZE);
+                removeNewLine(directoryName);
+                int result = removeDirectory(directoryName);
                 machine->WriteRegister(RET_VALUE_REGISTER,result);
                 break;
             }

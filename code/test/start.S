@@ -257,6 +257,42 @@ ForkExec :
     syscall
     j	$31
     .end ForkExec
+
+
+    .globl ListDirectoryContent
+    .ent   ListDirectoryContent
+ListDirectoryContent :
+    addiu $2,$0,SC_ListDirectoryContent
+    syscall
+    j	$31
+    .end ListDirectoryContent
+
+
+    .globl CreateDirectory
+    .ent   CreateDirectory
+CreateDirectory :
+    addiu $2,$0,SC_CreateDirectory
+    syscall
+    j	$31
+    .end CreateDirectory
+
+    .globl ChangeDirectory
+    .ent   ChangeDirectory
+ChangeDirectory :
+    addiu $2,$0,SC_ChangeDirectory
+    syscall
+    j	$31
+    .end ChangeDirectory
+
+
+    .globl RemoveDirectory
+    .ent   RemoveDirectory
+RemoveDirectory :
+    addiu $2,$0,SC_RemoveDirectory
+    syscall
+    j	$31
+    .end RemoveDirectory
+
 /* dummy function to keep gcc happy */
         .globl  __main
         .ent    __main

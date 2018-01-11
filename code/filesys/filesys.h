@@ -74,9 +74,14 @@ class FileSystem {
 					// the disk, so initialize the directory
     					// and the bitmap of free blocks.
 
-    bool Create(const char *name, int initialSize);  	
-					// Create a file (UNIX creat)
+    bool Create(const char *name, int initialSize);  	// Create a file (UNIX creat)
 
+    bool CreateDirectory(const char *name); //Creates a directory
+    
+    int ChangeDirectory(const char *name); //Changes current directory
+    
+    int RemoveDirectory(const char *name); //Removes current directory
+    
     OpenFile* Open(const char *name); 	// Open a file (UNIX open)
 
     bool Remove(const char *name); 	// Delete a file (UNIX unlink)
@@ -90,6 +95,8 @@ class FileSystem {
 					// represented as a file
    OpenFile* directoryFile;		// "Root" directory -- list of 
 					// file names, represented as a file
+   OpenFile* currentDirectoryFile;      // Current Directory;
+   
 };
 
 #endif // FILESYS

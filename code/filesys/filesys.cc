@@ -43,6 +43,8 @@
 // All rights reserved.  See copyright.h for copyright notice and limitation 
 // of liability and disclaimer of warranty provisions.
 
+#include <future>
+
 #include "copyright.h"
 
 #include "disk.h"
@@ -115,6 +117,8 @@ FileSystem::FileSystem(bool format)
         freeMapFile = new OpenFile(FreeMapSector);
         directoryFile = new OpenFile(DirectorySector);
      
+        //currentDirectoryFile = new OpenFile(DirectorySector);
+        
     // Once we have the files "open", we can write the initial version
     // of each file back to disk.  The directory at this point is completely
     // empty; but the bitmap has been changed to reflect the fact that
@@ -213,6 +217,141 @@ FileSystem::Create(const char *name, int initialSize)
     delete directory;
     return success;
 }
+
+
+bool
+FileSystem::CreateDirectory(const char *name){
+
+    Directory *directory;
+    BitMap *freeMap;
+    FileHeader *hdr;
+    int sector;
+    bool success;
+
+    int initialSize = DirectoryFileSize;
+
+    DEBUG('f', "Creating directory %s, size %d\n", name, initialSize);
+
+    directory = new Directory(NumDirEntries);
+    directory->FetchFrom(directoryFile);
+
+    if (directory->Find(name) != -1)
+      success = FALSE;			// file is already in directory
+    else {	
+        freeMap = new BitMap(NumSectors);
+        freeMap->FetchFrom(freeMapFile);
+        sector = freeMap->Find();	// find a sector to hold the file header
+    	if (sector == -1) 		
+            success = FALSE;		// no free block for file header 
+        else if (!directory->AddDirectory(name, sector))
+            success = FALSE;	// no space in directory
+	else {
+    	    hdr = new FileHeader;
+	    if (!hdr->Allocate(freeMap, initialSize))
+            	success = FALSE;	// no space on disk for data
+	    else {	
+	    	success = TRUE;
+		// everthing worked, flush all changes back to disk
+                
+ 
+                OpenFile *dirFile = new OpenFile(sector);               
+                Directory *newDirectory =  new Directory(NumDirEntries);
+                newDirectory->SetSpecialDirectories(sector,directory);
+                newDirectory->WriteBack(dirFile);
+                
+                
+                delete dirFile;
+                delete newDirectory;
+                
+    	     	hdr->WriteBack(sector); 		
+    	    	directory->WriteBack(directoryFile);
+    	    	freeMap->WriteBack(freeMapFile);
+                
+                printf("______________________________\n");
+                List();
+                printf("______________________________\n");
+                
+	    }
+            delete hdr;
+	}
+        delete freeMap;
+    }
+    delete directory;
+    return success;   
+}
+
+
+int FileSystem::ChangeDirectory(const char *name){
+    Directory *directory;
+    directory = new Directory(NumDirEntries);
+    directory->FetchFrom(directoryFile);
+    int sectorNumber  = directory->Find(name);
+    
+    printf("sector number of directory %d \n", sectorNumber);
+    
+    if(sectorNumber >= 0){
+        directoryFile = new OpenFile(sectorNumber);
+    }
+    
+    delete directory;
+    return sectorNumber >= 0 ? 0 : -1;
+}
+
+//----------------------------------------------------------------------
+// FileSystem::RemoveDirectory
+// 	Removes a directory.
+// 
+//  "name" -- name of the directory to remove
+//
+// if sucessful returns 0, 
+// if there is no directory with the name returns -1
+// if directory contains entries returns -2
+// if remove operation unseccessful returns -3
+//----------------------------------------------------------------------
+
+int FileSystem::RemoveDirectory(const char *name){
+    
+    int result;
+    Directory *directory;
+    Directory *directoryToRemove;
+   
+    OpenFile *directoryToRemoveFile;
+            
+    directory = new Directory(NumDirEntries);
+    directory->FetchFrom(directoryFile);
+    
+    int entryCount = 0;
+    
+    int sectorNumber  = directory->Find(name);
+    if(sectorNumber < 0){
+        result = -1;
+        goto END;
+    }
+ 
+    directoryToRemove = new Directory(NumDirEntries);
+    directoryToRemoveFile = new OpenFile(sectorNumber);
+    directoryToRemove->FetchFrom(directoryToRemoveFile);
+    
+    entryCount = directoryToRemove->GetEntryCount();
+    printf("entry count %d \n",entryCount);
+    if(entryCount > 2){
+        result =  -2;
+        goto END;
+    }
+    
+    if(this->Remove(name)){
+        result = 0;
+    }else{
+        result = -3;
+    }
+   
+END:
+    delete directory;
+    delete directoryToRemove;
+    delete directoryToRemoveFile;
+    return result;
+}
+
 
 //----------------------------------------------------------------------
 // FileSystem::Open

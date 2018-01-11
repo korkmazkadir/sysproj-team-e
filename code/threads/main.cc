@@ -29,7 +29,7 @@
 //    -f causes the physical disk to be formatted
 //    -cp copies a file from UNIX to Nachos
 //    -p prints a Nachos file to stdout
-//    -r removes a Nachos file from the file system
+//    -r removes a Nachos file from the file system-l lists the contents of the Nachos
 //    -l lists the contents of the Nachos directory
 //    -D prints the contents of the entire file system 
 //    -t tests the performance of the Nachos file system
@@ -169,6 +169,7 @@ main (int argc, char **argv)
 #endif // NETWORK
     }
 
+    
     currentThread->Finish ();	// NOTE: if the procedure "main" 
     // returns, then the program "nachos"
     // will exit (as any other normal program
