@@ -1,0 +1,16 @@
+PARTIE III
+"... the concurrency is not to be managed with this solution [...] If concurrency is to be managed you should ...
+Are we supposed to manage concurrency here or not?
+Do we choose?
+
+
+
+
+ideas for concurrency managements / data structs:
+
+filesys needs to provide funcitons for calling upon context switch to enable chnage of open files table. also do a call to chdir(newthreadDir)
+
+
+NOTES
+Root directory does not have . and ..
+

@@ -184,6 +184,7 @@ int
 FileSystem::Create(std::string fileName, int initialSize, bool isDir)
 {
     if ((unsigned)initialSize > MaxFileSize) {
+        printf("fileSystem::Create file %s is too big\n", fileName.c_str());
         return -1;
     }
     //separate path and name
@@ -210,7 +211,7 @@ FileSystem::Create(std::string fileName, int initialSize, bool isDir)
     BitMap *freeMap;
     FileHeader *hdr;
     int sector;
-    bool success;
+    int success;
 
     DEBUG('f', "Creating file %s, size %d\n", name.c_str(), initialSize);
 
@@ -218,6 +219,7 @@ FileSystem::Create(std::string fileName, int initialSize, bool isDir)
     directory->FetchFrom(directoryFile);
 
     if (directory->Find(name.c_str()) != -1) {
+        printf("FileSystem::Create file %s already exists\n", name.c_str());
         success = -1;			// file is already in directory
     }
     else {	
@@ -225,15 +227,19 @@ FileSystem::Create(std::string fileName, int initialSize, bool isDir)
         freeMap->FetchFrom(freeMapFile);
         sector = freeMap->Find();	// find a sector to hold the file header
     	if (sector == -1) {		
+            printf("FileSystem::Create for file %s : no free block for file header\n", name.c_str());
             success = -1;	        // no free block for file header 
         }	
         else if (!directory->Add(name.c_str(), sector, isDir)) {
+                printf("FileSystem::Create for file %s : no space in directory\n", name.c_str());
                 success = -1;	    // no space in directory
              }
              else {
                 hdr = new FileHeader;
-                if (!hdr->Allocate(freeMap, initialSize))
+                if (!hdr->Allocate(freeMap, initialSize)) {
+                    printf("FileSystem::Create for file %s : no space on disk\n", name.c_str());
                     success = -1;	// no space on disk for data
+                }
                 else {	
                     success = 0;
                     // everthing worked, flush all changes back to disk
@@ -311,6 +317,9 @@ FileSystem::Open(std::string fileName)
     if (i != 10) {
         //file found
         printf("FileSystem::Open the file %s is already open\n", name.c_str());
+        //return to initial dir
+        if (!backTrackPath.empty())
+            Chdir(backTrackPath);
         return NULL;
     }
     
@@ -325,6 +334,9 @@ FileSystem::Open(std::string fileName)
     }
     else {
         printf("FileSystem::Open max open file number reached. Cannot open %s\n", name.c_str());
+        //return to initial dir
+        if (!backTrackPath.empty())
+            Chdir(backTrackPath);
         return NULL;
     }
         
@@ -508,8 +520,8 @@ FileSystem::Mkdir(const char* dirName) {
         path.erase(0, std::string::npos);
     }
     else {
-         name = path.substr(pos+1, std::string::npos);
-         path.erase(pos, std::string::npos);
+        name = path.substr(pos+1, std::string::npos);
+        path.erase(pos, std::string::npos);
     }
     //change to the right dir, and keep opposite path to be able to come back
     if (!path.empty())
@@ -519,6 +531,9 @@ FileSystem::Mkdir(const char* dirName) {
     printf("creating file with name %s\n", name.c_str());
     if (-1 == Create(name.c_str(), DirectoryFileSize, 1))  {
         printf("fileSys::mkdir: could not create newDir file %s\n", dirName);
+        //return to initial dir
+        if (!backTrackPath.empty())
+            Chdir(backTrackPath);
         return -1;
     }
     
@@ -528,6 +543,9 @@ FileSystem::Mkdir(const char* dirName) {
     int cDSector = directoryFile->getSector();
     if (cDSector <= 0) {
         printf("fileSys::Mkdir: currentDir sector is bad\n");
+        //return to initial dir
+        if (!backTrackPath.empty())
+            Chdir(backTrackPath);
         return -1;
     }
     
@@ -535,6 +553,9 @@ FileSystem::Mkdir(const char* dirName) {
     int nDSector = currentDir->Find(name.c_str());
     if (nDSector <= 0) {
         printf("fileSys::Mkdir: newDir sector is bad\n");
+        //return to initial dir
+        if (!backTrackPath.empty())
+            Chdir(backTrackPath);
         return -1;
     }
     
@@ -550,6 +571,9 @@ FileSystem::Mkdir(const char* dirName) {
     OpenFile * newDirFile = Open(name.c_str());
     if (newDirFile == NULL) {
         printf("fileSys::Mkdir: could not open newDirFile %s\n", dirName);
+        //return to initial dir
+        if (!backTrackPath.empty())
+            Chdir(backTrackPath);
         return -1;
     }
     newDir->WriteBack(newDirFile);
@@ -592,6 +616,9 @@ FileSystem::Rmdir(const char* dirName) {
     OpenFile *rmDirFile = Open(name.c_str());
     if (rmDirFile == NULL) {
         printf("fileSys::Rmdir: could not open rmDirFile %s\n", dirName);
+        //return to initial dir
+        if (!backTrackPath.empty())
+            Chdir(backTrackPath);
         return -1;
     }
     rmDir->FetchFrom(rmDirFile);
@@ -635,8 +662,11 @@ FileSystem::Chdir(std::string path) {
         
         OpenFile *destDirFile = Open(name.c_str());
         if (destDirFile == NULL) {
-           printf("filesys::Chdir: cannot open directory %s\n", name.c_str());
-           return NULL;
+            printf("filesys::Chdir: cannot open directory %s\n", name.c_str());
+            if (!oppositePath.empty()) {
+                Chdir(oppositePath);
+            }
+            return NULL;
         }
         Close(directoryFile);
         directoryFile = destDirFile;

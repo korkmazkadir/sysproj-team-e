@@ -1,0 +1,2 @@
+Anna found hard crash if user doesn't call userthread join. For now (08/01) fix is to call join in processExit if needed. (avoids hard crash).
+Tried to force child thread exits but get weird segfaults / tries to run them again even if we call userthread exit and evict.
