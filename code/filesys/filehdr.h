@@ -19,6 +19,7 @@
 
 #define NumDirect 	((SectorSize - 2 * sizeof(int)) / sizeof(int))
 #define MaxFileSize 	(NumDirect * SectorSize)
+#define NumIndirect     (SectorSize/sizeof(int))
 
 // The following class defines the Nachos "file header" (in UNIX terms,  
 // the "i-node"), describing where on disk to find all of the data in the file.
@@ -34,6 +35,17 @@
 // There is no constructor; rather the file header can be initialized
 // by allocating blocks for the file (if it is a new file), or by
 // reading it from disk.
+
+
+
+class IndirectDataBlock{
+    public:
+        int dataSectors[NumIndirect];
+
+        void fetchIndirectBlocks(int sector);
+        void writeIndirectBlocks(int sector);
+};
+
 
 class FileHeader {
   public:
@@ -61,6 +73,7 @@ class FileHeader {
     int numSectors;			// Number of data sectors in the file
     int dataSectors[NumDirect];		// Disk sector numbers for each data 
 					// block in the file
+    
 };
 
 #endif // FILEHDR_H

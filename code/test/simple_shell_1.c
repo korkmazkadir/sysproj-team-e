@@ -10,7 +10,7 @@ int _userSelection = 0;
 
 
 void printCursor(){
-    _printf(">> ");
+    _printf("NashOS >> ");
 }
 
 
@@ -96,10 +96,14 @@ void decodeCommand(char *command){
         _userSelection = 1;
     }else if(compareString("cd",_command) == 0){
         _userSelection = 2;
+    }else if(compareString("mkdir",_command) == 0){
+        _userSelection = 3;
+    }else if(compareString("rm",_command) == 0){
+        _userSelection = 4;
+    }else if(compareString("exit",_command) == 0){
+        Exit(0);
     }
-    
-    //_printf("user selection %d\n",_userSelection);
-    
+
 }
 
 

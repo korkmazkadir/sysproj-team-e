@@ -177,9 +177,11 @@ OpenFile::WriteAt(const char *from, int numBytes, int position)
     bcopy(from, &buf[position - (firstSector * SectorSize)], numBytes);
 
 // write modified sectors back
-    for (i = firstSector; i <= lastSector; i++)	
+    for (i = firstSector; i <= lastSector; i++){
         synchDisk->WriteSector(hdr->ByteToSector(i * SectorSize), 
-					&buf[(i - firstSector) * SectorSize]);
+                                &buf[(i - firstSector) * SectorSize]);
+    }
+
     delete [] buf;
     return numBytes;
 }
