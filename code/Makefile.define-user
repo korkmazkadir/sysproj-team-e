@@ -94,4 +94,4 @@ USER_FLAVORS=$(ORIG_FLAVORS)
 
 USER_FLAVORS=step6
 
-$(eval $(call define-flavor,step6,userprog filesys-stub network, synchconsole.cc userthread.cc usersemaphore.cc frameprovider.cc synchtests.cc ))
+$(eval $(call define-flavor,step6,userprog filesys-stub network, securepost.cc synchconsole.cc userthread.cc usersemaphore.cc frameprovider.cc synchtests.cc))

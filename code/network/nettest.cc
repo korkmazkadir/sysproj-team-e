@@ -20,10 +20,11 @@
 
 #include "system.h"
 #include "network.h"
-#include "post.h"
+//#include "post.h"
+#include "securepost.h"
 #include "interrupt.h"
 
-// Test out message delivery, by doing the following:
+// Test out message /, by doing the following:
 //	1. send a message to the machine with ID "farAddr", at mail box #0
 //	2. wait for the other machine's message to arrive (in our mailbox #0)
 //	3. send an acknowledgment for the other machine's message
@@ -34,12 +35,12 @@ void
 MailTest(int farAddr)
 {
     PacketHeader outPktHdr, inPktHdr;
-    MailHeader outMailHdr, inMailHdr;
+    MailHeaderSecure outMailHdr, inMailHdr;
     const char *data = "Hello there!";
     const char *ack = "Got it!";
-    char buffer[MaxMailSize];
+    char buffer[MaxMailSizeSecure];
 
-    for(int j = 0; j < 2; j++) {
+    for(int j = 0; j < 1; j++) {
 
         // construct packet, mail header for original message
         // To: destination machine, mailbox 0
@@ -48,7 +49,7 @@ MailTest(int farAddr)
         outMailHdr.length = strlen(data) + 1;
 
 
-        for(int i = 0; i < 9; i+=2) {
+        for(int i = 0; i < 3; i+=2) {
             outMailHdr.to = i;
             outMailHdr.from = i+1;
             // Send the first message
@@ -56,26 +57,34 @@ MailTest(int farAddr)
         }
 
         
-        for(int i = 0; i < 10; i+=2) {
+        for(int i = 0; i < 4; i+=2) {
            // Wait for the first message from the other machine
            postOffice->Receive(i, &inPktHdr, &inMailHdr, buffer);
-           printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.to);
-           fflush(stdout);
+           if(inMailHdr.segments != -1) {
+               printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.to);
+               fflush(stdout);
 
-           // Send acknowledgement to the other machine (using "reply to" mailbox
-           // in the message that just arrived
-           outPktHdr.to = inPktHdr.from;
-           outMailHdr.to = inMailHdr.from;
-           outMailHdr.from = i+1;
-           outMailHdr.length = strlen(ack) + 1;
-           postOffice->Send(outPktHdr, outMailHdr, ack);
+               // Send acknowledgement to the other machine (using "reply to" mailbox
+               // in the message that just arrived
+               outPktHdr.to = inPktHdr.from;
+               outMailHdr.to = inMailHdr.from;
+               outMailHdr.from = i+1;
+               outMailHdr.length = strlen(ack) + 1;
+               postOffice->Send(outPktHdr, outMailHdr, ack);
+           } else {
+                printf("Timeout from %d\n", i);
+           }
         }
 
-        for(int i = 1; i < 10; i+=2) {
+        for(int i = 1; i < 4; i+=2) {
             // Wait for the ack from the other machine to the first message we sent.
            postOffice->Receive(i, &inPktHdr, &inMailHdr, buffer);
-           printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.from);
-           fflush(stdout);
+           if(inMailHdr.segments != -1) {
+               printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.from);
+               fflush(stdout);
+           } else {
+                printf("Timeout from %d\n", i);
+           }
         }
     }
 
@@ -87,9 +96,9 @@ void
 RingTopology(int myID, int n) {
 
     PacketHeader outPktHdr, inPktHdr;
-    MailHeader outMailHdr, inMailHdr;
+    MailHeaderSecure outMailHdr, inMailHdr;
     const char *data = "Tokensito";
-    char buffer[MaxMailSize];
+    char buffer[MaxMailSizeSecure];
     int next = (myID + 1) % n;
     
     if(myID == 0) {
@@ -129,4 +138,45 @@ RingTopology(int myID, int n) {
     }
 
     
+}
+
+void
+MailTest0(int farAddr)
+{
+    PacketHeader outPktHdr, inPktHdr;
+    MailHeaderSecure outMailHdr, inMailHdr;
+    const char *data = "Hello there!";
+    const char *ack = "Got it!";
+    char buffer[MaxMailSizeSecure];
+
+    // construct packet, mail header for original message
+    // To: destination machine, mailbox 0
+    // From: our machine, reply to: mailbox 1
+    outPktHdr.to = farAddr;     
+    outMailHdr.to = 0;
+    outMailHdr.from = 1;
+    outMailHdr.length = strlen(data) + 1;
+
+    // Send the first message
+    postOffice->Send(outPktHdr, outMailHdr, data); 
+
+    // Wait for the first message from the other machine
+    postOffice->Receive(0, &inPktHdr, &inMailHdr, buffer);
+    printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.from);
+    fflush(stdout);
+
+    // Send acknowledgement to the other machine (using "reply to" mailbox
+    // in the message that just arrived
+    outPktHdr.to = inPktHdr.from;
+    outMailHdr.to = inMailHdr.from;
+    outMailHdr.length = strlen(ack) + 1;
+    postOffice->Send(outPktHdr, outMailHdr, ack); 
+
+    // Wait for the ack from the other machine to the first message we sent.
+    postOffice->Receive(1, &inPktHdr, &inMailHdr, buffer);
+    printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.from);
+    fflush(stdout);
+
+    // Then we're done!
+    interrupt->Halt();
 }

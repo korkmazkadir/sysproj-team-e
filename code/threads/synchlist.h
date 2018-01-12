@@ -31,13 +31,17 @@ class SynchList
     // and wake up any thread waiting in remove
     void *Remove ();		// remove the first item from the front of
     // the list, waiting if the list is empty
+    void *RemoveTimeout(int timeout);
     // apply function to every item in the list
     void Mapcar (VoidFunctionPtr func);
 
+    void ReachTimeout();
+
   private:
-      List * list;		// the unsynchronized list
+    List * list;		// the unsynchronized list
     Lock *lock;			// enforce mutual exclusive access to the list
     Condition *listEmpty;	// wait in Remove if the list is empty
+    bool timeoutReached;
 };
 
 #endif // SYNCHLIST_H

@@ -35,7 +35,7 @@ Machine *machine;		// user program memory and registers
 #endif
 
 #ifdef NETWORK
-PostOffice *postOffice;
+SecurePost *postOffice;
 #endif
 
 
@@ -174,7 +174,7 @@ Initialize (int argc, char **argv)
 #endif
 
 #ifdef NETWORK
-    postOffice = new PostOffice (netname, rely, 10);
+    postOffice = new SecurePost (netname, rely, 10);
 #endif
 }
 

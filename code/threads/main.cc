@@ -63,6 +63,7 @@ extern void StartProcess (char *file);
 extern void ConsoleTest (char *in, char *out);
 extern void SynchConsoleTest(char *, char *);
 extern void MailTest (int networkID);
+extern void MailTest0 (int networkID);
 extern void RingTopology (int myID, int n);
 
 //----------------------------------------------------------------------
@@ -165,7 +166,7 @@ main (int argc, char **argv)
             Delay (2);	// delay for 2 seconds
             // to give the user time to
             // start up another nachos
-            MailTest (atoi (*(argv + 1)));
+            MailTest0 (atoi (*(argv + 1)));
             argCount = 2;
         } else if(!strcmp (*argv, "-rt")) {
             ASSERT (argc > 1);

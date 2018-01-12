@@ -27,6 +27,7 @@ SynchList::SynchList ()
     list = new List ();
     lock = new Lock ("list lock");
     listEmpty = new Condition ("list empty cond");
+    timeoutReached = false;
 }
 
 //----------------------------------------------------------------------
@@ -39,6 +40,15 @@ SynchList::~SynchList ()
     delete list;
     delete lock;
     delete listEmpty;
+}
+
+void
+SynchList::ReachTimeout ()
+{
+    timeoutReached = true;
+    lock->Acquire();
+    listEmpty->Signal(lock);
+    lock->Release();
 }
 
 //----------------------------------------------------------------------
@@ -77,6 +87,28 @@ SynchList::Remove ()
 	listEmpty->Wait (lock);	// wait until list isn't empty
     item = list->Remove ();
     ASSERT (item != NULL);
+    lock->Release ();
+    return item;
+}
+
+//----------------------------------------------------------------------
+// SynchList::RemoveTimout
+//      Remove an "item" from the beginning of the list. Wait if the list
+//      is empty but kill if it exceeds timeout.
+//
+//----------------------------------------------------------------------
+
+void *
+SynchList::RemoveTimeout(int timeout)
+{
+    void *item;
+    lock->Acquire ();       // enforce mutual exclusion
+    while (list->IsEmpty () && !timeoutReached) {
+        listEmpty->Wait (lock); // wait until list isn't empty
+    }
+    item = list->Remove ();
+    //ASSERT (item != NULL);
+    timeoutReached = false;
     lock->Release ();
     return item;
 }

@@ -54,8 +54,8 @@ extern SynchDisk *synchDisk;
 #endif
 
 #ifdef NETWORK
-#include "post.h"
-extern PostOffice *postOffice;
+#include "securepost.h"
+extern SecurePost *postOffice;
 #endif
 
 #endif // SYSTEM_H
