@@ -73,7 +73,10 @@ static void StartUserThread(int f) {
 
     cvtParam->space->InitRegisters();
     cvtParam->space->RestoreState();
-
+    
+    //filesys
+    fileSystem->restoreThreadState();
+    
     int instr = (int)cvtParam->functionPtr;
 
     machine->WriteRegister (PCReg, instr);
@@ -157,8 +160,19 @@ int do_UserThreadCreate(int funPtr, int arg, int retAddress, AddrSpace *space, b
         // Generate debug name for the thread
         // TODO: Remove after active dev phase
         int threadNum = (int)freeThreadIds.Remove();
-
-        Thread *newThread = new (std::nothrow) Thread("");
+        
+        if (currentThread->directoryFile == NULL) {
+            printf("do_UserThreadCreate creator's directoryFile is NULL\n");
+            Exit(-1);
+        }
+        
+        std::string *dbgName = new std::string(std::to_string(threadNum));
+        printf("            making thread with name %s wdn %s wp %s\n", dbgName->c_str(), currentThread->workingPath->c_str(), 
+                                                          currentThread->workingDirName->c_str() );
+                                                          
+        Thread *newThread = new (std::nothrow) Thread(dbgName->c_str(), currentThread->workingPath, 
+                                                          currentThread->workingDirName, 
+                                                          currentThread->directoryFile);
 
         /* Memory allocation failed */
         if (!newThread) {

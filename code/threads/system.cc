@@ -28,6 +28,7 @@ FileSystem *fileSystem;
 
 #ifdef FILESYS
 SynchDisk *synchDisk;
+int FileSysIsUp = 0;
 #endif
 
 #ifdef USER_PROGRAM		// requires either FILESYS or FILESYS_STUB
@@ -151,16 +152,18 @@ Initialize (int argc, char **argv)
 
     // We didn't explicitly allocate the current thread we are running in.
     // But if it ever tries to give up the CPU, we better have a Thread
-    // object to save its state. 
-    currentThread = new Thread ("main");
+    // object to save its state.
+    currentThread = new Thread ("main", NULL, NULL, NULL);
+    //inform the thread of it's filesys state
     currentThread->setStatus (RUNNING);
 
     syncConsole = new SynchConsole(NULL, NULL);
     semaphoreManager = new SemaphoreManager();
 
+
     interrupt->Enable ();
     CallOnUserAbort (Cleanup);	// if user hits ctl-C
-
+    
 #ifdef USER_PROGRAM
     machine = new Machine (debugUserProg);	// this must come first
 #endif
@@ -170,21 +173,65 @@ Initialize (int argc, char **argv)
 #endif
 
 #ifdef FILESYS_NEEDED
-    fileSystem = new FileSystem (format);
+    std::string *initialWP = new std::string("/");
+    std::string *initialWDN = new std::string("/");
+   // initialWP = "/";
+    //initialWDN = "/";
+    //need flag for filesys to avoid scheduler calling 
+    //filesys->save / restore before filesystem is created
+    FileSysIsUp = 0;
+    fileSystem = new FileSystem (format, initialWP, initialWDN);
+    fileSystem->saveThreadState();
+    printf("System::Initialize() has setup first thread's filesys info\n");
+    FileSysIsUp = 1;
+    
 #endif
 
 #ifdef NETWORK
     postOffice = new PostOffice (netname, rely, 10);
 #endif
+
+
 }
 
-int createProcess(char *filename){
+//Establish absolute path of new process's working directory
+void parseFilePath(const char *filename, const char *execDir) {
+    std::string path(filename);
+    //separate path and name
+    std::string name;
+    int pos = path.find_last_of("/"); 
+    if (pos == -1) {
+        //no / in path so whole path is a name
+        pos = 0;
+        name = path;
+        path.erase(0, std::string::npos);
+    }
+    else {
+         name = path.substr(pos+1, std::string::npos);
+         path.erase(pos, std::string::npos);
+    }
+    execDir = path.c_str();
+    filename = name.c_str();
+}
+
+int createProcess(char *filename) {
+    const char *execDir = NULL;
+    parseFilePath(filename, execDir);
+    
+    //move to executable's directory
+    std::string backTrackPath;
+    if (execDir != NULL) {
+        backTrackPath = fileSystem->Chdir(execDir);
+    }
 
     OpenFile *executable = fileSystem->Open(filename);
     AddrSpace *space;
 
     if (executable == NULL) {
         printf("Unable to open file %s\n", filename);
+        //return to initial dir
+        if (!backTrackPath.empty())
+            fileSystem->Chdir(backTrackPath);
         return 0;
     }
     
@@ -197,8 +244,11 @@ int createProcess(char *filename){
 
     int retVal = do_KernelThreadCreate(space);
 
-    delete executable; // close file
+    fileSystem->Close(executable); // close file
 
+    //return to initial dir
+    if (!backTrackPath.empty())
+        fileSystem->Chdir(backTrackPath);
 
     return retVal;
 }

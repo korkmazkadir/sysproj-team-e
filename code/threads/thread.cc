@@ -32,7 +32,7 @@
 //      "threadName" is an arbitrary string, useful for debugging.
 //----------------------------------------------------------------------
 
-Thread::Thread (const char *threadName):
+Thread::Thread (const char *threadName, std::string *initialWP, std::string *initialWDN, OpenFile *initialDirFile):
     tid(0)
 {
     name = threadName;
@@ -46,7 +46,20 @@ Thread::Thread (const char *threadName):
     // user threads.
     for (int r=NumGPRegs; r<NumTotalRegs; r++)
       userRegisters[r] = 0;
+      
 #endif
+
+    //filesys
+    if (initialWP != NULL) { //do not update fs info if passed NULL (first thread created, will have info from FS via fs->savestate)
+        workingPath = new std::string(*initialWP);
+        workingDirName = new std::string(*initialWDN);
+        directoryFile = initialDirFile;
+       //printf("    !!!!   created thread with WP %s WDN %s DF %x\n", workingPath->c_str(), workingDirName->c_str(), (unsigned int)directoryFile);
+    }
+    for (int i = 0; i < 10; i++) {
+        openFileIds[i] = -1;
+    }
+    
 }
 
 //----------------------------------------------------------------------
@@ -68,6 +81,14 @@ Thread::~Thread ()
     ASSERT (this != currentThread);
     if (stack != NULL)
 	DeallocBoundedArray ((char *) stack, StackSize * sizeof (int));
+    //filesys
+    if (workingPath != NULL) {
+        printf("Thread::~Thread ()    workingPath = %x\n",(unsigned int)workingPath);
+        //delete workingPath;
+    }
+    if (workingDirName != NULL) {
+        //delete workingDirName;
+    }
 }
 
 //----------------------------------------------------------------------
@@ -319,6 +340,10 @@ SetupThreadState ()
 
 #endif // USER_PROGRAM
 
+    //filesys
+    if (FileSysIsUp) {
+        fileSystem->restoreThreadState();
+    }
   // LB: The default level for interrupts is IntOn.
   InterruptEnable (); 
 

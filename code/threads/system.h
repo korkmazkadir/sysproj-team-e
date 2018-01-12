@@ -35,6 +35,7 @@ extern Statistics *stats;	// performance metrics
 extern Timer *timer;		// the hardware alarm clock
 extern SynchConsole *syncConsole;
 extern SemaphoreManager *semaphoreManager;
+extern int FileSysIsUp; //flag set to 1 when filesys has been created
 
 int createProcess(char *filename);
 

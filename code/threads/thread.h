@@ -45,6 +45,9 @@
 #include "addrspace.h"
 #endif
 
+#include "filesys.h"
+#include "openfile.h"
+
 // CPU register state to be saved on context switch.  
 // The SPARC and MIPS only need 10 registers, but the Snake needs 18.
 // For simplicity, this is just the max over all architectures.
@@ -83,7 +86,7 @@ class Thread
     int machineState[MachineStateSize];	// all registers except for stackTop
 
   public:
-      Thread (const char *debugName);	// initialize a Thread 
+      Thread (const char *debugName, std::string *initialWP, std::string *initialWDN, OpenFile *initialDirFile);	// initialize a Thread 
      ~Thread ();		// deallocate a Thread
     // NOTE -- thread being deleted
     // must not be running when delete 
@@ -143,6 +146,12 @@ class Thread
 
     AddrSpace *space;		// User code this thread is running.
 #endif
+
+    //filesys
+    OpenFile *directoryFile; //current directory file pointer
+    int openFileIds[10];
+    std::string *workingPath;
+    std::string *workingDirName;
 };
 
 // Magical machine-dependent routines, defined in switch.s

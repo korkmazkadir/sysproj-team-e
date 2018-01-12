@@ -103,6 +103,10 @@ Scheduler::Run (Thread * nextThread)
       currentThread->space->SaveState ();
       }
 #endif
+    //filesys
+    if (FileSysIsUp) {
+        fileSystem->saveThreadState();
+    }
 
     oldThread->CheckOverflow ();	// check if the old thread
     // had an undetected stack overflow
@@ -139,6 +143,10 @@ Scheduler::Run (Thread * nextThread)
       currentThread->space->RestoreState ();
       }
 #endif
+    //filesys
+    if (FileSysIsUp) {
+        fileSystem->restoreThreadState();
+    }
 }
 
 //----------------------------------------------------------------------
