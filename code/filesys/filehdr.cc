@@ -48,34 +48,25 @@ FileHeader::Allocate(BitMap *freeMap, int fileSize)
     if (freeMap->NumClear() < numSectors)
 	return FALSE;		// not enough space
     
-    if((unsigned int)numSectors <= NumDirect){
-        printf("--> (direct) NumSectors : %d\n",numSectors);
-        for (int i = 0; i < numSectors; i++)
-            dataSectors[i] = freeMap->Find();
-        return TRUE;
-    
-    }else{
+    printf("--> (indirect) NumSectors : %d\n",numSectors);
 
-        printf("--> (indirect) NumSectors : %d\n",numSectors);
-        
-        int indirectSectorCount = divRoundUp(numSectors,NumIndirect);
-        int arrangedSectorCount = 0;
-        
-        printf("--> (indirect) Indirect sector count : %d\n",indirectSectorCount);
-        
-        for (int i = 0; i < indirectSectorCount; i++){
-            dataSectors[i] = freeMap->Find();
-            IndirectDataBlock indirect;
-            for(unsigned int j=0; (j<NumIndirect && arrangedSectorCount < numSectors ) ;j++){
-                indirect.dataSectors[j] = freeMap->Find();
-                arrangedSectorCount++;
-            }
+    int indirectSectorCount = divRoundUp(numSectors,NumIndirect);
+    int arrangedSectorCount = 0;
 
-            indirect.writeIndirectBlocks(dataSectors[i]);
+    printf("--> (indirect) Indirect sector count : %d\n",indirectSectorCount);
+
+    for (int i = 0; i < indirectSectorCount; i++){
+        dataSectors[i] = freeMap->Find();
+        IndirectDataBlock indirect;
+        for(unsigned int j=0; (j<NumIndirect && arrangedSectorCount < numSectors ) ;j++){
+            indirect.dataSectors[j] = freeMap->Find();
+            arrangedSectorCount++;
         }
 
-        return TRUE;        
+        indirect.writeIndirectBlocks(dataSectors[i]);
     }
+
+    return TRUE;        
 }
 
 //----------------------------------------------------------------------
@@ -88,33 +79,22 @@ FileHeader::Allocate(BitMap *freeMap, int fileSize)
 void 
 FileHeader::Deallocate(BitMap *freeMap)
 {
-    if((unsigned int)numSectors <= NumDirect){
-        
-        for (int i = 0; i < numSectors; i++) {
-            ASSERT(freeMap->Test((int) dataSectors[i]));  // ought to be marked!
-            freeMap->Clear((int) dataSectors[i]);
-        }
-        
-    }else{
+    int indirectSectorCount = divRoundUp(numSectors,NumIndirect);
+    int arrangedSectorCount = 0;
 
-        int indirectSectorCount = divRoundUp(numSectors,NumIndirect);
-        int arrangedSectorCount = 0;
-        
-        for (int i = 0; i < indirectSectorCount; i++){
-            ASSERT(freeMap->Test((int) dataSectors[i]));
-            IndirectDataBlock indirect;
-            indirect.fetchIndirectBlocks(dataSectors[i]);
-            
-            for(unsigned int j=0; (j<NumIndirect && arrangedSectorCount < numSectors) ;j++){
-                
-                ASSERT(freeMap->Test(indirect.dataSectors[j]));  // ought to be marked!
-                freeMap->Clear(indirect.dataSectors[j]);
-                arrangedSectorCount++;
-            }
-            
-            freeMap->Clear((int) dataSectors[i]);
+    for (int i = 0; i < indirectSectorCount; i++){
+        ASSERT(freeMap->Test((int) dataSectors[i]));
+        IndirectDataBlock indirect;
+        indirect.fetchIndirectBlocks(dataSectors[i]);
+
+        for(unsigned int j=0; (j<NumIndirect && arrangedSectorCount < numSectors) ;j++){
+
+            ASSERT(freeMap->Test(indirect.dataSectors[j]));  // ought to be marked!
+            freeMap->Clear(indirect.dataSectors[j]);
+            arrangedSectorCount++;
         }
-        
+
+        freeMap->Clear((int) dataSectors[i]);
     }
 }
 
@@ -157,18 +137,12 @@ FileHeader::WriteBack(int sector)
 int
 FileHeader::ByteToSector(int offset)
 {
+    int sectorNumber = offset / SectorSize;
 
-    if((unsigned int)numSectors <= NumDirect){
-        return(dataSectors[offset / SectorSize]);
-    }else{
-        
-        int sectorNumber = offset / SectorSize;
+    IndirectDataBlock indirect;
+    indirect.fetchIndirectBlocks(dataSectors[ (sectorNumber / NumIndirect) ]);
 
-        IndirectDataBlock indirect;
-        indirect.fetchIndirectBlocks(dataSectors[ (sectorNumber / NumIndirect) ]);
-
-        return indirect.dataSectors[(sectorNumber % NumIndirect)];
-    }
+    return indirect.dataSectors[(sectorNumber % NumIndirect)];
 }
 
 //----------------------------------------------------------------------
@@ -195,13 +169,24 @@ FileHeader::Print()
     char *data = new char[SectorSize];
 
     printf("FileHeader contents.  File size: %d.  File blocks:\n", numBytes);
-    if((unsigned int)numSectors <= NumDirect){
-        
-        for (i = 0; i < numSectors; i++)
-            printf("%d ", dataSectors[i]);
-        printf("\nFile contents:\n");
-        for (i = k = 0; i < numSectors; i++) {
-            synchDisk->ReadSector(dataSectors[i], data);
+    int indirectSectorCount = divRoundUp(numSectors,NumIndirect);
+    int readSectorCount = 0;
+
+    for (i = 0; i < indirectSectorCount; i++){
+        IndirectDataBlock indirect;
+        indirect.fetchIndirectBlocks(dataSectors[i]);
+        for(j = 0; ((unsigned int)j < NumIndirect) && (readSectorCount < numSectors); j++){
+            printf("%d ", indirect.dataSectors[j]);
+        }
+    }
+
+    printf("\nFile contents:\n");
+    for (int l = 0; l < indirectSectorCount; l++){
+        IndirectDataBlock indirect;
+        indirect.fetchIndirectBlocks(dataSectors[l]);
+
+        for (i = k = 0; (unsigned int)i < NumIndirect && readSectorCount < numSectors; i++) {
+            synchDisk->ReadSector(indirect.dataSectors[i], data);
             for (j = 0; (j < SectorSize) && (k < numBytes); j++, k++) {
                 if ('\040' <= data[j] && data[j] <= '\176')   // isprint(data[j])
                     printf("%c", data[j]);
@@ -209,41 +194,10 @@ FileHeader::Print()
                     printf("\\%x", (unsigned char)data[j]);
             }
             printf("\n"); 
+            readSectorCount++;
         }
-        
-    }else{
-
-        int indirectSectorCount = divRoundUp(numSectors,NumIndirect);
-        int readSectorCount = 0;
-        
-        for (i = 0; i < indirectSectorCount; i++){
-            IndirectDataBlock indirect;
-            indirect.fetchIndirectBlocks(dataSectors[i]);
-            for(j = 0; ((unsigned int)j < NumIndirect) && (readSectorCount < numSectors); j++){
-                printf("%d ", indirect.dataSectors[j]);
-            }
-        }
-            
-        printf("\nFile contents:\n");
-        for (int l = 0; l < indirectSectorCount; l++){
-            IndirectDataBlock indirect;
-            indirect.fetchIndirectBlocks(dataSectors[l]);
-            
-            for (i = k = 0; (unsigned int)i < NumIndirect && readSectorCount < numSectors; i++) {
-                synchDisk->ReadSector(indirect.dataSectors[i], data);
-                for (j = 0; (j < SectorSize) && (k < numBytes); j++, k++) {
-                    if ('\040' <= data[j] && data[j] <= '\176')   // isprint(data[j])
-                        printf("%c", data[j]);
-                    else
-                        printf("\\%x", (unsigned char)data[j]);
-                }
-                printf("\n"); 
-                readSectorCount++;
-            }
-        }
-
     }
-    
+
     delete [] data;
 }
 
