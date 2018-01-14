@@ -4,20 +4,3 @@ abk
 99999
 Lorem Ipsum is simply dummy text of the printing and typesetting industry.[]{} 
 2384727834rıurfjernfekrjnjnjjh000==94309509304593045^+%&%+^&%&/&%/ 
-System::Initialize() has setup first thread's filesys info
-
-*  *   *    *    * START COPY *  *   *   *   *
-
-
-filesys::open opened file ptr is 152554664
-
-*  *   *    *    * out of loop *  *   *   *   *
-
-
-
-*  *   *    *    * END COPY *  *   *   *   *
-
-
-createProcess: filename = prog execdir = (null)
-filesys::open opened file ptr is 152621208
-            making thread with name 1 wdn / wp /

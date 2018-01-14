@@ -167,8 +167,8 @@ int do_UserThreadCreate(int funPtr, int arg, int retAddress, AddrSpace *space, b
         }
         
         std::string *dbgName = new std::string(std::to_string(threadNum));
-        printf("            making thread with name %s wdn %s wp %s\n", dbgName->c_str(), currentThread->workingPath->c_str(), 
-                                                          currentThread->workingDirName->c_str() );
+        //printf("            making thread with name %s wdn %s wp %s\n", dbgName->c_str(), currentThread->workingPath->c_str(), 
+                                                         // currentThread->workingDirName->c_str() );
                                                           
         Thread *newThread = new (std::nothrow) Thread(dbgName->c_str(), currentThread->workingPath, 
                                                           currentThread->workingDirName, 
@@ -187,6 +187,10 @@ int do_UserThreadCreate(int funPtr, int arg, int retAddress, AddrSpace *space, b
         thread_args[threadNum - 1].threadPtr = newThread;
         thread_args[threadNum - 1].argPtr = (int)serializedThreadParam;
         thread_args[threadNum - 1].waitingForJoin = true;
+        //thread_args[threadNum - 1].kThread = kernelRequest;
+        
+        
+
         newThread->SetTID(threadNum);
         newThread->space = space;
         newThread->Fork(StartUserThread, (int)serializedThreadParam);
@@ -198,7 +202,12 @@ int do_UserThreadCreate(int funPtr, int arg, int retAddress, AddrSpace *space, b
             if (1 == numProcesses) {
 //                haltSync.P();
             }
+        } else {
+            int pTid = currentThread->Tid();
+            thread_args[pTid - 1].children.Append((void*)threadNum);//store children tid
         }
+
+
     }
 
     early_exit:
@@ -226,6 +235,27 @@ void do_UserThreadExit() {
 
     //TODO: Consider removing threadPtr from the descriptor
     descriptor->threadPtr->Finish();
+
+    // Do not delete descriptor.threadPtr explicitly since it will be done by the scheduler
+}
+
+void do_SomeUserThreadExit(Thread* thread) {
+    int tid = thread->Tid();
+    ThreadDescriptor_t *descriptor = &thread_args[tid - 1];
+    ThreadParam_t *cvt = (ThreadParam_t *)descriptor->argPtr;
+
+    threadStacks[thread->space].Append((void *)cvt->topOfStack);
+
+    delete cvt;
+    thread_args[tid - 1].synch->V();
+    --numThreads;
+    if (0 == numThreads) {
+//        haltSync.V();
+    }
+
+    //TODO: Consider removing threadPtr from the descriptor
+    //descriptor->threadPtr->Finish();
+    delete descriptor->threadPtr;
 
     // Do not delete descriptor.threadPtr explicitly since it will be done by the scheduler
 }
@@ -267,8 +297,24 @@ int do_KernelThreadCreate(AddrSpace *space) {
 void do_ExitCurrentProcess()
 {    
     int tid = currentThread->Tid();
-    IntStatus oldLevel = interrupt->SetLevel(IntOff);
 
+    //Check if it has userlevel threads
+    while(!thread_args[tid - 1].children.IsEmpty()) {
+        int childTid = (int)thread_args[tid - 1].children.Remove(); //Get child tid
+        //Thread* thread = thread_args[childTid - 1].threadPtr;
+        if(thread_args[childTid - 1].waitingForJoin) {
+            do_UserThreadJoin(childTid); //consider deleting them
+
+            //For deletion, doesn't work yet(tries to access thread after deleting it)
+            /*do_SomeUserThreadExit(thread);
+
+            scheduler->EvictThreadsById(childTid);
+
+            printf("Waiting for children left behind %d\n", childTid);*/
+        }
+    }
+
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);
     scheduler->EvictThreadsById(tid);
     delete currentThread->space;
     currentThread->space = nullptr;
@@ -276,7 +322,8 @@ void do_ExitCurrentProcess()
     interrupt->SetLevel(oldLevel);
 
     --numProcesses;
-    printf("xiting num proc %d %d \n", numProcesses, tid );
+    //--numThreads; //deleting thread from count?
+    //printf("xiting num proc %d %d \n", numProcesses, tid );
     if (0 >= numProcesses) {
 //        haltSync.V();
         interrupt->Halt();

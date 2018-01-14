@@ -108,7 +108,6 @@ void ExceptionHandler (ExceptionType which)
         switch (type) {
             case SC_Halt:
             {
-                printf("SHUTDONW %d \n", currentThread->Tid());
                 interrupt->Halt ();
             } break;
 
@@ -169,8 +168,8 @@ void ExceptionHandler (ExceptionType which)
 
             case SC_Exit:
             {
-                int retValue = machine->ReadRegister(FIRST_PARAM_REGISTER);
-                printf("EXIT %d %d \n", currentThread->Tid(), retValue);
+                machine->ReadRegister(FIRST_PARAM_REGISTER);
+                //printf("EXIT %d %d \n", currentThread->Tid(), retValue);
                 do_ExitCurrentProcess();
             } break;
 

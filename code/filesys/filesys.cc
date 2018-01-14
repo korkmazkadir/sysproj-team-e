@@ -398,18 +398,7 @@ FileSystem::Open(std::string fileName)
             }
         }
     }
-   /* if (i != 10) {
-        //file found
-        printf("FileSystem::Open the file %s is already open\n", name.c_str());
-        //wait for it to be closed
-        //openFiles[i]->sem->P();
-        
-    }*/
-
-    
-    
-
-
+   
     if (i == 10) { //if not opened yet
         //create new openfile object
         openFile = new OpenFile(sector);
@@ -440,7 +429,7 @@ FileSystem::Open(std::string fileName)
     if (!backTrackPath.empty())
         Chdir(backTrackPath);
         
-    printf("filesys::open opened file ptr is %d\n", (int)openFile);
+    //printf("filesys::open opened file ptr is %d\n", (int)openFile);
     dbgChecks();
     if (release) {
         fsLock->Release();
@@ -699,7 +688,7 @@ FileSystem::Mkdir(const char* dirName) {
         backTrackPath = Chdir(path);
 
     //create file representing the new dir in our current directory
-    printf("creating file with name %s\n", name.c_str());
+    //printf("creating file with name %s\n", name.c_str());
     if (-1 == Create(name.c_str(), DirectoryFileSize, 1))  {
         printf("fileSys::mkdir: could not create newDir file %s\n", dirName);
         //return to initial dir
@@ -715,7 +704,7 @@ FileSystem::Mkdir(const char* dirName) {
     Directory *currentDir = new Directory(NumDirEntries);
     currentDir->FetchFrom(directoryFile);
     int cDSector = directoryFile->getSector();
-    if (cDSector <= 0) {
+    if (cDSector < 0) {
         printf("fileSys::Mkdir: currentDir sector is bad\n");
         //return to initial dir
         if (!backTrackPath.empty())
@@ -728,7 +717,7 @@ FileSystem::Mkdir(const char* dirName) {
     
     //get sector of our newly created directory file
     int nDSector = currentDir->Find(name.c_str());
-    if (nDSector <= 0) {
+    if (nDSector < 0) {
         printf("fileSys::Mkdir: newDir sector is bad\n");
         //return to initial dir
         if (!backTrackPath.empty())
@@ -859,7 +848,7 @@ FileSystem::Chdir(std::string path) {
         path.erase(0, pos);
         path.erase(0, 1); //remove /
         
-        printf("chdir remaining path is %s    changing to name:%s\n", path.c_str(), name.c_str());
+        //printf("chdir remaining path is %s    changing to name:%s\n", path.c_str(), name.c_str());
 
         
         // TODO: unsure of this...   what to do for "." ?

@@ -48,6 +48,7 @@ class MachineMock {
 
     std::array<int, NumTotalRegs> registers;
     std::map<int, int> memory;
+    char mainMemory[MemorySize];
 };
 
 #endif // MACHINE_MOCK_H

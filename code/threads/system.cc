@@ -185,7 +185,7 @@ Initialize (int argc, char **argv)
     FileSysIsUp = 0;
     fileSystem = new FileSystem (format, initialWP, initialWDN);
     fileSystem->saveThreadState();
-    printf("System::Initialize() has setup first thread's filesys info\n");
+    //printf("System::Initialize() has setup first thread's filesys info\n");
     FileSysIsUp = 1;
     
 #endif
@@ -220,7 +220,7 @@ void parseFilePath(const char *filename, const char *execDir) {
 int createProcess(char *filename) {
     const char *execDir = NULL;
     parseFilePath(filename, execDir);
-    printf("createProcess: filename = %s execdir = %s\n", filename, execDir);
+    //printf("createProcess: filename = %s execdir = %s\n", filename, execDir);
     
     //move to executable's directory
     std::string backTrackPath;
@@ -236,22 +236,19 @@ int createProcess(char *filename) {
         //return to initial dir
         if (!backTrackPath.empty())
             fileSystem->Chdir(backTrackPath);
-        return 0;
+        return -1;
+
     }
-    
 
     space = new AddrSpace(executable);
-
     if (!currentThread->space) {
         currentThread->space = space;
     }
-
+    
     int retVal = do_KernelThreadCreate(space);
 
-    printf("createProcess closing executable file\n");
     fileSystem->Close(executable); // close file
-    printf("createProcess done exec file close\n");
-
+    
     //return to initial dir
     if (!backTrackPath.empty())
         fileSystem->Chdir(backTrackPath);

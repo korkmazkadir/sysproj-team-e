@@ -1,0 +1,25 @@
+Specification
+
+========================================================================================
+
+Signature: int ForkExec(char *path);
+Parameters:
+    path   <-  path of the executable to run in new process
+
+Return value
+ *         PID       if process creation was successful
+ *         -1        if executable file can not open
+ *         -2        if the sum of the number of processes and number of user threds in the system is equal to MAX_NUM_USERTHREADS
+ *         -3        if there is no space left on stack for a new thread
+ *         -4        ran out of memory
+
+Description:
+
+
+Creates a new kernel level thread(process) that will execute program at path. 
+
+Currently it is only possible to create up to 128 threads and processes.
+
+PID of the newly created process may be re-used after this thread is joined.
+
+========================================================================================

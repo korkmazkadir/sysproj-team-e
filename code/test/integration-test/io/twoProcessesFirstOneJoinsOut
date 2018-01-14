@@ -1,0 +1,9 @@
+abcdMachine halting!
+
+Ticks: total 4520828, idle 4499097, system 21500, user 231
+Disk I/O: reads 338, writes 282
+Console I/O: reads 0, writes 4
+Paging: faults 0
+Network I/O: packets received 0, sent 0
+
+Cleaning up...

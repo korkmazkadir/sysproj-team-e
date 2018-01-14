@@ -1,0 +1,9 @@
+Machine halting!
+
+Ticks: total 632, idle 0, system 110, user 522
+Disk I/O: reads 0, writes 0
+Console I/O: reads 1, writes 0
+Paging: faults 0
+Network I/O: packets received 0, sent 0
+
+Cleaning up...

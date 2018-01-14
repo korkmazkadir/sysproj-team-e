@@ -76,7 +76,7 @@ int main() {
         Exit(3);
     }
     _printf("userprogram: buf contains %s\n", buf);
-    Print();
+    //Print();
     Close(ofid);
     
 
