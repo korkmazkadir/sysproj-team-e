@@ -54,12 +54,20 @@ Thread::Thread (const char *threadName, std::string *initialWP, std::string *ini
         workingPath = new std::string(*initialWP);
         workingDirName = new std::string(*initialWDN);
         directoryFile = initialDirFile;
+        if (*workingDirName == "/") {
+            fileSystem->Open(".");
+        } else {
+            std::string dirname("../");
+            dirname.append(*workingDirName);
+            fileSystem->Open(dirname);
+        }
        //printf("    !!!!   created thread with WP %s WDN %s DF %x\n", workingPath->c_str(), workingDirName->c_str(), (unsigned int)directoryFile);
     }
+
     for (int i = 0; i < 10; i++) {
         openFileIds[i] = -1;
     }
-    
+
 }
 
 //----------------------------------------------------------------------
@@ -83,11 +91,10 @@ Thread::~Thread ()
 	DeallocBoundedArray ((char *) stack, StackSize * sizeof (int));
     //filesys
     if (workingPath != NULL) {
-        printf("Thread::~Thread ()    workingPath = %x\n",(unsigned int)workingPath);
-        //delete workingPath;
+        delete workingPath;
     }
     if (workingDirName != NULL) {
-        //delete workingDirName;
+        delete workingDirName;
     }
 }
 

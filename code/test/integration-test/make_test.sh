@@ -6,8 +6,8 @@
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
-EXECUTABLE="../../build/nachos-step5 -x"
-EXECUTABLE_RAND="../../build/nachos-step5 -rs -x"
+EXECUTABLE="../../build/nachos-step5 -f -cp"
+
 
 nbFails=0
 Check_Result(){
@@ -26,12 +26,12 @@ printf "${NC}\n\n### STEP 2 ###\n"
 
 #----------------------------------------------------------------------------
 printf "${NC}>> stdio input test\n"
-${EXECUTABLE} ../../build/test_stdio_input < ./io/input_test_stdio
+${EXECUTABLE} ../../build/test_stdio_input prog -x prog < ./io/input_test_stdio
 Check_Result
 
 #----------------------------------------------------------------------------
 printf "${NC}>> stdio output/input test ${RED}\n"
-${EXECUTABLE} ../../build/test_stdio_output_input  > ./io/global_output < ./io/global_output
+${EXECUTABLE} ../../build/test_stdio_output_input prog -x prog  > ./io/global_output < ./io/global_output
 Check_Result
 
 
@@ -40,31 +40,31 @@ printf "${NC}\n\n### STEP 3 ###\n"
 #----------------------------------------------------------------------------
 printf "${RED}"
 printf "${NC}>> Semaphore test (takes time to execute) ${RED}\n"
-${EXECUTABLE} ../../build/testsemaphores -rs 15
+${EXECUTABLE} ../../build/testsemaphores prog -x prog -rs 15
 Check_Result
 
 
 #----------------------------------------------------------------------------
 printf "${NC}>> manyThreads1 (max nb threads) test ${RED}\n"
-${EXECUTABLE_RAND} ../../build/manyThreads1
+${EXECUTABLE} ../../build/manyThreads1 prog -rs -x prog
 Check_Result
 
 
 #----------------------------------------------------------------------------
 printf "${NC}>> manyThreads2 (memory limitations) test ${RED}\n"
-${EXECUTABLE_RAND} ../../build/manyThreads2
+${EXECUTABLE} ../../build/manyThreads2 prog -rs -x prog
 Check_Result
 
 
 #----------------------------------------------------------------------------
 printf "${NC}>> nullFuncP test ${RED}\n"
-${EXECUTABLE_RAND} ../../build/nullFuncP
+${EXECUTABLE} ../../build/nullFuncP prog -rs -x prog
 Check_Result
 
 
 #----------------------------------------------------------------------------
 printf "${NC}>> userThreadExit test ${RED}\n"
-${EXECUTABLE_RAND} ../../build/userThreadExit
+${EXECUTABLE} ../../build/userThreadExit prog -rs -x prog
 Check_Result
 
 printf "${NC}\n\n### STEP 4 ###\n"

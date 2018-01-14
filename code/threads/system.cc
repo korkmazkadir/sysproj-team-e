@@ -169,6 +169,9 @@ Initialize (int argc, char **argv)
 #endif
 
 #ifdef FILESYS
+    if (format) {
+        remove("DISK");
+    }
     synchDisk = new SynchDisk ("DISK");
 #endif
 
@@ -209,14 +212,15 @@ void parseFilePath(const char *filename, const char *execDir) {
     else {
          name = path.substr(pos+1, std::string::npos);
          path.erase(pos, std::string::npos);
+         execDir = path.c_str();
     }
-    execDir = path.c_str();
     filename = name.c_str();
 }
 
 int createProcess(char *filename) {
     const char *execDir = NULL;
     parseFilePath(filename, execDir);
+    printf("createProcess: filename = %s execdir = %s\n", filename, execDir);
     
     //move to executable's directory
     std::string backTrackPath;
@@ -244,7 +248,9 @@ int createProcess(char *filename) {
 
     int retVal = do_KernelThreadCreate(space);
 
+    printf("createProcess closing executable file\n");
     fileSystem->Close(executable); // close file
+    printf("createProcess done exec file close\n");
 
     //return to initial dir
     if (!backTrackPath.empty())

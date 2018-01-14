@@ -92,6 +92,26 @@ FileSystem::dbgChecks() {
 FileSystem::FileSystem(bool format, std::string *initialWP, std::string *initialWDN)
 { 
     DEBUG('f', "Initializing the file system.\n");
+    
+    //allocate space for openFiles table
+    openFiles = (FileInfo**) malloc(sizeof(FileInfo*) * 10);
+    if (openFiles == NULL) {
+        printf("FileSystem::constructor malloc for openFiles[] failed\n");
+        Exit(1);
+    }
+    for (int i = 0; i < 10; i++) {
+        openFiles[i] = (FileInfo*) malloc(sizeof(struct S_fileInfo));
+        openFiles[i]->file = NULL;
+        openFiles[i]->sem = NULL;
+    }
+    
+    //set up synch
+    fsLock = new Lock("fileSysLock");
+    
+    workingPath = initialWP;
+    workingDirName = initialWDN;
+    
+    
     if (format) {
         BitMap *freeMap = new BitMap(NumSectors);
         Directory *directory = new Directory(NumDirEntries);
@@ -127,7 +147,13 @@ FileSystem::FileSystem(bool format, std::string *initialWP, std::string *initial
             printf("FileSystem::FileSystem() failed to create directoryFile\n");
             Exit(-1);
         }
-        
+        openFiles[0]->file = directoryFile;
+        openFiles[0]->sem = new Semaphore("openFile sem", 0);
+        openFiles[0]->nbOpens = 1;
+
+        //add the two dirs . and ..
+        directory->Add(".", DirectorySector, 1);
+        directory->Add("..", DirectorySector, 1);
      
         // Once we have the files "open", we can write the initial version
         // of each file back to disk.  The directory at this point is completely
@@ -158,27 +184,12 @@ FileSystem::FileSystem(bool format, std::string *initialWP, std::string *initial
             printf("FileSystem::FileSystem() failed to create directoryFile\n");
             Exit(-1);
         }
+        openFiles[0]->file = directoryFile;
+        openFiles[0]->sem = new Semaphore("openFile sem", 0);
+        openFiles[0]->nbOpens = 1;
     }
+        
     
-    // TODO:  ! ! !  need to add directoryFile to list of open files!!!
-    
-    //allocate space for openFiles table
-    openFiles = (FileInfo**) malloc(sizeof(FileInfo*) * 10);
-    if (openFiles == NULL) {
-        printf("FileSystem::constructor malloc for openFiles[] failed\n");
-        Exit(1);
-    }
-    for (int i = 0; i < 10; i++) {
-        openFiles[i] = (FileInfo*) malloc(sizeof(struct S_fileInfo));
-        openFiles[i]->file = NULL;
-        openFiles[i]->sem = NULL;
-    }
-    
-    //set up synch
-    fsLock = new Lock("fileSysLock");
-    
-    workingPath = initialWP;
-    workingDirName = initialWDN;
     dbgChecks();
 }
 
@@ -318,8 +329,8 @@ FileSystem::Create(std::string fileName, int initialSize, bool isDir)
 
 //----------------------------------------------------------------------
 // FileSystem::Open
-// 	Open a file for reading and writing. A file canot be opened multiple times simultaneously. 
-//  a call to Open() on an already open file will block until the file is closed.
+// 	Open a file for reading and writing.
+//  Multiple Threads can open the same file, and will use the same OpenFile object.
 //	To open a file:
 //	  Find the location of the file's header, using the directory 
 //	  Bring the header into memory
@@ -328,8 +339,6 @@ FileSystem::Create(std::string fileName, int initialSize, bool isDir)
 //----------------------------------------------------------------------
 
 
-//write a close function...??
-//TODO: convert Open Close etc to use paths
 OpenFile *
 FileSystem::Open(std::string fileName)
 { 
@@ -366,6 +375,18 @@ FileSystem::Open(std::string fileName)
     DEBUG('f', "Opening file %s\n", name.c_str());
     directory->FetchFrom(directoryFile);
     sector = directory->Find(name.c_str()); 
+    if (sector < 0) {	
+        // name was not found in directory 
+        printf("FileSystem::Open didnt find file %s in dir\n", name.c_str());
+        if (!backTrackPath.empty())
+            Chdir(backTrackPath);
+        if (release) {
+            fsLock->Release();
+        }
+        return NULL;
+    }
+    delete directory;
+    
     
     //check if is already opened
     int i;
@@ -386,17 +407,7 @@ FileSystem::Open(std::string fileName)
     }*/
 
     
-    if (sector < 0) {	
-        // name was not found in directory 
-        printf("FileSystem::Open didnt find file in dir\n");
-        if (!backTrackPath.empty())
-            Chdir(backTrackPath);
-        if (release) {
-            fsLock->Release();
-        }
-        return NULL;
-    }
-    delete directory;
+    
 
 
     if (i == 10) { //if not opened yet
@@ -422,6 +433,7 @@ FileSystem::Open(std::string fileName)
     }
     else { // if the file was already open
         openFiles[i]->nbOpens++;
+        openFile = openFiles[i]->file;
     }
     
     //go back to initial dir
@@ -468,7 +480,7 @@ FileSystem::Close(OpenFile *ofid) {
         //no one else has this file open
         delete openFiles[i]->file;
         openFiles[i]->file = NULL;
-        //openFiles[i]->sem->V();
+        openFiles[i]->sem->V();
     }
     dbgChecks();
     if (release) {
@@ -595,7 +607,9 @@ FileSystem::List()
         release = TRUE;
         fsLock->Acquire();
     }
-    printf("List: workingdir is:%s  dirname is:%s  Contents is:\n", GetWorkingPath(), GetWorkingDir());
+    std::string wp = GetWorkingPath();
+    std::string wdn = GetWorkingDir();
+    printf("List: workingdir is:%s  dirname is:%s  Contents is:\n", wp.c_str(), wdn.c_str());
     Directory *directory = new Directory(NumDirEntries);
     directory->FetchFrom(directoryFile);
     directory->List();
@@ -611,7 +625,7 @@ FileSystem::List()
 // 	Print everything about the file system:
 //	  the contents of the bitmap
 //	  the contents of the directory
-//	  for each file in the directory,
+//	  for each file in the specified directory,
 //	      the contents of the file header
 //	      the data in the file
 //----------------------------------------------------------------------
@@ -891,7 +905,7 @@ FileSystem::Chdir(std::string path) {
     return oppositePath;
 }
 
-const char *
+std::string
 FileSystem::GetWorkingPath() {
     bool release;
     if (!fsLock->isHeldByCurrentThread()) {
@@ -902,10 +916,10 @@ FileSystem::GetWorkingPath() {
     if (release) {
         fsLock->Release();
     }
-    return tmp.c_str();
+    return tmp;
 }
 
-const char *
+std::string
 FileSystem::GetWorkingDir() {
     bool release;
     if (!fsLock->isHeldByCurrentThread()) {
@@ -915,7 +929,7 @@ FileSystem::GetWorkingDir() {
     if (release) {
         fsLock->Release();
     }
-    return tmp.c_str();
+    return tmp;
 }
 
  

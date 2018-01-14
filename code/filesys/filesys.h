@@ -102,8 +102,8 @@ class FileSystem {
     int Mkdir(const char *dirName);
     int Rmdir(const char *dirName);
     std::string Chdir(std::string path);
-    const char* GetWorkingPath();
-    const char* GetWorkingDir();
+    std::string GetWorkingPath();
+    std::string GetWorkingDir();
     void saveThreadState();                          //handles context switch
     void restoreThreadState();
                                                    

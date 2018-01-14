@@ -54,6 +54,7 @@
 #define SC_ReadAt 30
 #define SC_WriteAt 31
 #define SC_Remove 32
+#define SC_Print 33
 
 #define SC_AssertionFailed     100
 
@@ -195,6 +196,11 @@ void Chdir(const char *name);
  * remove the file specified by the path "name"
  */
 int Remove(const char *name);
+
+/* Print
+ * print contents of current directory's files + bitmap / freespace info
+ */
+ void Print();
 
 //--- end filesystem ---
 

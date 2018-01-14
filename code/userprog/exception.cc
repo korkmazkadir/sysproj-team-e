@@ -395,6 +395,12 @@ void ExceptionHandler (ExceptionType which)
                 machine->WriteRegister(RET_VALUE_REGISTER, result);
                 
             } break;
+            
+            case SC_Print:
+            {
+                fileSystem->Print();
+            } break;
+            
             //      ---- End File System ----
             default:
             {

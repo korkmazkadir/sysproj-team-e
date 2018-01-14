@@ -31,7 +31,7 @@ int main() {
         _printf("user: rmdir failed\n");
     }
     List(); //here the Rmdir should have failed
-    _printf("Rmdir of newDir has run\n");
+    _printf("Rmdir of newDir has run, and should have failed\n");
     
     Chdir("newDir");
     Rmdir("subDir");
@@ -39,6 +39,7 @@ int main() {
     _printf("\n");
     
     Chdir("..");
+    _printf("\nnow removing newDir should work:\n");
     if (Rmdir("newDir") == -1) {
         _printf("user: rmdir failed\n");
     }
