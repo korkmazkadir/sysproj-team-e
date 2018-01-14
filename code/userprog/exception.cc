@@ -189,7 +189,7 @@ void ExceptionHandler (ExceptionType which)
 
                 int retAddress = machine->ReadRegister(8);
 
-                int threadRetVal = do_UserThreadCreate(funPtr, arg, retAddress, currentThread->space, false);
+                int threadRetVal = do_UserThreadCreate(funPtr, arg, retAddress, currentThread->space, false,currentThread->GetWorkingDirectory());
                 machine->WriteRegister(RET_VALUE_REGISTER, threadRetVal);
             } break;
 
@@ -257,8 +257,11 @@ void ExceptionHandler (ExceptionType which)
             
             case SC_ListDirectoryContent:
             {
-                printf(">> Listing directory content...\n");
-                listDirectoryContent();
+                int directoryNameAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                char directoryName [MAX_WRITE_BUF_SIZE];
+                copyStringFromMachine(directoryNameAddress, directoryName, MAX_WRITE_BUF_SIZE);
+                removeNewLine(directoryName);
+                listDirectoryContent(directoryName); 
                 break;
             }
             

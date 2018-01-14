@@ -152,6 +152,16 @@ int Thread::Tid() const
     return tid;
 }
 
+
+void Thread::SetWorkingDirectory(int inodeSector){
+    workingDirectoryInode = inodeSector;
+}
+
+
+int Thread::GetWorkingDirectory(){
+    return workingDirectoryInode;
+}
+
 //----------------------------------------------------------------------
 // Thread::Finish
 //      Called by ThreadRoot when a thread is done executing the 
@@ -402,6 +412,8 @@ Thread::SaveUserState ()
 {
     for (int i = 0; i < NumTotalRegs; i++)
 	userRegisters[i] = machine->ReadRegister (i);
+    
+    
 }
 
 //----------------------------------------------------------------------
@@ -418,6 +430,10 @@ Thread::RestoreUserState ()
 {
     for (int i = 0; i < NumTotalRegs; i++)
 	machine->WriteRegister (i, userRegisters[i]);
+    
+    //printf("inode number is %d\n",this->workingDirectoryInode);
+    
+    //fileSystem->SetWorkingDirectory(this->workingDirectoryInode);
 }
 #endif
 

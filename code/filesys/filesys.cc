@@ -45,6 +45,8 @@
 
 #include <future>
 
+#include <iostream>
+
 #include "copyright.h"
 
 #include "disk.h"
@@ -178,18 +180,27 @@ FileSystem::FileSystem(bool format)
 bool
 FileSystem::Create(const char *name, int initialSize)
 {
+    
+    std::string fileName = this->getFileName(name);
+    OpenFile *currentDirectoryFile = this->handlePath(name);
+    
+    printf("creating filefile %s\n",fileName.c_str());
+    
     Directory *directory;
     BitMap *freeMap;
     FileHeader *hdr;
     int sector;
     bool success;
 
-    DEBUG('f', "Creating file %s, size %d\n", name, initialSize);
+    DEBUG('f', "Creating file %s, size %d\n", fileName.c_str(), initialSize);
 
     directory = new Directory(NumDirEntries);
-    directory->FetchFrom(directoryFile);
+    directory->FetchFrom(currentDirectoryFile);
 
-    if (directory->Find(name) != -1)
+    printf("Current directory in create\n");
+    directory->List();
+    
+    if (directory->Find(fileName.c_str()) != -1)
       success = FALSE;			// file is already in directory
     else {	
         freeMap = new BitMap(NumSectors);
@@ -197,7 +208,7 @@ FileSystem::Create(const char *name, int initialSize)
         sector = freeMap->Find();	// find a sector to hold the file header
     	if (sector == -1) 		
             success = FALSE;		// no free block for file header 
-        else if (!directory->Add(name, sector))
+        else if (!directory->Add(fileName.c_str(), sector))
             success = FALSE;	// no space in directory
 	else {
     	    hdr = new FileHeader;
@@ -207,7 +218,7 @@ FileSystem::Create(const char *name, int initialSize)
 	    	success = TRUE;
 		// everthing worked, flush all changes back to disk
     	    	hdr->WriteBack(sector); 		
-    	    	directory->WriteBack(directoryFile);
+    	    	directory->WriteBack(currentDirectoryFile);
     	    	freeMap->WriteBack(freeMapFile);
 	    }
             delete hdr;
@@ -218,10 +229,14 @@ FileSystem::Create(const char *name, int initialSize)
     return success;
 }
 
-
 bool
 FileSystem::CreateDirectory(const char *name){
 
+    std::string fileName = this->getFileName(name);
+    OpenFile *currentDirectoryFile = this->handlePath(name);
+    
+    printf("File name is %s\n",fileName.c_str());
+    
     Directory *directory;
     BitMap *freeMap;
     FileHeader *hdr;
@@ -230,12 +245,12 @@ FileSystem::CreateDirectory(const char *name){
 
     int initialSize = DirectoryFileSize;
 
-    DEBUG('f', "Creating directory %s, size %d\n", name, initialSize);
+    DEBUG('f', "Creating directory %s, size %d\n", fileName.c_str(), initialSize);
 
     directory = new Directory(NumDirEntries);
-    directory->FetchFrom(directoryFile);
+    directory->FetchFrom(currentDirectoryFile);
 
-    if (directory->Find(name) != -1)
+    if (directory->Find(fileName.c_str()) != -1)
       success = FALSE;			// file is already in directory
     else {	
         freeMap = new BitMap(NumSectors);
@@ -244,7 +259,7 @@ FileSystem::CreateDirectory(const char *name){
 
     	if (sector == -1) 		
             success = FALSE;		// no free block for file header 
-        else if (!directory->AddDirectory(name, sector))
+        else if (!directory->AddDirectory(fileName.c_str(), sector))
             success = FALSE;	// no space in directory
 	else {
     	    hdr = new FileHeader;
@@ -266,7 +281,7 @@ FileSystem::CreateDirectory(const char *name){
                 delete newDirectory;
                 
     	     			
-    	    	directory->WriteBack(directoryFile);
+    	    	directory->WriteBack(currentDirectoryFile);
     	    	freeMap->WriteBack(freeMapFile);
                 
 	    }
@@ -280,10 +295,16 @@ FileSystem::CreateDirectory(const char *name){
 
 
 int FileSystem::ChangeDirectory(const char *name){
+    
+    std::string fileName = this->getFileName(name);
+    OpenFile *currentDirectoryFile = this->handlePath(name);
+    
     Directory *directory;
     directory = new Directory(NumDirEntries);
-    directory->FetchFrom(directoryFile);
-    int sectorNumber  = directory->Find(name);
+    
+    
+    directory->FetchFrom(currentDirectoryFile);
+    int sectorNumber  = directory->Find(fileName.c_str());
     
     printf("sector number of directory %d \n", sectorNumber);
     
@@ -364,13 +385,21 @@ END:
 OpenFile *
 FileSystem::Open(const char *name)
 { 
+    std::string fileName = this->getFileName(name);
+    OpenFile *currentDirectoryFile = this->handlePath(name);
+    
     Directory *directory = new Directory(NumDirEntries);
     OpenFile *openFile = NULL;
     int sector;
 
-    DEBUG('f', "Opening file %s\n", name);
-    directory->FetchFrom(directoryFile);
-    sector = directory->Find(name); 
+    DEBUG('f', "Opening file %s\n", fileName.c_str());
+    directory->FetchFrom(currentDirectoryFile);
+    
+    printf("__________________\n");
+    directory->List();
+    printf("__________________\n");
+    
+    sector = directory->Find(fileName.c_str()); 
     if (sector >= 0) 		
 	openFile = new OpenFile(sector);	// name was found in directory 
     delete directory;
@@ -439,6 +468,17 @@ FileSystem::List()
     delete directory;
 }
 
+
+void FileSystem::ListDirectoryContent(const char *name){
+    OpenFile *currentDirectoryFile = this->handlePath(name);
+    Directory *directory = new Directory(NumDirEntries);
+
+    directory->FetchFrom(currentDirectoryFile);
+    directory->List();
+    delete directory;
+}
+
+
 //----------------------------------------------------------------------
 // FileSystem::Print
 // 	Print everything about the file system:
@@ -476,3 +516,94 @@ FileSystem::Print()
     delete freeMap;
     delete directory;
 } 
+
+//----------------------------------------------------------------------
+//Open function to use internally
+//----------------------------------------------------------------------
+OpenFile *
+FileSystem::open(const char *name,OpenFile *dirFile)
+{ 
+    Directory *directory = new Directory(NumDirEntries);
+    OpenFile *openFile = NULL;
+    int sector;
+
+    DEBUG('f', "Opening file %s\n", name);
+    directory->FetchFrom(dirFile);
+    sector = directory->Find(name); 
+    if (sector >= 0) 		
+	openFile = new OpenFile(sector);	// name was found in directory 
+    delete directory;
+    return openFile;				// return NULL if not found
+}
+
+
+//----------------------------------------------------------------------
+// Decodes paths and returns a file pointer
+//----------------------------------------------------------------------
+OpenFile* FileSystem::handlePath(const char *pathStr){
+    
+    OpenFile *file  = directoryFile;
+    std::string  path = pathStr;
+    std::string  delimiter = "/";
+    
+    if(path.find(delimiter) == std::string::npos){
+        printf("returning current directory file\n");
+        return file;
+    }
+
+    size_t pos = 0;
+    std::string token;
+    while ((pos = path.find(delimiter)) != std::string::npos) {
+        token = path.substr(0, pos);
+        printf("-->File name %s\n",token.c_str());
+        std::cout << token << std::endl;
+        path.erase(0, pos + delimiter.length());
+        
+        file = this->open(token.c_str(),file);
+        
+        if(path.find(delimiter) == std::string::npos){
+            printf("no path...%d\n",(int)file);
+           return file;
+        }
+        
+        
+        Directory *directory = new Directory(NumDirEntries);
+        directory->FetchFrom(file);
+        int sector = directory->Find(token.c_str());
+        
+        //Clean previous file object
+        if (sector >= 0){
+            delete file;
+            file = new OpenFile(sector);
+        }
+
+        delete directory;
+    }
+
+    return file;
+}
+
+
+
+std::string FileSystem::getFileName(const char *pathStr) {
+   std::string  path = pathStr;
+   char sep = '/';
+   size_t i = path.rfind(sep, path.length());
+   if (i != std::string::npos) {
+      return(path.substr(i+1, path.length() - i));
+   }
+   
+   return path;
+}
+
+
+int FileSystem::GetDirectoryInode(const char *path){
+    OpenFile* file = handlePath(path);
+    return file->GetSector();
+}
+
+
+void FileSystem::SetWorkingDirectory(int directoryInode){
+    delete directoryFile;
+    directoryFile = new OpenFile(directoryInode);
+}

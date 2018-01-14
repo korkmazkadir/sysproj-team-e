@@ -3,7 +3,7 @@
 #include "nachos_stdio.h"
 
 int main() {
-    ListDirectoryContent();
+    ListDirectoryContent(".");
     Exit(0);
 }
 

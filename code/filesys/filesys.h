@@ -35,6 +35,8 @@
 #ifndef FS_H
 #define FS_H
 
+#include <string>
+
 #include "copyright.h"
 #include "openfile.h"
 
@@ -76,6 +78,8 @@ class FileSystem {
 
     bool Create(const char *name, int initialSize);  	// Create a file (UNIX creat)
 
+    void ListDirectoryContent(const char *name);
+    
     bool CreateDirectory(const char *name); //Creates a directory
     
     int ChangeDirectory(const char *name); //Changes current directory
@@ -90,12 +94,20 @@ class FileSystem {
 
     void Print();			// List all the files and their contents
 
+    int GetDirectoryInode(const char *path);
+    
+    void SetWorkingDirectory(int directoryInode);
+    
+    
   private:
    OpenFile* freeMapFile;		// Bit map of free disk blocks,
 					// represented as a file
    OpenFile* directoryFile;		// "Root" directory -- list of 
 					// file names, represented as a file
-   OpenFile* currentDirectoryFile;      // Current Directory;
+
+   OpenFile* open(const char *name, OpenFile *dirFile);
+   OpenFile* handlePath(const char *path);
+   std::string getFileName(const char *pathStr);
    
 };
 

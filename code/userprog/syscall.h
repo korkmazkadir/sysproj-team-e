@@ -191,7 +191,7 @@ int ForkExec(char *fileName);
 /* Lists content of the current directory
  * 
  */
-void ListDirectoryContent();
+void ListDirectoryContent(char *directoryName);
 
 /* Lists content of the current directory
  * 

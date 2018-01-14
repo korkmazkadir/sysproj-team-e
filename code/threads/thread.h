@@ -114,6 +114,10 @@ class Thread
     }
 
     void SetTID(int _tid);
+    
+    void SetWorkingDirectory(int inodeSector);
+    int GetWorkingDirectory();
+    
     int Tid() const;
 
   private:
@@ -125,7 +129,9 @@ class Thread
     // (If NULL, don't deallocate stack)
     ThreadStatus status;	// ready, running or blocked
     const char *name;
-
+    
+    int workingDirectoryInode;
+    
     void StackAllocate (VoidFunctionPtr func, int arg);
     // Allocate a stack for thread.
     // Used internally by Fork()

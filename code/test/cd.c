@@ -10,7 +10,7 @@ int main() {
     SynchGetString(name,MAX_STRING_SIZE);
     
     ChangeDirectory(name);
-    ListDirectoryContent();
+    ListDirectoryContent(".");
 
     SynchGetString(name,MAX_STRING_SIZE);
     int result = CreateDirectory(name);

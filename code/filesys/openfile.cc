@@ -26,11 +26,12 @@
 //	"sector" -- the location on disk of the file header for this file
 //----------------------------------------------------------------------
 
-OpenFile::OpenFile(int sector)
+OpenFile::OpenFile(int sector_)
 { 
     hdr = new FileHeader;
-    hdr->FetchFrom(sector);
+    hdr->FetchFrom(sector_);
     seekPosition = 0;
+    this->sector = sector_;
 }
 
 //----------------------------------------------------------------------
@@ -195,4 +196,9 @@ int
 OpenFile::Length() 
 { 
     return hdr->FileLength(); 
+}
+
+
+int OpenFile::GetSector(){
+    return sector;
 }

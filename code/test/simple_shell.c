@@ -2,54 +2,133 @@
 
 #include "nachos_stdio.h"
 
+//char COMMAND_LIST[10][MAX_STRING_SIZE] = {"", "ls", "cd","mkdir","rm"};
 
-void printCommandList(){
-    _printf("#### Commands ######\n");
-    _printf("1 - ls\n");
-    _printf("2 - mkdir\n");
-    _printf("3 - cd\n");
-    _printf("4 - rm\n");
+
+char _command[MAX_STRING_SIZE];
+char _parameter[MAX_STRING_SIZE];
+int _userSelection = 0;
+
+
+int strlen(char *str){
+    int count = 0;
+    for (int i = 0; i < MAX_STRING_SIZE; i++) {
+        if(str[i] != '\0'){
+            count++;
+        }else{
+            break;
+        }
+    }
     
-    _printf("0 - exit\n");
-    
-    _printf(">> ");
+    return count;
 }
+
+
+void printCursor(){
+    _userSelection = -1;
+    _printf("NashOS >> ");
+}
+
 
 void printError(char *message){
     _printf("ERROR : %s\n",message);
 }
 
 void cmd_ls(){
-    ListDirectoryContent();
+    int size = strlen(_parameter);
+    _printf("size of the parameter %d\n",size);
+    if(size != 0){
+        ListDirectoryContent(_parameter);
+    }else{
+        ListDirectoryContent(".");
+    }
 }
 
 void cmd_mkdir(){
-    _printf("(create directory)Enter name of the directory : ");
-    char name[MAX_STRING_SIZE];
-    SynchGetString(name,MAX_STRING_SIZE);
-    CreateDirectory(name);
+    CreateDirectory(_parameter);
 }
 
+
 void cmd_cd(){
-    _printf("(chnage directory)Enter name of the directory : ");
-    char name[MAX_STRING_SIZE];
-    SynchGetString(name,MAX_STRING_SIZE);
-    ChangeDirectory(name);
+    ChangeDirectory(_parameter);
 }
 
 
 void cmd_rm(){
-    _printf("(remove directory)Enter name of the directory : ");
-    char name[MAX_STRING_SIZE];
-    SynchGetString(name,MAX_STRING_SIZE);
-    int result = RemoveDirectory(name);
+    int result = RemoveDirectory(_parameter);
     if(result == -2){
         printError("Can not delete, directory it is not empty.\n");
     }
 }
 
-void handleUserSelection(int userSelection){
-    switch(userSelection){
+
+int compareString(char *str1, char *str2){
+    for (int i = 0; i < MAX_STRING_SIZE; i++) {
+        char ch1 = str1[i];
+        char ch2 = str2[i];
+        
+        if(ch1 != ch2){
+            return -1;
+        }else if(ch1 == '\0'){
+            return 0;
+        }
+    }
+    
+    return 0;
+}
+
+void clearString(char *string, int size){
+    for (int i = 0; i < size; i++) {
+        string[i] = '\0';
+    }   
+}
+
+
+void decodeCommand(char *command){
+    clearString(_command,MAX_STRING_SIZE);
+    clearString(_parameter,MAX_STRING_SIZE);
+
+    int commandCursor = 0;
+    int parameterCursor = 0;
+    
+    int isCommand = 1;
+    for (int i = 0; i < MAX_STRING_SIZE && command[i] != '\n'; i++) {
+        char c = command[i];
+        
+        if(c == ' '){
+            isCommand = 0;
+            continue;
+        }
+        
+        if(isCommand){
+           _command[commandCursor] = c;
+           commandCursor++;
+        }else{
+           _parameter[parameterCursor] = c;
+           parameterCursor++;
+        }
+    }
+    
+
+    if(compareString("ls",_command) == 0){
+        _userSelection = 1;
+    }else if(compareString("cd",_command) == 0){
+        _userSelection = 2;
+    }else if(compareString("mkdir",_command) == 0){
+        _userSelection = 3;
+    }else if(compareString("rm",_command) == 0){
+        _userSelection = 4;
+    }else if(compareString("exit",_command) == 0){
+        Exit(0);
+    }
+
+}
+
+
+
+void handleCommand(){
+    
+    switch(_userSelection){
         
         case 1: {
             cmd_ls();
@@ -57,12 +136,12 @@ void handleUserSelection(int userSelection){
         }
         
         case 2: {
-            cmd_mkdir();
+            cmd_cd();
             break;
         }
         
         case 3: {
-            cmd_cd();
+            cmd_mkdir();
             break;
         }
         
@@ -71,25 +150,21 @@ void handleUserSelection(int userSelection){
             break;
         }
         
-        
         case 0: {
             Exit(0);
         }
-        
-        default :{
-            _printf("---> Bad request. Try again\n");
-        }
-        
+
     }
 }
 
 int main() {
     
-    int userSelection;
+    char command[MAX_STRING_SIZE];
     while (1 == 1) {
-        printCommandList();
-        SynchGetInt(&userSelection);
-        handleUserSelection(userSelection);
+        printCursor();
+        SynchGetString(command,MAX_STRING_SIZE);
+        decodeCommand(command);
+        handleCommand();
     }
 
     Exit(0);
