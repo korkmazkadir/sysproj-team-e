@@ -176,14 +176,10 @@ Initialize (int argc, char **argv)
 #endif
 
 #ifdef FILESYS_NEEDED
-    std::string *initialWP = new std::string("/");
-    std::string *initialWDN = new std::string("/");
-   // initialWP = "/";
-    //initialWDN = "/";
     //need flag for filesys to avoid scheduler calling 
     //filesys->save / restore before filesystem is created
     FileSysIsUp = 0;
-    fileSystem = new FileSystem (format, initialWP, initialWDN);
+    fileSystem = new FileSystem (format);
     fileSystem->saveThreadState();
     //printf("System::Initialize() has setup first thread's filesys info\n");
     FileSysIsUp = 1;

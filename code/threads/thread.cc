@@ -59,6 +59,7 @@ Thread::Thread (const char *threadName, std::string *initialWP, std::string *ini
         } else {
             std::string dirname("../");
             dirname.append(*workingDirName);
+            printf("Thread creation: appended %s to ../\n", workingDirName->c_str());
             fileSystem->Open(dirname);
         }
        //printf("    !!!!   created thread with WP %s WDN %s DF %x\n", workingPath->c_str(), workingDirName->c_str(), (unsigned int)directoryFile);
@@ -96,6 +97,7 @@ Thread::~Thread ()
     if (workingDirName != NULL) {
         delete workingDirName;
     }
+    fileSystem->Close(directoryFile);
 }
 
 //----------------------------------------------------------------------

@@ -89,7 +89,7 @@ FileSystem::dbgChecks() {
 //	"format" -- should we initialize the disk?
 //----------------------------------------------------------------------
 
-FileSystem::FileSystem(bool format, std::string *initialWP, std::string *initialWDN)
+FileSystem::FileSystem(bool format)
 { 
     DEBUG('f', "Initializing the file system.\n");
     
@@ -102,15 +102,16 @@ FileSystem::FileSystem(bool format, std::string *initialWP, std::string *initial
     for (int i = 0; i < 10; i++) {
         openFiles[i] = (FileInfo*) malloc(sizeof(struct S_fileInfo));
         openFiles[i]->file = NULL;
-        openFiles[i]->sem = NULL;
     }
     
     //set up synch
     fsLock = new Lock("fileSysLock");
     
+
+    std::string *initialWP = new std::string("/");
+    std::string *initialWDN = new std::string("/");
     workingPath = initialWP;
     workingDirName = initialWDN;
-    
     
     if (format) {
         BitMap *freeMap = new BitMap(NumSectors);
@@ -148,8 +149,8 @@ FileSystem::FileSystem(bool format, std::string *initialWP, std::string *initial
             Exit(-1);
         }
         openFiles[0]->file = directoryFile;
-        openFiles[0]->sem = new Semaphore("openFile sem", 0);
         openFiles[0]->nbOpens = 1;
+        openFiles[0]->name = "/";
 
         //add the two dirs . and ..
         directory->Add(".", DirectorySector, 1);
@@ -185,7 +186,6 @@ FileSystem::FileSystem(bool format, std::string *initialWP, std::string *initial
             Exit(-1);
         }
         openFiles[0]->file = directoryFile;
-        openFiles[0]->sem = new Semaphore("openFile sem", 0);
         openFiles[0]->nbOpens = 1;
     }
         
@@ -195,11 +195,18 @@ FileSystem::FileSystem(bool format, std::string *initialWP, std::string *initial
 
 
 FileSystem::~FileSystem() {
+    int nbOpenFiles = 0;
     for (int i = 0; i < 10; i++) {
         if (openFiles[i] != NULL) {
+            if (openFiles[i]->file != NULL) {
+                delete openFiles[i]->file;
+                nbOpenFiles ++;
+                printf("xxxxx %s is still open\n", openFiles[i]->name.c_str());
+            }
             free (openFiles[i]);
         }
     }
+    printf("FileSystem::~FileSystem : %d files still open at exit.\n", nbOpenFiles);
 }
 
 //----------------------------------------------------------------------
@@ -341,7 +348,11 @@ FileSystem::Create(std::string fileName, int initialSize, bool isDir)
 
 OpenFile *
 FileSystem::Open(std::string fileName)
-{ 
+{   printf("Open(%s)\n", fileName.c_str());
+    if (fileName.empty()) {
+        printf("FileSystem called with empty filename\n");
+        return NULL;
+    }
     bool release;
     if (!fsLock->isHeldByCurrentThread()) {
         release = TRUE;
@@ -377,7 +388,7 @@ FileSystem::Open(std::string fileName)
     sector = directory->Find(name.c_str()); 
     if (sector < 0) {	
         // name was not found in directory 
-        printf("FileSystem::Open didnt find file %s in dir\n", name.c_str());
+        printf("FileSystem::Open didnt find file %s in dir %s\n", name.c_str(), GetWorkingPath().c_str());
         if (!backTrackPath.empty())
             Chdir(backTrackPath);
         if (release) {
@@ -406,8 +417,10 @@ FileSystem::Open(std::string fileName)
         for (i = 0; i < 10 && openFiles[i]->file != NULL; i++);
         if (i != 10) {
             openFiles[i]->file = openFile;
-            openFiles[i]->sem = new Semaphore("openFile sem", 0);
             openFiles[i]->nbOpens = 1;
+            openFiles[i]->toBeRemoved = 0;
+            openFiles[i]->name = fileName;
+            printf("Open: file %s %x nbopens =%d\n",name.c_str(), (unsigned int)openFiles[i]->file, openFiles[i]->nbOpens);
         }
         else {
             printf("FileSystem::Open max open file number reached. Cannot open %s\n", name.c_str());
@@ -421,8 +434,19 @@ FileSystem::Open(std::string fileName)
         }
     }
     else { // if the file was already open
+        if (openFiles[i]->toBeRemoved) {
+            //cannot open as file is waiting to be destroyed
+            printf("FileSystem::Open file %s is waiting for destruction, cannot open\n", name.c_str());
+            if (!backTrackPath.empty())
+                Chdir(backTrackPath);
+            if (release) {
+                fsLock->Release();
+            }
+            return NULL;
+        }
         openFiles[i]->nbOpens++;
         openFile = openFiles[i]->file;
+        printf("(re-)Open: file %s %x nbopens =%d\n",name.c_str(), (unsigned int)openFiles[i]->file, openFiles[i]->nbOpens);
     }
     
     //go back to initial dir
@@ -458,7 +482,7 @@ FileSystem::Close(OpenFile *ofid) {
     }
     if (!found) {
         //file not found
-        printf("FileSystem::Close the file of id %d is not open\n", (int)ofid);
+        printf("FileSystem::Close the file of id %x is not open\n", (unsigned int)ofid);
         if (release) {
             fsLock->Release();
         }
@@ -469,7 +493,9 @@ FileSystem::Close(OpenFile *ofid) {
         //no one else has this file open
         delete openFiles[i]->file;
         openFiles[i]->file = NULL;
-        openFiles[i]->sem->V();
+        if (openFiles[i]->toBeRemoved) {
+            Remove(openFiles[i]->name);
+        }
     }
     dbgChecks();
     if (release) {
@@ -488,7 +514,8 @@ FileSystem::Close(OpenFile *ofid) {
 //
 //	Return 0 if the file was deleted, -1 if the file wasn't
 //	in the file system.
-//  A call to Remove() on an open file will block until the file has been closed.
+//  A call to Remove() on an open file will set flag so that no other can open it.
+//  When the last thread closes the file, this flag will trigger a call to Remove, which will then be able to run.
 //	"name" -- the text name of the file to be removed
 //----------------------------------------------------------------------
 
@@ -552,9 +579,13 @@ FileSystem::Remove(std::string fileName)
     }
     if (i != 10) {
         //file found
-        printf("FileSystem::Remove the file %s is still open\n", name.c_str());
-        //wait for it to be closed
-        openFiles[i]->sem->P();
+        printf("FileSystem::Remove the file %s %x is still open\n", name.c_str(), (unsigned int)openFiles[i]->file);
+        //mark for removal so no one else opens it
+        openFiles[i]->toBeRemoved = 1;
+        if (release) {
+            fsLock->Release();
+        }
+        return 0;
     }
     
     fileHdr = new FileHeader;

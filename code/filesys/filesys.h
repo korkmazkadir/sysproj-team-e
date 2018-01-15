@@ -74,13 +74,14 @@ class Lock;
 
 typedef struct S_fileInfo {
     OpenFile *file;
-    Semaphore *sem;
     int nbOpens;
+    int toBeRemoved;
+    std::string name;
 } FileInfo;
 
 class FileSystem {
   public:
-    FileSystem(bool format, std::string *initialWP, std::string *initialWDN);		                // Initialize the file system.
+    FileSystem(bool format);		                // Initialize the file system.
                                                     // Must be called *after* "synchDisk" 
                                                     // has been initialized.
                                                     // If "format", there is nothing on
@@ -117,8 +118,8 @@ class FileSystem {
                                                     // represented as a file
     OpenFile* directoryFile;		                // current directory -- list of 
                                                      // file names, represented as a file
-    //OpenFile **openFiles;                           //table of currently open files
-    FileInfo **openFiles;
+    //OpenFile **openFiles;                           
+    FileInfo **openFiles;                           //system-wide table of currently open files
     int *threadOpenFiles;                           //points to table in thread class containing 
                                                     //indices referring to (global) openFiles table
     std::string *workingPath;
