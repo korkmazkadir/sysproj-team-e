@@ -149,7 +149,7 @@ class Thread
 
     //filesys
     OpenFile *directoryFile; //current directory file pointer
-    int openFileIds[10];
+    OpenFile *openFileIds[10];
     std::string *workingPath;
     std::string *workingDirName;
 };

@@ -1,9 +1,37 @@
-abcdMachine halting!
+acdbOpen(prog)
+Open: file prog 8162128 nbopens =1
+Open(up0)
+Open: file up0 8162210 nbopens =1
+Open(up1j)
+Open: file up1j 8162140 nbopens =1
+Open(prog)
+Open: file prog 8162158 nbopens =1
+Open(.)
+(re-)Open: file . 8151ce8 nbopens =2
+Open(up0)
+Open: file up0 8162170 nbopens =1
+Open(.)
+(re-)Open: file . 8151ce8 nbopens =2
+Open(up1j)
+Open(.)
+Open: file up1j 8164750 nbopens =1
+(re-)Open: file . 8151ce8 nbopens =3
+Open(.)
+Open(.)
+(re-)Open: file . 8151ce8 nbopens =3
+Open(.)
+(re-)Open: file . 8151ce8 nbopens =3
+Open(.)
+(re-)Open: file . 8151ce8 nbopens =3
+(re-)Open: file . 8151ce8 nbopens =2
+Machine halting!
 
-Ticks: total 4520832, idle 4499001, system 21600, user 231
-Disk I/O: reads 338, writes 282
+Ticks: total 4826243, idle 4784992, system 41020, user 231
+Disk I/O: reads 945, writes 287
 Console I/O: reads 0, writes 4
 Paging: faults 0
 Network I/O: packets received 0, sent 0
 
 Cleaning up...
+xxxxx / is still open
+FileSystem::~FileSystem : 1 files still open at exit.

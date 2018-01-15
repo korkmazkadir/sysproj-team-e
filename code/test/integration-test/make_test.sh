@@ -40,10 +40,10 @@ Check_Result
 printf "${NC}\n\n### STEP 3 ###\n"
 
 #----------------------------------------------------------------------------
-#printf "${RED}"
-#printf "${NC}>> Semaphore test (takes time to execute) ${RED}\n"
-#${EXECUTABLE} ../../build/testsemaphores prog -x prog -rs 15
-#Check_Result
+printf "${RED}"
+printf "${NC}>> Semaphore test (takes time to execute) ${RED}\n"
+${EXECUTABLE} ../../build/testsemaphores prog -x prog -rs 15
+Check_Result
 
 
 #----------------------------------------------------------------------------

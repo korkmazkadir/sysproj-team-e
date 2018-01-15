@@ -92,8 +92,10 @@ class FileSystem {
     int Create(std::string fileName, int initialSize, bool isDir); // Create a file (UNIX creat)
                                                     
 
+    int ThreadOpen(std::string fileName);
     OpenFile* Open(std::string fileName); 	         // Open a file (UNIX open)
     
+    int ThreadClose(int index);
     int Close(OpenFile *ofid);
     int Remove(std::string fileName);  	         // Delete a file (UNIX unlink)
 
@@ -107,24 +109,27 @@ class FileSystem {
     std::string GetWorkingDir();
     void saveThreadState();                          //handles context switch
     void restoreThreadState();
-                                                   
+    int Read(char *buffer, int numBytes, int index);
+    int Write(char *buffer, int numBytes, int index);     
+    int ReadAt(char *buffer, int numBytes, int pos, int index);
+    int WriteAt(char *buffer, int numBytes, int pos, int index);  
 
+    Lock *fsLock;
 
   private:
   
     void dbgChecks(); //helper
-
     OpenFile* freeMapFile;		                    // Bit map of free disk blocks,
                                                     // represented as a file
     OpenFile* directoryFile;		                // current directory -- list of 
                                                      // file names, represented as a file
     //OpenFile **openFiles;                           
     FileInfo **openFiles;                           //system-wide table of currently open files
-    int *threadOpenFiles;                           //points to table in thread class containing 
+    OpenFile **threadOpenFiles;                     //points to table in thread class containing 
                                                     //indices referring to (global) openFiles table
     std::string *workingPath;
     std::string *workingDirName;                       //name of current directory (starts as root)
-    Lock *fsLock;
+    
 };
 
 /* ideas:

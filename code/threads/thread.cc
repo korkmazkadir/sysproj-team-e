@@ -64,9 +64,8 @@ Thread::Thread (const char *threadName, std::string *initialWP, std::string *ini
         }
        //printf("    !!!!   created thread with WP %s WDN %s DF %x\n", workingPath->c_str(), workingDirName->c_str(), (unsigned int)directoryFile);
     }
-
     for (int i = 0; i < 10; i++) {
-        openFileIds[i] = -1;
+        openFileIds[i] = NULL;
     }
 
 }

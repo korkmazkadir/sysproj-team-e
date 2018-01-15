@@ -258,22 +258,31 @@ void ExceptionHandler (ExceptionType which)
             } break;
             
             
-            //        ---- File System ---
+            //        ---- File System ---            
             case SC_Mkdir:
             {
                 int fromAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
                 char local_buf[MAX_WRITE_BUF_SIZE];
                 copyStringFromMachine(fromAddress, local_buf, MAX_WRITE_BUF_SIZE);
+                
+                fileSystem->fsLock->Acquire();
                 int result = fileSystem->Mkdir(local_buf);
+                fileSystem->fsLock->Release();
+                
                 machine->WriteRegister(RET_VALUE_REGISTER, result);
             } break;
+            
             
             case SC_Rmdir:
             {
                 int fromAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
                 char local_buf[MAX_WRITE_BUF_SIZE];
                 copyStringFromMachine(fromAddress, local_buf, MAX_WRITE_BUF_SIZE);
+                
+                fileSystem->fsLock->Acquire();
                 int result = fileSystem->Rmdir(local_buf);
+                fileSystem->fsLock->Release();
+                
                 machine->WriteRegister(RET_VALUE_REGISTER, result);
             } break;
             
@@ -288,8 +297,11 @@ void ExceptionHandler (ExceptionType which)
                 char local_buf[MAX_WRITE_BUF_SIZE];
                 copyStringFromMachine(fromAddress, local_buf, MAX_WRITE_BUF_SIZE);
                 std::string path(local_buf);
-                //std::string oppositePath =
+                
+                fileSystem->fsLock->Acquire();
                 fileSystem->Chdir(path);
+                fileSystem->fsLock->Release();
+                
             } break;
             
             case SC_Create:
@@ -298,7 +310,11 @@ void ExceptionHandler (ExceptionType which)
                 char local_buf[MAX_WRITE_BUF_SIZE];
                 copyStringFromMachine(fromAddress, local_buf, MAX_WRITE_BUF_SIZE);
                 std::string path(local_buf);
+                
+                fileSystem->fsLock->Acquire();
                 int result = fileSystem->Create(path, MaxFileSize, 0);
+                fileSystem->fsLock->Release();
+                
                 machine->WriteRegister(RET_VALUE_REGISTER, result);                
             } break;
             
@@ -308,8 +324,12 @@ void ExceptionHandler (ExceptionType which)
                 char local_buf[MAX_WRITE_BUF_SIZE];
                 copyStringFromMachine(fromAddress, local_buf, MAX_WRITE_BUF_SIZE);
                 std::string path(local_buf);
-                int ofid = (int) fileSystem->Open(path);
-                machine->WriteRegister(RET_VALUE_REGISTER, ofid);
+                
+                fileSystem->fsLock->Acquire();
+                int index = fileSystem->ThreadOpen(path);
+                fileSystem->fsLock->Release();
+                
+                machine->WriteRegister(RET_VALUE_REGISTER, index);
             } break;
 
 
@@ -321,9 +341,13 @@ void ExceptionHandler (ExceptionType which)
                 if (numBytes > MAX_WRITE_BUF_SIZE) {
                     numBytes = MAX_WRITE_BUF_SIZE;
                 }
-                OpenFile *ofid = (OpenFile*) machine->ReadRegister(THIRD_PARAM_REGISTER);
+                int index = machine->ReadRegister(THIRD_PARAM_REGISTER);
                 char local_buf[MAX_WRITE_BUF_SIZE];
-                int result = ofid->Read(local_buf, numBytes);
+                
+                fileSystem->fsLock->Acquire();
+                int result = fileSystem->Read(local_buf, numBytes, index);
+                fileSystem->fsLock->Release();
+                
                 copyStringToMachine(local_buf, toVirtualAddress, numBytes);
                 machine->WriteRegister(RET_VALUE_REGISTER, result);
             } break;
@@ -337,10 +361,14 @@ void ExceptionHandler (ExceptionType which)
                 if (numBytes > MAX_WRITE_BUF_SIZE) {
                     numBytes = MAX_WRITE_BUF_SIZE;
                 }
-                OpenFile *ofid = (OpenFile*) machine->ReadRegister(THIRD_PARAM_REGISTER);
+                int index = machine->ReadRegister(THIRD_PARAM_REGISTER);
                 char local_buf[MAX_WRITE_BUF_SIZE];
+                
                 copyStringFromMachine(fromAddress, local_buf, MAX_WRITE_BUF_SIZE);
-                int result = ofid->Write(local_buf, numBytes);
+                fileSystem->fsLock->Acquire();
+                fileSystem->fsLock->Release();
+                
+                int result = fileSystem->Write(local_buf, numBytes, index);
                 machine->WriteRegister(RET_VALUE_REGISTER, result);
             } break;
             
@@ -353,10 +381,14 @@ void ExceptionHandler (ExceptionType which)
                 if (numBytes > MAX_WRITE_BUF_SIZE) {
                     numBytes = MAX_WRITE_BUF_SIZE;
                 }
-                OpenFile *ofid = (OpenFile*) machine->ReadRegister(THIRD_PARAM_REGISTER);
+                int index = machine->ReadRegister(THIRD_PARAM_REGISTER);
                 int pos = machine->ReadRegister(FOURTH_PARAM_REGISTER);
                 char local_buf[MAX_WRITE_BUF_SIZE];
-                int result = ofid->ReadAt(local_buf, numBytes, pos);
+                
+                fileSystem->fsLock->Acquire();
+                int result = fileSystem->ReadAt(local_buf, numBytes, pos, index);
+                fileSystem->fsLock->Release();
+                
                 copyStringToMachine(local_buf, toVirtualAddress, numBytes);
                 machine->WriteRegister(RET_VALUE_REGISTER, result);
             } break;
@@ -370,18 +402,26 @@ void ExceptionHandler (ExceptionType which)
                 if (numBytes > MAX_WRITE_BUF_SIZE) {
                     numBytes = MAX_WRITE_BUF_SIZE;
                 }
-                OpenFile *ofid = (OpenFile*) machine->ReadRegister(THIRD_PARAM_REGISTER);
+                int index = machine->ReadRegister(THIRD_PARAM_REGISTER);
                 int pos = machine->ReadRegister(FOURTH_PARAM_REGISTER);
                 char local_buf[MAX_WRITE_BUF_SIZE];
                 copyStringFromMachine(fromAddress, local_buf, MAX_WRITE_BUF_SIZE);
-                int result = ofid->WriteAt(local_buf, numBytes, pos);
+                
+                fileSystem->fsLock->Acquire();
+                int result = fileSystem->WriteAt(local_buf, numBytes, pos, index);
+                fileSystem->fsLock->Release();
+                
                 machine->WriteRegister(RET_VALUE_REGISTER, result);
             } break;
             
             case SC_Close:
-            {
-                OpenFile *ofid = (OpenFile*) machine->ReadRegister(FIRST_PARAM_REGISTER);
-                int result = fileSystem->Close(ofid);
+            {   
+                int index = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                
+                fileSystem->fsLock->Acquire();
+                int result = fileSystem->ThreadClose(index);
+                fileSystem->fsLock->Release();
+                
                 machine->WriteRegister(RET_VALUE_REGISTER, result);
             } break;
 
@@ -390,7 +430,11 @@ void ExceptionHandler (ExceptionType which)
                 int fromAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
                 char local_buf[MAX_WRITE_BUF_SIZE];
                 copyStringFromMachine(fromAddress, local_buf, MAX_WRITE_BUF_SIZE);
+                
+                fileSystem->fsLock->Acquire();
                 int result = fileSystem->Remove(local_buf);
+                fileSystem->fsLock->Release();
+                
                 machine->WriteRegister(RET_VALUE_REGISTER, result);
                 
             } break;

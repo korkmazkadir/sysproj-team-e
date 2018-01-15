@@ -241,16 +241,8 @@ FileSystem::~FileSystem() {
 int
 FileSystem::Create(std::string fileName, int initialSize, bool isDir)
 {
-    bool release;
-    if (!fsLock->isHeldByCurrentThread()) {
-        release = TRUE;
-        fsLock->Acquire();
-    }
     if ((unsigned)initialSize > MaxFileSize) {
         printf("fileSystem::Create file %s is too big\n", fileName.c_str());
-        if (release) {
-            fsLock->Release();
-        }
         return -1;
     }
     //separate path and name
@@ -328,10 +320,34 @@ FileSystem::Create(std::string fileName, int initialSize, bool isDir)
     if (!backTrackPath.empty())
         Chdir(backTrackPath);
     dbgChecks();
-    if (release) {
-        fsLock->Release();
-    }
     return success;
+}
+
+
+/*
+ * Returns -1 on failure, and an integer index corresponding to openFile ID otherwise
+ */
+int 
+FileSystem::ThreadOpen(std::string fileName) {
+    int index;
+    int i;
+    for (i = 0; i < 10; i++) {
+        if (threadOpenFiles[i] == NULL) {
+            index = i;
+            break;
+        }
+    }
+    if (i == 10) {
+        printf("Filesystem ThreadOpen: max files open. failed to open\n");
+        return -1;
+    }
+    OpenFile *ofid = Open(fileName);
+    if (ofid == NULL) {
+        printf("Filesystem ThreadOpen: failed to open\n");
+        return -1;
+    }
+    threadOpenFiles[index] = ofid;
+    return index;
 }
 
 //----------------------------------------------------------------------
@@ -345,18 +361,12 @@ FileSystem::Create(std::string fileName, int initialSize, bool isDir)
 //	"name" -- the text name of the file to be opened
 //----------------------------------------------------------------------
 
-
 OpenFile *
 FileSystem::Open(std::string fileName)
 {   printf("Open(%s)\n", fileName.c_str());
     if (fileName.empty()) {
         printf("FileSystem called with empty filename\n");
         return NULL;
-    }
-    bool release;
-    if (!fsLock->isHeldByCurrentThread()) {
-        release = TRUE;
-        fsLock->Acquire();
     }
     
     //separate path and name
@@ -391,9 +401,6 @@ FileSystem::Open(std::string fileName)
         printf("FileSystem::Open didnt find file %s in dir %s\n", name.c_str(), GetWorkingPath().c_str());
         if (!backTrackPath.empty())
             Chdir(backTrackPath);
-        if (release) {
-            fsLock->Release();
-        }
         return NULL;
     }
     delete directory;
@@ -427,9 +434,6 @@ FileSystem::Open(std::string fileName)
             //return to initial dir
             if (!backTrackPath.empty())
                 Chdir(backTrackPath);
-            if (release) {
-                fsLock->Release();
-            }
             return NULL;
         }
     }
@@ -439,9 +443,6 @@ FileSystem::Open(std::string fileName)
             printf("FileSystem::Open file %s is waiting for destruction, cannot open\n", name.c_str());
             if (!backTrackPath.empty())
                 Chdir(backTrackPath);
-            if (release) {
-                fsLock->Release();
-            }
             return NULL;
         }
         openFiles[i]->nbOpens++;
@@ -455,22 +456,32 @@ FileSystem::Open(std::string fileName)
         
     //printf("filesys::open opened file ptr is %d\n", (int)openFile);
     dbgChecks();
-    if (release) {
-        fsLock->Release();
-    }
     return openFile;				// return NULL if not found
+}
+
+
+
+int 
+FileSystem::ThreadClose(int index) {
+    
+    OpenFile *ofid = threadOpenFiles[index];
+    if (ofid == NULL) {
+        printf("Filesystem ThreadClose: file not open\n");
+        return -1;
+    }
+    int ret = Close(ofid);
+    if (ret != -1) {
+        threadOpenFiles[index] = NULL;
+    }
+    return ret;
 }
 
 
 // FileSystem::Close
 // Closes the file specified by ofid. 
+
 int
 FileSystem::Close(OpenFile *ofid) {
-    bool release;
-    if (!fsLock->isHeldByCurrentThread()) {
-        release = TRUE;
-        fsLock->Acquire();
-    }
     //check if is opened
     int i;
     bool found = FALSE;
@@ -483,9 +494,6 @@ FileSystem::Close(OpenFile *ofid) {
     if (!found) {
         //file not found
         printf("FileSystem::Close the file of id %x is not open\n", (unsigned int)ofid);
-        if (release) {
-            fsLock->Release();
-        }
         return -1;
     }
     openFiles[i]->nbOpens--;
@@ -498,9 +506,6 @@ FileSystem::Close(OpenFile *ofid) {
         }
     }
     dbgChecks();
-    if (release) {
-        fsLock->Release();
-    }
     return 0;
 }
 
@@ -522,11 +527,6 @@ FileSystem::Close(OpenFile *ofid) {
 int
 FileSystem::Remove(std::string fileName)
 { 
-    bool release;
-    if (!fsLock->isHeldByCurrentThread()) {
-        release = TRUE;
-        fsLock->Acquire();
-    }
     //separate path and name
     std::string path(fileName);
     std::string name;
@@ -561,9 +561,6 @@ FileSystem::Remove(std::string fileName)
         //go back to initial dir
         if (!backTrackPath.empty())
         Chdir(backTrackPath);
-        if (release) {
-            fsLock->Release();
-        }
        return -1;			 // file not found 
     }
     
@@ -582,9 +579,6 @@ FileSystem::Remove(std::string fileName)
         printf("FileSystem::Remove the file %s %x is still open\n", name.c_str(), (unsigned int)openFiles[i]->file);
         //mark for removal so no one else opens it
         openFiles[i]->toBeRemoved = 1;
-        if (release) {
-            fsLock->Release();
-        }
         return 0;
     }
     
@@ -608,9 +602,6 @@ FileSystem::Remove(std::string fileName)
     if (!backTrackPath.empty())
         Chdir(backTrackPath);
     dbgChecks();
-    if (release) {
-        fsLock->Release();
-    }
     return 0;
 } 
 
@@ -622,11 +613,6 @@ FileSystem::Remove(std::string fileName)
 void
 FileSystem::List()
 {
-    bool release;
-    if (!fsLock->isHeldByCurrentThread()) {
-        release = TRUE;
-        fsLock->Acquire();
-    }
     std::string wp = GetWorkingPath();
     std::string wdn = GetWorkingDir();
     printf("List: workingdir is:%s  dirname is:%s  Contents is:\n", wp.c_str(), wdn.c_str());
@@ -634,10 +620,6 @@ FileSystem::List()
     directory->FetchFrom(directoryFile);
     directory->List();
     delete directory;
-    
-    if (release) {
-        fsLock->Release();
-    }
 }
 
 //----------------------------------------------------------------------
@@ -653,11 +635,6 @@ FileSystem::List()
 void
 FileSystem::Print()
 {
-    bool release;
-    if (!fsLock->isHeldByCurrentThread()) {
-        release = TRUE;
-        fsLock->Acquire();
-    }
     FileHeader *bitHdr = new FileHeader;
     FileHeader *dirHdr = new FileHeader;
     BitMap *freeMap = new BitMap(NumSectors);
@@ -681,10 +658,6 @@ FileSystem::Print()
     delete dirHdr;
     delete freeMap;
     delete directory;
-
-    if (release) {
-        fsLock->Release();
-    }
 } 
 
 
@@ -693,11 +666,6 @@ FileSystem::Print()
 
 int
 FileSystem::Mkdir(const char* dirName) {
-    bool release;
-    if (!fsLock->isHeldByCurrentThread()) {
-        release = TRUE;
-        fsLock->Acquire();
-    }
     
     //separate path and name
     std::string path(dirName);
@@ -725,9 +693,6 @@ FileSystem::Mkdir(const char* dirName) {
         //return to initial dir
         if (!backTrackPath.empty())
             Chdir(backTrackPath);
-        if (release) {
-            fsLock->Release();
-        }
         return -1;
     }
     
@@ -740,9 +705,6 @@ FileSystem::Mkdir(const char* dirName) {
         //return to initial dir
         if (!backTrackPath.empty())
             Chdir(backTrackPath);
-        if (release) {
-            fsLock->Release();
-        }
         return -1;
     }
     
@@ -753,9 +715,6 @@ FileSystem::Mkdir(const char* dirName) {
         //return to initial dir
         if (!backTrackPath.empty())
             Chdir(backTrackPath);
-        if (release) {
-            fsLock->Release();
-        }
         return -1;
     }
     
@@ -774,9 +733,6 @@ FileSystem::Mkdir(const char* dirName) {
         //return to initial dir
         if (!backTrackPath.empty())
             Chdir(backTrackPath);
-        if (release) {
-            fsLock->Release();
-        }
         return -1;
     }
     newDir->WriteBack(newDirFile);
@@ -784,10 +740,6 @@ FileSystem::Mkdir(const char* dirName) {
     
     if (!backTrackPath.empty())
         Chdir(backTrackPath);
-    
-    if (release) {
-        fsLock->Release();
-    }
     return 0;
  }
  
@@ -798,11 +750,6 @@ FileSystem::Mkdir(const char* dirName) {
 
 int
 FileSystem::Rmdir(const char* dirName) {
-    bool release;
-    if (!fsLock->isHeldByCurrentThread()) {
-        release = TRUE;
-        fsLock->Acquire();
-    }
 
     //separate path and name
     std::string path(dirName);
@@ -831,9 +778,6 @@ FileSystem::Rmdir(const char* dirName) {
         //return to initial dir
         if (!backTrackPath.empty())
             Chdir(backTrackPath);
-        if (release) {
-            fsLock->Release();
-        }
         return -1;
     }
     rmDir->FetchFrom(rmDirFile);
@@ -842,9 +786,6 @@ FileSystem::Rmdir(const char* dirName) {
     //check dir is empty
     if (!rmDir->Empty()) {
         printf("filesys::Rmdir: directory %s is not empty\n", dirName);
-        if (release) {
-            fsLock->Release();
-        }
         return -1;
     }
     Remove(name.c_str());
@@ -853,9 +794,6 @@ FileSystem::Rmdir(const char* dirName) {
     if (!backTrackPath.empty())
         Chdir(backTrackPath);
         
-    if (release) {
-        fsLock->Release();
-    }
     return 0;
 
  }
@@ -865,12 +803,6 @@ FileSystem::Rmdir(const char* dirName) {
  
 std::string
 FileSystem::Chdir(std::string path) {
-    //handle possibility of Chdir called by another fileSys function
-    bool release;
-    if (!fsLock->isHeldByCurrentThread()) {
-        release = TRUE;
-        fsLock->Acquire();
-    }
     
     std::string oppositePath(".");
     do {
@@ -892,9 +824,6 @@ FileSystem::Chdir(std::string path) {
             printf("filesys::Chdir: cannot open directory %s\n", name.c_str());
             if (!oppositePath.empty()) {
                 Chdir(oppositePath);
-            }
-            if (release) {
-                fsLock->Release();
             }
             return NULL;
         }
@@ -919,36 +848,18 @@ FileSystem::Chdir(std::string path) {
             *workingDirName = name;
         }
     } while (!path.empty());
-    if (release) {
-        fsLock->Release();
-    }
     return oppositePath;
 }
 
 std::string
 FileSystem::GetWorkingPath() {
-    bool release;
-    if (!fsLock->isHeldByCurrentThread()) {
-        release = TRUE;
-        fsLock->Acquire();
-    }
     std::string tmp = *workingPath;
-    if (release) {
-        fsLock->Release();
-    }
     return tmp;
 }
 
 std::string
 FileSystem::GetWorkingDir() {
-    bool release;
-    if (!fsLock->isHeldByCurrentThread()) {
-        release = TRUE;
-        fsLock->Acquire();
-    }    std::string tmp = *workingDirName;
-    if (release) {
-        fsLock->Release();
-    }
+    std::string tmp = *workingDirName;
     return tmp;
 }
 
@@ -993,3 +904,55 @@ FileSystem::restoreThreadState() {
     
 } 
 
+
+
+int 
+FileSystem::ReadAt(char *buffer, int numBytes, int pos, int index) {
+    OpenFile *ofid = threadOpenFiles[index];
+    if (ofid == NULL) {
+        printf("Thread %s does not have this file Open: cannot read\n", currentThread->getName());
+        return -1;
+    }
+    if (pos == 0) {
+        return ofid->Read(buffer, numBytes);
+    }
+    else {
+        return ofid->ReadAt(buffer, numBytes, pos);
+    }
+}
+
+int 
+FileSystem::WriteAt(char *buffer, int numBytes, int pos, int index) {
+    OpenFile *ofid = threadOpenFiles[index];
+    if (ofid == NULL) {
+        printf("Thread %s does not have this file Open: cannot Write\n", currentThread->getName());
+        return -1;
+    }
+    if (pos == 0) {
+        return ofid->Write(buffer, numBytes);
+    }
+    else {
+        return ofid->WriteAt(buffer, numBytes, pos);
+    }
+}
+
+
+int
+FileSystem::Read(char *buffer, int numBytes, int index) {
+    OpenFile *ofid = threadOpenFiles[index];
+    if (ofid == NULL) {
+        printf("Thread %s does not have this file Open: cannot read\n", currentThread->getName());
+        return -1;
+    }
+    return ofid->Read(buffer, numBytes);
+}
+
+int
+FileSystem::Write(char *buffer, int numBytes, int index) {
+    OpenFile *ofid = threadOpenFiles[index];
+    if (ofid == NULL) {
+        printf("Thread %s does not have this file Open: cannot Write\n", currentThread->getName());
+        return -1;
+    }
+    return ofid->Write(buffer, numBytes);
+}

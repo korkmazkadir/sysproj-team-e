@@ -5,13 +5,10 @@
 
 
 /*
- * here IO is ordered: first thread runs, opens file, writes, closes.
- * If doing actual concurrent accesses, ordering of Reads/writes is undefined
+ * Writing to non-overlapping locations. Writes are both happening.
  */
  
 char *fileName = "myfile";
-int pos = 0;
-sem_t mtx;
 
 void writer1(void *ptr) {
     char *string = (char*)ptr;
@@ -20,10 +17,14 @@ void writer1(void *ptr) {
     if (ofid == -1) {
         _printf("userprogram Open failed\n");
     }
-    int numBytes = WriteAt(string, 25, ofid, 0);
-    if (numBytes == -1) {
-        _printf("userprogram: WriteAt failed\n");
-        Exit(21);
+    int pos = 0;
+    for (int i = 0; i < 4; i++) {
+        int numBytes = WriteAt(string, 3, ofid, pos);
+        if (numBytes == -1) {
+            _printf("userprogram: WriteAt failed\n");
+            Exit(21);
+        }
+        pos+=3;
     }
     if (Close(ofid) == -1) {
         _printf("userprogram Close failed\n");
@@ -38,24 +39,25 @@ void writer2(void *ptr) {
     if (ofid == -1) {
         _printf("userprogram Open failed\n");
     }
-    int numBytes = WriteAt(string, 25, ofid, 26);
-    if (numBytes == -1) {
-        _printf("userprogram: WriteAt failed\n");
-        Exit(21);
+    int pos = 100;
+    for (int i = 0; i < 4; i++) {
+        int numBytes = WriteAt(string, 3, ofid, pos);
+        if (numBytes == -1) {
+            _printf("userprogram: WriteAt failed\n");
+            Exit(21);
+        }
+        pos+=3;
     }
     if (Close(ofid) == -1) {
         _printf("userprogram Close failed\n");
     }
     _printf("%s",string);
-    SemPost(&mtx);
 }
 
 
 int main() {
     int numBytes;
     char buf[BUF_SIZE];
-    SemInit(&mtx, 1);
-
     
     //create file, write to it
     if (Create(fileName) == -1) {
@@ -63,16 +65,14 @@ int main() {
         Exit(1);
     }
     List();
-    char *string1 = "1 first writer writing 1"; 
-    char *string2 = "2-SECOND-WRITER-WRITING-2"; 
+    char *string1 = "1-1"; 
+    char *string2 = "2-2"; 
     
     _printf("usrpg: Main Thread launching writers\n");
     int tid1 = UserThreadCreate(writer1, string1);
-    UserThreadJoin(tid1);
     int tid2 = UserThreadCreate(writer2, string2);
+    UserThreadJoin(tid1);
     UserThreadJoin(tid2);
-    //SemDestroy(&mtx);
-    SemWait(&mtx);
     
     
     OpenFileId ofid = Open(fileName);
