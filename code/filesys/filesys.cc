@@ -600,14 +600,13 @@ std::string FileSystem::getFileName(const char *pathStr) {
    return path;
 }
 
-
-int FileSystem::GetDirectoryInode(const char *path){
+OpenFile* FileSystem::GetDirectoryFile(const char *path){
     OpenFile* file = handlePath(path);
-    return file->GetSector();
+    return file;
 }
 
 
-void FileSystem::SetWorkingDirectory(int directoryInode){
+void FileSystem::SetWorkingDirectory(OpenFile* workingDirectoryFile){
     
     
     //OpenFile *test = new OpenFile(1);
@@ -615,6 +614,9 @@ void FileSystem::SetWorkingDirectory(int directoryInode){
     //delete directoryFile;
 
     //printf("Opening directory file\n");
-    //directoryFile = new OpenFile(directoryInode);
-   
+    directoryFile = workingDirectoryFile;  
+}
+
+OpenFile* FileSystem::GetWorkingDirectory(){
+    return directoryFile;
 }

@@ -189,7 +189,7 @@ void ExceptionHandler (ExceptionType which)
 
                 int retAddress = machine->ReadRegister(8);
 
-                int threadRetVal = do_UserThreadCreate(funPtr, arg, retAddress, currentThread->space, false,currentThread->GetWorkingDirectory());
+                int threadRetVal = do_UserThreadCreate(funPtr, arg, retAddress, currentThread->space, currentThread->GetWorkingDirectory(),false);
                 machine->WriteRegister(RET_VALUE_REGISTER, threadRetVal);
             } break;
 

@@ -33,8 +33,8 @@ typedef struct ThreadDescriptor_t {
     }
 } ThreadDescriptor_t;
 
-int do_UserThreadCreate(int funPtr, int arg, int retAddress, AddrSpace *space, int workingDirectoryInode, bool kernelRequest = false);
-int do_KernelThreadCreate(AddrSpace *space, int workingDirectoryInode);
+int do_UserThreadCreate(int funPtr, int arg, int retAddress, AddrSpace *space, OpenFile *workingDirectoryFile, bool kernelRequest = false);
+int do_KernelThreadCreate(AddrSpace *space, OpenFile *workingDirectoryFile);
 void do_UserThreadExit();
 int do_UserThreadJoin(int tid);
 void do_ExitCurrentProcess();

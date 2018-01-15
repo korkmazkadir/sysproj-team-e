@@ -185,9 +185,8 @@ Initialize (int argc, char **argv)
 int createProcess(char *filename){
 
     OpenFile *executable = fileSystem->Open(filename);
-    int workingDirectoryInode = fileSystem->GetDirectoryInode(filename);
-    
-    
+    OpenFile *workingDirectoryFile = fileSystem->GetDirectoryFile(filename);
+
     
     AddrSpace *space;
 
@@ -203,7 +202,7 @@ int createProcess(char *filename){
         currentThread->space = space;
     }
 
-    int retVal = do_KernelThreadCreate(space,workingDirectoryInode);
+    int retVal = do_KernelThreadCreate(space,workingDirectoryFile);
 
     delete executable; // close file
 

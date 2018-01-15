@@ -115,8 +115,8 @@ class Thread
 
     void SetTID(int _tid);
     
-    void SetWorkingDirectory(int inodeSector);
-    int GetWorkingDirectory();
+    void SetWorkingDirectory(OpenFile *workingDirectoryFile);
+    OpenFile * GetWorkingDirectory();
     
     int Tid() const;
 
@@ -130,7 +130,7 @@ class Thread
     ThreadStatus status;	// ready, running or blocked
     const char *name;
     
-    int workingDirectoryInode;
+    OpenFile* workingDirectoryFile;
     
     void StackAllocate (VoidFunctionPtr func, int arg);
     // Allocate a stack for thread.

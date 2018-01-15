@@ -153,13 +153,13 @@ int Thread::Tid() const
 }
 
 
-void Thread::SetWorkingDirectory(int inodeSector){
-    workingDirectoryInode = inodeSector;
+void Thread::SetWorkingDirectory(OpenFile *workingDirectoryFile_){
+    this->workingDirectoryFile = workingDirectoryFile_;
 }
 
 
-int Thread::GetWorkingDirectory(){
-    return workingDirectoryInode;
+OpenFile * Thread::GetWorkingDirectory(){
+    return this->workingDirectoryFile;
 }
 
 //----------------------------------------------------------------------
@@ -397,6 +397,7 @@ Thread::StackAllocate (VoidFunctionPtr func, int arg)
 
 #ifdef USER_PROGRAM
 #include "machine.h"
+#include "coff.h"
 
 //----------------------------------------------------------------------
 // Thread::SaveUserState
@@ -413,7 +414,7 @@ Thread::SaveUserState ()
     for (int i = 0; i < NumTotalRegs; i++)
 	userRegisters[i] = machine->ReadRegister (i);
     
-    
+    this->workingDirectoryFile = fileSystem->GetWorkingDirectory();
 }
 
 //----------------------------------------------------------------------
@@ -430,10 +431,8 @@ Thread::RestoreUserState ()
 {
     for (int i = 0; i < NumTotalRegs; i++)
 	machine->WriteRegister (i, userRegisters[i]);
-    
-    //printf("inode number is %d\n",this->workingDirectoryInode);
-    
-    fileSystem->SetWorkingDirectory(this->workingDirectoryInode);
+
+    fileSystem->SetWorkingDirectory(this->workingDirectoryFile);
 }
 #endif
 

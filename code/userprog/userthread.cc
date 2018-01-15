@@ -102,7 +102,7 @@ static void StartUserThread(int f) {
  *         -3 if there is no space left on stack for a new thread
  *         -4 ran out of memory
  */
-int do_UserThreadCreate(int funPtr, int arg, int retAddress, AddrSpace *space, int workingDirectoryInode, bool kernelRequest) {
+int do_UserThreadCreate(int funPtr, int arg, int retAddress, AddrSpace *space, OpenFile *workingDirectoryFile, bool kernelRequest) {
 
     int retVal = -1;
     static bool firstTime = true;
@@ -176,7 +176,7 @@ int do_UserThreadCreate(int funPtr, int arg, int retAddress, AddrSpace *space, i
         newThread->SetTID(threadNum);
         newThread->space = space;
         newThread->Fork(StartUserThread, (int)serializedThreadParam);
-        newThread->SetWorkingDirectory(workingDirectoryInode);
+        newThread->SetWorkingDirectory(workingDirectoryFile);
         retVal = threadNum;
         ++numThreads;
 
@@ -245,8 +245,8 @@ early_exit:
 }
 
 
-int do_KernelThreadCreate(AddrSpace *space, int workingDirectoryInode) {
-    int retVal = do_UserThreadCreate(0, 0, 0, space, true, workingDirectoryInode);
+int do_KernelThreadCreate(AddrSpace *space, OpenFile *workingDirectoryFile) {
+    int retVal = do_UserThreadCreate(0, 0, 0, space, workingDirectoryFile,true );
     return retVal;
 }
 

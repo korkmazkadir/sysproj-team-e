@@ -94,10 +94,10 @@ class FileSystem {
 
     void Print();			// List all the files and their contents
 
-    int GetDirectoryInode(const char *path);
+    OpenFile* GetDirectoryFile(const char *path);
     
-    void SetWorkingDirectory(int directoryInode);
-    
+    void SetWorkingDirectory(OpenFile* workingDirectoryFile);
+    OpenFile* GetWorkingDirectory();
     
   private:
    OpenFile* freeMapFile;		// Bit map of free disk blocks,
