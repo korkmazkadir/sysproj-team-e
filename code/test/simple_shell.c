@@ -4,6 +4,9 @@
 
 //char COMMAND_LIST[10][MAX_STRING_SIZE] = {"", "ls", "cd","mkdir","rm"};
 
+#define ANSI_COLOR_CYAN    "\x1b[36m"
+#define ANSI_COLOR_GREEN   "\x1b[32m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
 
 char _command[MAX_STRING_SIZE];
 char _parameter[MAX_STRING_SIZE];
@@ -26,7 +29,10 @@ int strlen(char *str){
 
 void printCursor(){
     _userSelection = -1;
+    _printf(ANSI_COLOR_CYAN);
     _printf("NashOS >> ");
+    _printf(ANSI_COLOR_RESET);
+    
 }
 
 
@@ -36,7 +42,6 @@ void printError(char *message){
 
 void cmd_ls(){
     int size = strlen(_parameter);
-    _printf("size of the parameter %d\n",size);
     if(size != 0){
         ListDirectoryContent(_parameter);
     }else{
@@ -59,6 +64,11 @@ void cmd_rm(){
     if(result == -2){
         printError("Can not delete, directory it is not empty.\n");
     }
+}
+
+void cmd_run(){
+    int tid = ForkExec(_parameter);
+    UserThreadJoin(tid);
 }
 
 
@@ -118,6 +128,10 @@ void decodeCommand(char *command){
         _userSelection = 3;
     }else if(compareString("rm",_command) == 0){
         _userSelection = 4;
+    }else if(compareString("run",_command) == 0){
+        _userSelection = 5;
+    }else if(compareString("clear",_command) == 0){
+        _userSelection = 6;
     }else if(compareString("exit",_command) == 0){
         Exit(0);
     }
@@ -150,8 +164,23 @@ void handleCommand(){
             break;
         }
         
+        case 5: {
+            cmd_run();
+            break;
+        }
+        
+        case 6: {
+            _printf("\033[H\033[J");
+            break;
+        }
+        
         case 0: {
             Exit(0);
+        }
+        
+        default : {
+            _printf("%s : command not found\n",_command);
+            break;
         }
 
     }

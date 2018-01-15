@@ -263,7 +263,6 @@ void do_ExitCurrentProcess()
     interrupt->SetLevel(oldLevel);
 
     --numProcesses;
-    printf("xiting num proc %d %d \n", numProcesses, tid );
     if (0 >= numProcesses) {
 //        haltSync.V();
         interrupt->Halt();

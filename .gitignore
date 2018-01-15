@@ -4,3 +4,5 @@ code/bin/*.o
 code/bin/.*.d
 code/unit_tests/build/*
 **/CMakeFiles
+nbproject/
+

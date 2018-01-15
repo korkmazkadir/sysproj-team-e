@@ -197,8 +197,6 @@ FileSystem::Create(const char *name, int initialSize)
     directory = new Directory(NumDirEntries);
     directory->FetchFrom(currentDirectoryFile);
 
-    printf("Current directory in create\n");
-    directory->List();
     
     if (directory->Find(fileName.c_str()) != -1)
       success = FALSE;			// file is already in directory
@@ -341,7 +339,18 @@ int FileSystem::RemoveDirectory(const char *name){
     
     int entryCount = 0;
     
+    
     int sectorNumber  = directory->Find(name);
+    
+    if(directory->isDirectory(name) == false && sectorNumber > 0){
+        //It is normal file remove it
+        printf("Deleting normal file\n");
+        if(this->Remove(name)){
+            result = 0;
+        }
+        goto END;
+    }
+    
     if(sectorNumber < 0){
         result = -1;
         goto END;
@@ -350,6 +359,7 @@ int FileSystem::RemoveDirectory(const char *name){
     directoryToRemove = new Directory(NumDirEntries);
     directoryToRemoveFile = new OpenFile(sectorNumber);
     directoryToRemove->FetchFrom(directoryToRemoveFile);
+    
     
     entryCount = directoryToRemove->GetEntryCount();
     printf("entry count %d \n",entryCount);
@@ -394,11 +404,7 @@ FileSystem::Open(const char *name)
 
     DEBUG('f', "Opening file %s\n", fileName.c_str());
     directory->FetchFrom(currentDirectoryFile);
-    
-    printf("__________________\n");
-    directory->List();
-    printf("__________________\n");
-    
+
     sector = directory->Find(fileName.c_str()); 
     if (sector >= 0) 		
 	openFile = new OpenFile(sector);	// name was found in directory 
@@ -547,7 +553,6 @@ OpenFile* FileSystem::handlePath(const char *pathStr){
     std::string  delimiter = "/";
     
     if(path.find(delimiter) == std::string::npos){
-        printf("returning current directory file\n");
         return file;
     }
 
@@ -555,14 +560,13 @@ OpenFile* FileSystem::handlePath(const char *pathStr){
     std::string token;
     while ((pos = path.find(delimiter)) != std::string::npos) {
         token = path.substr(0, pos);
-        printf("-->File name %s\n",token.c_str());
+
         std::cout << token << std::endl;
         path.erase(0, pos + delimiter.length());
         
         file = this->open(token.c_str(),file);
         
         if(path.find(delimiter) == std::string::npos){
-            printf("no path...%d\n",(int)file);
            return file;
         }
         
@@ -604,6 +608,13 @@ int FileSystem::GetDirectoryInode(const char *path){
 
 
 void FileSystem::SetWorkingDirectory(int directoryInode){
-    delete directoryFile;
-    directoryFile = new OpenFile(directoryInode);
+    
+    
+    //OpenFile *test = new OpenFile(1);
+    //printf("inode is %d\n", directoryInode);
+    //delete directoryFile;
+
+    //printf("Opening directory file\n");
+    //directoryFile = new OpenFile(directoryInode);
+   
 }

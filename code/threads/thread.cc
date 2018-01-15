@@ -433,7 +433,7 @@ Thread::RestoreUserState ()
     
     //printf("inode number is %d\n",this->workingDirectoryInode);
     
-    //fileSystem->SetWorkingDirectory(this->workingDirectoryInode);
+    fileSystem->SetWorkingDirectory(this->workingDirectoryInode);
 }
 #endif
 

@@ -17,6 +17,7 @@
 #include "timer.h"
 #include "synchconsole.h"
 #include "usersemaphore.h"
+#include "openfiletable.h"
 
 #define MAX_WRITE_BUF_SIZE 128
 #define MAX_INT_LEN 11
@@ -35,6 +36,7 @@ extern Statistics *stats;	// performance metrics
 extern Timer *timer;		// the hardware alarm clock
 extern SynchConsole *syncConsole;
 extern SemaphoreManager *semaphoreManager;
+extern OpenFileTable *openFileTable;
 
 int createProcess(char *filename);
 
@@ -42,6 +44,12 @@ void listDirectoryContent(char *name); // list directory (ls)
 int createDirectory(char *name); // change directory (cd)
 int changeDirectory(char *name); // create directory (mkdir)
 int removeDirectory(char *name); // remove directory (rm)
+
+
+int openFile(char *name);
+void writeToFile (char *buffer, int size, int fileDescriptor);
+int readFromFile (char *buffer, int size, int fileDescriptor);
+void closeFile(int fileDescriptor);
 
 
 #ifdef USER_PROGRAM

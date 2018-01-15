@@ -41,19 +41,14 @@
 bool
 FileHeader::Allocate(BitMap *freeMap, int fileSize)
 { 
-    printf("------------> NumDirect : %d\n",NumDirect);
-    
+
     numBytes = fileSize;
     numSectors  = divRoundUp(fileSize, SectorSize);
     if (freeMap->NumClear() < numSectors)
 	return FALSE;		// not enough space
-    
-    printf("--> (indirect) NumSectors : %d\n",numSectors);
 
     int indirectSectorCount = divRoundUp(numSectors,NumIndirect);
     int arrangedSectorCount = 0;
-
-    printf("--> (indirect) Indirect sector count : %d\n",indirectSectorCount);
 
     for (int i = 0; i < indirectSectorCount; i++){
         dataSectors[i] = freeMap->Find();

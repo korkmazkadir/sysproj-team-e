@@ -298,6 +298,57 @@ void ExceptionHandler (ExceptionType which)
                 break;
             }
             
+            
+            case SC_Open:
+            {
+                printf("Opening file...");
+                
+                int fileNameAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                char fileName [MAX_WRITE_BUF_SIZE];
+                copyStringFromMachine(fileNameAddress, fileName, MAX_WRITE_BUF_SIZE);
+                int result = openFile(fileName);
+                machine->WriteRegister(RET_VALUE_REGISTER,result);
+                break;
+            }
+            
+            case SC_Write:
+            {
+                int bufferAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                char buffer [MAX_WRITE_BUF_SIZE];
+                copyStringFromMachine(bufferAddress, buffer, MAX_WRITE_BUF_SIZE);
+                
+                int size = machine->ReadRegister(SECOND_PARAM_REGISTER);
+                int fileDescriptor = machine->ReadRegister(THIRD_PARAM_REGISTER);
+                writeToFile(buffer,size,fileDescriptor);
+                
+                break;
+            }
+            
+            case SC_Read:
+            {
+            
+                int bufferAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                int size = machine->ReadRegister(SECOND_PARAM_REGISTER);
+                int fileDescriptor = machine->ReadRegister(THIRD_PARAM_REGISTER);
+                
+                char buffer [MAX_WRITE_BUF_SIZE];
+                int numberOfBytes = readFromFile(buffer,size,fileDescriptor);
+                machine->WriteRegister(RET_VALUE_REGISTER,numberOfBytes);
+                copyStringToMachine(buffer, bufferAddress, numberOfBytes);
+
+                break;
+            }
+
+            case SC_Close:
+            {
+                printf("closing file...");
+                int fileDescriptor = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                closeFile(fileDescriptor);
+                break;
+            }
+            
+            
+            
             case SC_AssertionFailed:
             {
                 int fileNameAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);

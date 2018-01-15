@@ -8,6 +8,7 @@
 #include "copyright.h"
 #include "system.h"
 #include "userthread.h"
+#include "openfiletable.h"
 
 // This defines *all* of the global data structures used by Nachos.
 // These are all initialized and de-allocated by this file.
@@ -21,6 +22,7 @@ Timer *timer;			// the hardware timer device,
 					// for invoking context switches
 SynchConsole *syncConsole;
 SemaphoreManager *semaphoreManager;
+OpenFileTable *openFileTable;
 
 #ifdef FILESYS_NEEDED
 FileSystem *fileSystem;
@@ -158,6 +160,8 @@ Initialize (int argc, char **argv)
     syncConsole = new SynchConsole(NULL, NULL);
     semaphoreManager = new SemaphoreManager();
 
+    openFileTable = new OpenFileTable();
+    
     interrupt->Enable ();
     CallOnUserAbort (Cleanup);	// if user hits ctl-C
 
@@ -182,6 +186,8 @@ int createProcess(char *filename){
 
     OpenFile *executable = fileSystem->Open(filename);
     int workingDirectoryInode = fileSystem->GetDirectoryInode(filename);
+    
+    
     
     AddrSpace *space;
 
@@ -231,7 +237,47 @@ int changeDirectory(char *name){
 // Removes directory if it is empty rm
 //----------------------------------------------------------------------
 int removeDirectory(char *name){
-    return fileSystem->RemoveDirectory(name);
+    //return fileSystem->RemoveDirectory(name);
+    return fileSystem->Remove(name);
+}
+
+//----------------------------------------------------------------------
+// Opens a file and returns file descriptior
+//----------------------------------------------------------------------
+int openFile(char *name){
+    
+    if(openFileTable->getNumAvailable() == 0){
+        return -1;
+    }
+    
+    OpenFile *file = fileSystem->Open(name);
+    if(file == NULL){
+        int initialSize = sizeof(char) * 1024; // 1 KB
+        bool result = fileSystem->Create(name,initialSize);
+        if(!result){
+            return -2;
+        }
+    }
+    
+    file = fileSystem->Open(name);
+    
+    int fileDescriptor = openFileTable->AddEntry(file,name,currentThread->Tid(), currentThread->getName());
+    return fileDescriptor;
+}
+    
+
+void writeToFile (char *buffer, int size, int fileDescriptor){
+    OpenFile *file = openFileTable->getFile(fileDescriptor);
+    file->Write(buffer,size);
+}
+
+int readFromFile (char *buffer, int size, int fileDescriptor){
+    OpenFile *file = openFileTable->getFile(fileDescriptor);
+    return file->Read(buffer,size);
+}
+
+void closeFile(int fileDescriptor){
+    openFileTable->RemoveEntry(fileDescriptor);
 }
 
 //----------------------------------------------------------------------

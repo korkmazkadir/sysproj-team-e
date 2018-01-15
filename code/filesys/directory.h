@@ -82,6 +82,8 @@ class Directory {
     
     void SetSpecialDirectories(int homeDirSector, Directory *parent);
     
+    bool isDirectory(const char *name);
+    
     bool Remove(const char *name);	// Remove a file from the directory
 
     int GetEntryCount(); // Returns the number of the entries inside the directory;

@@ -177,6 +177,15 @@ void Directory::SetSpecialDirectories(int homeDirSector, Directory *parent){
     table[1].sector = parent->table[0].sector;
 }
 
+bool Directory::isDirectory(const char *name){
+    int index =  Find(name);
+    if(index > 0){
+        return table[index].isDirectory;
+    }
+    return false;
+}
+
+
 //----------------------------------------------------------------------
 // Returns the number of the entries inside a directory
 //----------------------------------------------------------------------
