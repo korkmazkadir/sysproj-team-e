@@ -32,7 +32,7 @@
 //      "threadName" is an arbitrary string, useful for debugging.
 //----------------------------------------------------------------------
 
-Thread::Thread (const char *threadName, std::string *initialWP, std::string *initialWDN, OpenFile *initialDirFile):
+Thread::Thread (const char *threadName, std::string *initialWP, std::string *initialWDN):
     tid(0)
 {
     name = threadName;
@@ -53,14 +53,13 @@ Thread::Thread (const char *threadName, std::string *initialWP, std::string *ini
     if (initialWP != NULL) { //do not update fs info if passed NULL (first thread created, will have info from FS via fs->savestate)
         workingPath = new std::string(*initialWP);
         workingDirName = new std::string(*initialWDN);
-        directoryFile = initialDirFile;
         if (*workingDirName == "/") {
-            fileSystem->Open(".");
+            directoryFile = fileSystem->Open(".");
         } else {
             std::string dirname("../");
             dirname.append(*workingDirName);
             printf("Thread creation: appended %s to ../\n", workingDirName->c_str());
-            fileSystem->Open(dirname);
+            directoryFile = fileSystem->Open(dirname);
         }
        //printf("    !!!!   created thread with WP %s WDN %s DF %x\n", workingPath->c_str(), workingDirName->c_str(), (unsigned int)directoryFile);
     }

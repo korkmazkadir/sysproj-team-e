@@ -1,30 +1,4 @@
-abcdOpen(tpf)
-Open: file tpf 82b4128 nbopens =1
-Open(up0j)
-Open: file up0j 82b4210 nbopens =1
-Open(up1)
-Open: file up1 82b4170 nbopens =1
-Open(tpf)
-Open: file tpf 82b6518 nbopens =1
-Open(.)
-(re-)Open: file . 82a3ce8 nbopens =2
-Open(up0j)
-Open: file up0j 82b42b0 nbopens =1
-Open(.)
-(re-)Open: file . 82a3ce8 nbopens =2
-Open(up1)
-Open(.)
-Open: file up1 82b4140 nbopens =1
-Open(.)
-(re-)Open: file . 82a3ce8 nbopens =3
-Open(.)
-(re-)Open: file . 82a3ce8 nbopens =3
-Open(.)
-(re-)Open: file . 82a3ce8 nbopens =3
-(re-)Open: file . 82a3ce8 nbopens =2
-Open(.)
-(re-)Open: file . 82a3ce8 nbopens =2
-Machine halting!
+abcdMachine halting!
 
 Ticks: total 4781003, idle 4739762, system 41010, user 231
 Disk I/O: reads 945, writes 287
@@ -33,5 +7,3 @@ Paging: faults 0
 Network I/O: packets received 0, sent 0
 
 Cleaning up...
-xxxxx / is still open
-FileSystem::~FileSystem : 1 files still open at exit.

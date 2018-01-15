@@ -86,7 +86,7 @@ class Thread
     int machineState[MachineStateSize];	// all registers except for stackTop
 
   public:
-      Thread (const char *debugName, std::string *initialWP, std::string *initialWDN, OpenFile *initialDirFile);	// initialize a Thread 
+      Thread (const char *debugName, std::string *initialWP, std::string *initialWDN);	// initialize a Thread 
      ~Thread ();		// deallocate a Thread
     // NOTE -- thread being deleted
     // must not be running when delete 

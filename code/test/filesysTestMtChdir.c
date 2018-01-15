@@ -8,14 +8,14 @@ void t1(void *ptr) {
     Chdir("subDir1");
     _printf("1  Chdir(subDir1) :\n");
     List();
-    _printf("1\n");
+    _printf("1\n\n");
     SemPost(&mtx);
     
     SemWait(&mtx);
-    Mkdir("t1SubDir");
+    if (Mkdir("t1SubDir") == -1) Exit(2);
     _printf("1  Mkdir(t1SubDir) :\n");
     List();
-    _printf("1\n");
+    _printf("1\n\n");
     SemPost(&mtx);
     
     SemWait(&created);
@@ -23,7 +23,7 @@ void t1(void *ptr) {
     Chdir("../subDir2/t2SubDir");
     _printf("1  Chdir(t2SubDir) :\n");
     List();
-    _printf("1\n");
+    _printf("1\n\n");
     SemPost(&mtx);
 }
 
@@ -32,15 +32,15 @@ void t2(void *ptr) {
     Chdir("subDir2");
     _printf("2 Chdir(subDir2) :\n");
     List();
-    _printf("2\n");
+    _printf("2\n\n");
     SemPost(&mtx);
     
     SemWait(&mtx);
-    Mkdir("t2SubDir");
+    if (Mkdir("t2SubDir") == -1) Exit(11);
     SemPost(&created);
     _printf("2  Mkdir(t2SubDir) :\n");
     List();
-    _printf("2\n");
+    _printf("2\n\n");
     SemPost(&mtx);
 }
 
@@ -48,8 +48,8 @@ int main() {
     SemInit(&mtx, 1);
     SemInit(&created, 0);
     
-    Mkdir("subDir1");
-    Mkdir("subDir2");
+    if (Mkdir("subDir1") == -1) Exit(20);
+    if (Mkdir("subDir2") == -1) Exit(21);
     List();
     
     _printf("usrpg: Main launching writers\n");
@@ -58,6 +58,9 @@ int main() {
     
     UserThreadJoin(tid1);
     UserThreadJoin(tid2);
+    _printf("\nmain\n");
+    Chdir("subDir1");
+    
     SemDestroy(&mtx);
     return 0;
 }

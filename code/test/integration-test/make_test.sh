@@ -105,7 +105,7 @@ fi
 
 #----------------------------------------------------------------------------
 printf "${NC}>> Two sub-processes with userthreads - second joins${RED}\n"
-${EXECUTABLE} ../../build/twoProcessesSecondOneJoins prog  -cp ../../build/userprog0 up0 -cp ../../build/userprog1join up1j -rs 1 -x prog >./io/twoProcessesSecondOneJoinsOut
+${EXECUTABLE} ../../build/twoProcessesSecondOneJoins prog  -cp ../../build/userprog0 up0 -cp ../../build/userprog1join up1j -rs 2 -x prog >./io/twoProcessesSecondOneJoinsOut
 output=$(head -n -8 ./io/twoProcessesSecondOneJoinsOut)
 expected="abcdMachine halting!"
 diff  <(echo "$output" ) <(echo "$expected")

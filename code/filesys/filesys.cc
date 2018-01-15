@@ -166,8 +166,6 @@ FileSystem::FileSystem(bool format)
         freeMap->WriteBack(freeMapFile);	 // flush changes to disk
         directory->WriteBack(directoryFile);
         
-
-
         if (DebugIsEnabled('f')) {
             freeMap->Print();
             directory->Print();
@@ -201,12 +199,13 @@ FileSystem::~FileSystem() {
             if (openFiles[i]->file != NULL) {
                 delete openFiles[i]->file;
                 nbOpenFiles ++;
-                printf("xxxxx %s is still open\n", openFiles[i]->name.c_str());
+                //printf("xxxxx %s is still open\n", openFiles[i]->name.c_str());
             }
             free (openFiles[i]);
         }
     }
-    printf("FileSystem::~FileSystem : %d files still open at exit.\n", nbOpenFiles);
+    //printf("FileSystem::~FileSystem : %d files still open at exit.\n", nbOpenFiles);
+    delete fsLock;
 }
 
 //----------------------------------------------------------------------
@@ -284,7 +283,7 @@ FileSystem::Create(std::string fileName, int initialSize, bool isDir)
 
     if (directory->Find(name.c_str()) != -1) {
         printf("FileSystem::Create file %s already exists\n", name.c_str());
-        success = -1;			// file is already in directory
+        success = -1;
     }
     else {	
         freeMap = new BitMap(NumSectors);
@@ -354,6 +353,7 @@ FileSystem::ThreadOpen(std::string fileName) {
 // FileSystem::Open
 // 	Open a file for reading and writing.
 //  Multiple Threads can open the same file, and will use the same OpenFile object.
+//  a thread cannot access a file opened by another thread
 //	To open a file:
 //	  Find the location of the file's header, using the directory 
 //	  Bring the header into memory
@@ -363,7 +363,8 @@ FileSystem::ThreadOpen(std::string fileName) {
 
 OpenFile *
 FileSystem::Open(std::string fileName)
-{   printf("Open(%s)\n", fileName.c_str());
+{   
+    //printf("Open(%s)\n", fileName.c_str());
     if (fileName.empty()) {
         printf("FileSystem called with empty filename\n");
         return NULL;
@@ -427,7 +428,7 @@ FileSystem::Open(std::string fileName)
             openFiles[i]->nbOpens = 1;
             openFiles[i]->toBeRemoved = 0;
             openFiles[i]->name = fileName;
-            printf("Open: file %s %x nbopens =%d\n",name.c_str(), (unsigned int)openFiles[i]->file, openFiles[i]->nbOpens);
+            //printf("Open: file %s %x nbopens =%d\n",name.c_str(), (unsigned int)openFiles[i]->file, openFiles[i]->nbOpens);
         }
         else {
             printf("FileSystem::Open max open file number reached. Cannot open %s\n", name.c_str());
@@ -447,7 +448,7 @@ FileSystem::Open(std::string fileName)
         }
         openFiles[i]->nbOpens++;
         openFile = openFiles[i]->file;
-        printf("(re-)Open: file %s %x nbopens =%d\n",name.c_str(), (unsigned int)openFiles[i]->file, openFiles[i]->nbOpens);
+        //printf("(re-)Open: file %s %x nbopens =%d\n",name.c_str(), (unsigned int)openFiles[i]->file, openFiles[i]->nbOpens);
     }
     
     //go back to initial dir
@@ -575,13 +576,13 @@ FileSystem::Remove(std::string fileName)
         }
     }
     if (i != 10) {
-        //file found
+        //file found, can't delete yet
         printf("FileSystem::Remove the file %s %x is still open\n", name.c_str(), (unsigned int)openFiles[i]->file);
         //mark for removal so no one else opens it
         openFiles[i]->toBeRemoved = 1;
         return 0;
     }
-    
+    //file not open, we can delete it
     fileHdr = new FileHeader;
     fileHdr->FetchFrom(sector);
 
@@ -620,6 +621,18 @@ FileSystem::List()
     directory->FetchFrom(directoryFile);
     directory->List();
     delete directory;
+    
+    int nbOpenFiles = 0;
+    for (int i = 0; i < 10; i++) {
+        if (openFiles[i] != NULL) {
+            if (openFiles[i]->file != NULL) {
+                nbOpenFiles ++;
+                printf("xxxxx %s is still open\n", openFiles[i]->name.c_str());
+            }
+        }
+    }
+    printf("FileSystem::~FileSystem : %d files still open at exit.\n", nbOpenFiles);
+    printf("List: Total files and dirs Open %d\n", nbOpenFiles);
 }
 
 //----------------------------------------------------------------------
@@ -666,7 +679,6 @@ FileSystem::Print()
 
 int
 FileSystem::Mkdir(const char* dirName) {
-    
     //separate path and name
     std::string path(dirName);
     std::string name;
@@ -800,7 +812,7 @@ FileSystem::Rmdir(const char* dirName) {
  
  
 
- 
+
 std::string
 FileSystem::Chdir(std::string path) {
     
@@ -814,8 +826,8 @@ FileSystem::Chdir(std::string path) {
         //printf("chdir remaining path is %s    changing to name:%s\n", path.c_str(), name.c_str());
 
         
-        // TODO: unsure of this...   what to do for "." ?
         if (name == ".") {
+            //we're already here... do nothing
            continue;
         }
         
@@ -881,7 +893,7 @@ FileSystem::saveThreadState() {
     currentThread->workingPath = workingPath;
     currentThread->workingDirName = workingDirName;
     currentThread->directoryFile = directoryFile;
-    dbgChecks();
+    //dbgChecks();
     
 }
  
@@ -900,7 +912,7 @@ FileSystem::restoreThreadState() {
     //printf("FS WP ptr = %x FS WDN ptr = %x FS DF = %x\n", (unsigned int)workingPath, (unsigned int)workingDirName, (unsigned int)directoryFile);
     //printf("FS WP = %s", workingPath->c_str());
     //printf("FS WDN = %s \n", workingDirName->c_str());
-    dbgChecks();
+    //dbgChecks();
     
 } 
 

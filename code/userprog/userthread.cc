@@ -170,9 +170,9 @@ int do_UserThreadCreate(int funPtr, int arg, int retAddress, AddrSpace *space, b
         //printf("            making thread with name %s wdn %s wp %s\n", dbgName->c_str(), currentThread->workingPath->c_str(), 
                                                          // currentThread->workingDirName->c_str() );
                                                           
-        Thread *newThread = new (std::nothrow) Thread(dbgName->c_str(), currentThread->workingPath, 
-                                                          currentThread->workingDirName, 
-                                                          currentThread->directoryFile);
+        Thread *newThread = new (std::nothrow) Thread(dbgName->c_str(), 
+                                                      currentThread->workingPath, 
+                                                      currentThread->workingDirName);
 
         /* Memory allocation failed */
         if (!newThread) {

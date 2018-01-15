@@ -153,7 +153,7 @@ Initialize (int argc, char **argv)
     // We didn't explicitly allocate the current thread we are running in.
     // But if it ever tries to give up the CPU, we better have a Thread
     // object to save its state.
-    currentThread = new Thread ("main", NULL, NULL, NULL);
+    currentThread = new Thread ("main", NULL, NULL);
     //inform the thread of it's filesys state
     currentThread->setStatus (RUNNING);
 

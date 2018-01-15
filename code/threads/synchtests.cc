@@ -45,10 +45,10 @@ static void producer (int notused)
 void RunSyncTests() {
     printf ("Starting consumer/producer example...\n");
 
-    Thread *prod_thread = new Thread("", NULL, NULL, NULL);
+    Thread *prod_thread = new Thread("", NULL, NULL);
     prod_thread->Fork(&producer, 0);
 
-    Thread *cons_thread = new Thread("", NULL, NULL, NULL);
+    Thread *cons_thread = new Thread("", NULL, NULL);
     cons_thread->Fork(&consumer, 0);
 
     currentThread->Yield();
