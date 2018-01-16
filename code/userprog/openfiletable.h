@@ -16,14 +16,15 @@
 
 #define NumOpenFiles 10
 
+#include <string>
+#include <map>
 #include "bitmap.h"
-
-
-
+#include "synch.h"
 
 class OpenFileEntry{
     public:
         OpenFile *file;
+        int inode;
         const char *fileName;
         int threadId;
         const char *threadName;
@@ -35,14 +36,23 @@ public:
     OpenFileTable();
     int AddEntry(OpenFile *file,  const char *fileName,  int threadId,  const char *threadName);
     OpenFile *getFile(int fileDescriptor);
+    Lock *getLock(int fileDescriptor);
     int getNumAvailable();
     void RemoveEntry(int fileDescriptor);
 
-    
+   
 private:
+    //inode number & node
+    std::map<int,Lock*> inodeToLockMap;
+    std::map<int,int> inodeToReferenceCountMap;
+    
     BitMap* freeMap;
     OpenFileEntry openFiles[NumOpenFiles];
     
+    Lock *findLock(int inode);
+    void increaseReferenceCount(int inode);
+    void decreaseReferenceCount(int inode);
+    int getReferenceCount(int inode);
 };
 
 #endif /* OPENFILETABLE_H */

@@ -198,7 +198,6 @@ OpenFile::Length()
     return hdr->FileLength(); 
 }
 
-
-int OpenFile::GetSector(){
+int OpenFile::GetInode(){
     return sector;
 }

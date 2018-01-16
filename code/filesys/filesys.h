@@ -67,6 +67,9 @@ class FileSystem {
 };
 
 #else // FILESYS
+
+class Lock;
+
 class FileSystem {
   public:
     FileSystem(bool format);		// Initialize the file system.
@@ -105,6 +108,9 @@ class FileSystem {
    OpenFile* directoryFile;		// "Root" directory -- list of 
 					// file names, represented as a file
 
+   Lock *lock;
+   
+   
    OpenFile* open(const char *name, OpenFile *dirFile);
    OpenFile* handlePath(const char *path);
    std::string getFileName(const char *pathStr);

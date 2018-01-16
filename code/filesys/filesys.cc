@@ -54,6 +54,7 @@
 #include "directory.h"
 #include "filehdr.h"
 #include "filesys.h"
+#include "synch.h"
 
 // Sectors containing the file headers for the bitmap of free sectors,
 // and the directory of files.  These file headers are placed in well-known 
@@ -146,6 +147,8 @@ FileSystem::FileSystem(bool format)
         freeMapFile = new OpenFile(FreeMapSector);
         directoryFile = new OpenFile(DirectorySector);
     }
+    
+    lock = new Lock("file system lock");
 }
 
 //----------------------------------------------------------------------
@@ -180,11 +183,13 @@ FileSystem::FileSystem(bool format)
 bool
 FileSystem::Create(const char *name, int initialSize)
 {
+
+    lock->Acquire();
     
     std::string fileName = this->getFileName(name);
     OpenFile *currentDirectoryFile = this->handlePath(name);
     
-    printf("creating filefile %s\n",fileName.c_str());
+    //printf("creating file %s\n",fileName.c_str());
     
     Directory *directory;
     BitMap *freeMap;
@@ -224,12 +229,17 @@ FileSystem::Create(const char *name, int initialSize)
         delete freeMap;
     }
     delete directory;
+    
+    lock->Release();
+    
     return success;
 }
 
 bool
 FileSystem::CreateDirectory(const char *name){
 
+    lock->Acquire();
+    
     std::string fileName = this->getFileName(name);
     OpenFile *currentDirectoryFile = this->handlePath(name);
     
@@ -288,11 +298,16 @@ FileSystem::CreateDirectory(const char *name){
         delete freeMap;
     }
     delete directory;
+    
+    lock->Release();
+    
     return success;   
 }
 
 
 int FileSystem::ChangeDirectory(const char *name){
+    
+    lock->Acquire();
     
     std::string fileName = this->getFileName(name);
     OpenFile *currentDirectoryFile = this->handlePath(name);
@@ -311,6 +326,9 @@ int FileSystem::ChangeDirectory(const char *name){
     }
     
     delete directory;
+    
+    lock->Release();
+    
     return sectorNumber >= 0 ? 0 : -1;
 }
 
@@ -395,6 +413,8 @@ END:
 OpenFile *
 FileSystem::Open(const char *name)
 { 
+    lock->Acquire();
+    
     std::string fileName = this->getFileName(name);
     OpenFile *currentDirectoryFile = this->handlePath(name);
     
@@ -409,6 +429,9 @@ FileSystem::Open(const char *name)
     if (sector >= 0) 		
 	openFile = new OpenFile(sector);	// name was found in directory 
     delete directory;
+    
+    lock->Release();
+    
     return openFile;				// return NULL if not found
 }
 
@@ -429,6 +452,8 @@ FileSystem::Open(const char *name)
 bool
 FileSystem::Remove(const char *name)
 { 
+    lock->Acquire();
+    
     Directory *directory;
     BitMap *freeMap;
     FileHeader *fileHdr;
@@ -439,6 +464,9 @@ FileSystem::Remove(const char *name)
     sector = directory->Find(name);
     if (sector == -1) {
        delete directory;
+       
+       lock->Release();
+       
        return FALSE;			 // file not found 
     }
     fileHdr = new FileHeader;
@@ -456,6 +484,9 @@ FileSystem::Remove(const char *name)
     delete fileHdr;
     delete directory;
     delete freeMap;
+    
+    lock->Release();
+    
     return TRUE;
 } 
 
@@ -467,21 +498,29 @@ FileSystem::Remove(const char *name)
 void
 FileSystem::List()
 {
-    Directory *directory = new Directory(NumDirEntries);
 
+    lock->Acquire();
+    
+    Directory *directory = new Directory(NumDirEntries);
     directory->FetchFrom(directoryFile);
     directory->List();
     delete directory;
+    
+    lock->Release();
 }
 
 
 void FileSystem::ListDirectoryContent(const char *name){
+
+    lock->Acquire();
+    
     OpenFile *currentDirectoryFile = this->handlePath(name);
     Directory *directory = new Directory(NumDirEntries);
-
     directory->FetchFrom(currentDirectoryFile);
     directory->List();
-    delete directory;
+    delete directory;   
+    
+    lock->Release();
 }
 
 
@@ -498,6 +537,8 @@ void FileSystem::ListDirectoryContent(const char *name){
 void
 FileSystem::Print()
 {
+    lock->Acquire();
+
     FileHeader *bitHdr = new FileHeader;
     FileHeader *dirHdr = new FileHeader;
     BitMap *freeMap = new BitMap(NumSectors);
@@ -521,6 +562,9 @@ FileSystem::Print()
     delete dirHdr;
     delete freeMap;
     delete directory;
+
+    lock->Release();
+    
 } 
 
 //----------------------------------------------------------------------
@@ -528,7 +572,7 @@ FileSystem::Print()
 //----------------------------------------------------------------------
 OpenFile *
 FileSystem::open(const char *name,OpenFile *dirFile)
-{ 
+{
     Directory *directory = new Directory(NumDirEntries);
     OpenFile *openFile = NULL;
     int sector;
@@ -605,16 +649,8 @@ OpenFile* FileSystem::GetDirectoryFile(const char *path){
     return file;
 }
 
-
 void FileSystem::SetWorkingDirectory(OpenFile* workingDirectoryFile){
-    
-    
-    //OpenFile *test = new OpenFile(1);
-    //printf("inode is %d\n", directoryInode);
-    //delete directoryFile;
-
-    //printf("Opening directory file\n");
-    directoryFile = workingDirectoryFile;  
+    directoryFile = workingDirectoryFile;
 }
 
 OpenFile* FileSystem::GetWorkingDirectory(){

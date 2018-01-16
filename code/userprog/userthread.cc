@@ -256,6 +256,8 @@ void do_ExitCurrentProcess()
     int tid = currentThread->Tid();
     IntStatus oldLevel = interrupt->SetLevel(IntOff);
 
+    thread_args[tid - 1].synch->V();
+    
     scheduler->EvictThreadsById(tid);
     delete currentThread->space;
     currentThread->space = nullptr;

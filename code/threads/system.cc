@@ -267,12 +267,24 @@ int openFile(char *name){
 
 void writeToFile (char *buffer, int size, int fileDescriptor){
     OpenFile *file = openFileTable->getFile(fileDescriptor);
+    Lock *lock = openFileTable->getLock(fileDescriptor);
+    lock->Acquire();
+    
     file->Write(buffer,size);
+    
+    lock->Release();
 }
 
 int readFromFile (char *buffer, int size, int fileDescriptor){
     OpenFile *file = openFileTable->getFile(fileDescriptor);
-    return file->Read(buffer,size);
+    Lock *lock = openFileTable->getLock(fileDescriptor);
+    lock->Acquire();
+    
+    int readSize = file->Read(buffer,size);
+    
+    lock->Release();
+    
+    return readSize;
 }
 
 void closeFile(int fileDescriptor){

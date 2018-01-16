@@ -26,12 +26,23 @@ int strlen(char *str){
     return length;
 }
 
+void removeNewLine(char *string, int size){
+    for (int i = 0; i < size; i++) {
+        if(string[i] == '\n'){
+            string[i] = '\0';
+            break;
+        }
+    }   
+}
+
 
 int openFile(){
     _printf("Enter the name of the file : ");
     
     char name[MAX_STRING_SIZE];
     SynchGetString(name,MAX_STRING_SIZE);
+    
+    removeNewLine(name,MAX_STRING_SIZE);
     
     OpenFileId fileDescriptor = Open(name);
 
@@ -46,19 +57,26 @@ int openFile(){
 
 int lineCount = 1;
 char line[MAX_STRING_SIZE];
-void readFromFile(int file){
-    int size = Read(line,MAX_STRING_SIZE, file);
-    _printf("%s",lineCount,line);
-    while(size == MAX_STRING_SIZE){
-        size = Read(line,MAX_STRING_SIZE, file);
-        _printf("%s",lineCount,line);
+void writeToFile(int file){
+    while(1 == 1){
+        _printf("%d ",lineCount);
+        SynchGetString(line,MAX_STRING_SIZE);
+        if(compareString(":q\n",line) == 0){
+            Close(file);
+            return;
+        }
+        Write(line,strlen(line), file);
+        lineCount++;
     }
 }
 
+
 int main() {
+    
+    _printf("\nNano Text Editor\n");
     int file = openFile();
-    _printf("------------------------------------------\n");
-    readFromFile(file);
-    _printf("------------------------------------------\n");
+    writeToFile(file);
+  
+    _printf("End of nano\n");
 }
 

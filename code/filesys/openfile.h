@@ -87,7 +87,7 @@ class OpenFile {
 					// end of file, tell, lseek back 
     
     
-    int GetSector();                    //Returns the sector of the file
+    int GetInode();                    //Returns the sector of the file
     
   private:
     FileHeader *hdr;			// Header for this file 

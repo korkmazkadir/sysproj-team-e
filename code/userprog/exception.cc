@@ -177,7 +177,7 @@ void ExceptionHandler (ExceptionType which)
             case SC_Exit:
             {
                 int retValue = machine->ReadRegister(FIRST_PARAM_REGISTER);
-                printf("EXIT %d %d \n", currentThread->Tid(), retValue);
+                printf(">> EXIT %d %d \n", currentThread->Tid(), retValue);
                 do_ExitCurrentProcess();
             } break;
 
@@ -301,8 +301,6 @@ void ExceptionHandler (ExceptionType which)
             
             case SC_Open:
             {
-                printf("Opening file...");
-                
                 int fileNameAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
                 char fileName [MAX_WRITE_BUF_SIZE];
                 copyStringFromMachine(fileNameAddress, fileName, MAX_WRITE_BUF_SIZE);
