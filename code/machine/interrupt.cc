@@ -243,8 +243,10 @@ Interrupt::Idle()
 void
 Interrupt::Halt()
 {
+#if 1
     printf("Machine halting!\n\n");
     stats->Print();
+#endif
     Cleanup();     // Never returns.
 }
 

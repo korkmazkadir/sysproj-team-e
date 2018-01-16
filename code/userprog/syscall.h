@@ -101,7 +101,7 @@ int NetworkConnectAsServer(int mailbox);
 int NetworkConnectAsClient(int address, int mailbox);
 int NetworkSendToByConnId(int connId, const char *data, int len);
 int NetworkReceiveFromByConnId(int connId, char *data);
-int SendFile(int connId, const char *fileName);
+int SendFile(int connId, const char *fileName, int *transferSpeed);
 int ReceiveFile(int connId, const char *fileName);
 
 /* Address space control operations: Exit, Exec, and Join */

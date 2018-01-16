@@ -60,7 +60,7 @@ class FileSystem {
 	  return new OpenFile(fileDescriptor);
       }
 
-    bool Remove(char *name) { return Unlink(name) == 0; }
+    bool Remove(const char *name) { return Unlink(name) == 0; }
 
 };
 

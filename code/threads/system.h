@@ -28,7 +28,7 @@
 
 // max number of mail boxes for network communication
 // this number must be even
-#define NUM_MAIL_BOXES 10
+#define NUM_MAIL_BOXES 128
 
 // Initialization and cleanup routines
 extern void Initialize (int argc, char **argv);	// Initialization,

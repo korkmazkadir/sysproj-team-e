@@ -105,3 +105,15 @@ code/network/SynchPost.h
 code/network/SynchPost.cc
 code/test/network_sender.c
 code/test/network_receiver.c
+code/test/network_test2_snd.c
+code/test/network_test2_rcv.c
+code/test/twoProcessesFirstOneJoins.c
+code/test/twoProcessesNoJoins.c
+code/test/twoProcessesSecondOneJoins.c
+code/test/userprog0.c
+code/test/userprog0join.c
+code/test/userprog1.c
+code/test/userprog1join.c
+code/test/userThreadExit.c
+code/test/manyThreads1.c
+code/test/manyThreads2.c

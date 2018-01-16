@@ -1,0 +1,420 @@
+00
+
+TBRyAtNeSsFE R rFIeNcISeHiEvDe d
+: 125
+This is a long message that I am going to transfer in this test. It should belonger than the typical size of the package ... 
+0
+Machine halting!
+
+Ticks: total 163156011, idle 162187785, system 965360, user 2866
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 150
+Paging: faults 0
+Network I/O: packets received 8956, sent 8952
+
+Cleaning up...
+Machine halting!
+
+Ticks: total 309848982, idle 308796028, system 1051360, user 1594
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 21
+Paging: faults 0
+Network I/O: packets received 6699, sent 12015
+
+Cleaning up...
+00
+
+TBRyAtNeSFsE Rr eFcIeNiIvSeHdE:D  
+125
+This is a long message that I am going to transfer in this test. It should belonger than the typical size of the package ... 
+0
+Machine halting!
+
+Ticks: total 227443633, idle 226539577, system 901190, user 2866
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 150
+Paging: faults 0
+Network I/O: packets received 8280, sent 8277
+
+Cleaning up...
+Machine halting!
+
+Ticks: total 382505870, idle 381544216, system 960060, user 1594
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 21
+Paging: faults 0
+Network I/O: packets received 6186, sent 11011
+
+Cleaning up...
+00
+
+Bytes received: 125
+This is a long message that I am going to transfer in this test. It should belonger than the typical size of the package ... 
+TRANSFER FINISHED 
+0
+Machine halting!
+
+Ticks: total 206038024, idle 205136548, system 898610, user 2866
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 150
+Paging: faults 0
+Network I/O: packets received 8274, sent 8272
+
+Cleaning up...
+Machine halting!
+
+Ticks: total 395859710, idle 394880516, system 977600, user 1594
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 21
+Paging: faults 0
+Network I/O: packets received 6315, sent 11159
+
+Cleaning up...
+0
+0
+Bytes received: 125
+This is a long message that I am going to transfer in this test. It should belonger than the typical size of the package ... 
+TRANSFER FINISHED 
+0
+Machine halting!
+
+Ticks: total 288206748, idle 287312682, system 891200, user 2866
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 150
+Paging: faults 0
+Network I/O: packets received 8142, sent 8205
+
+Cleaning up...
+Machine halting!
+
+Ticks: total 478380212, idle 477418568, system 960050, user 1594
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 21
+Paging: faults 0
+Network I/O: packets received 6159, sent 10951
+
+Cleaning up...
+0
+0
+TBRyAtNeSsF ErRe cFeIiNvIeSdH:E D 1
+25
+This is a long message that I am going to transfer in this test. It should belonger than the typical size of the package ... 
+0
+Machine halting!
+
+Ticks: total 265705042, idle 264820896, system 881280, user 2866
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 150
+Paging: faults 0
+Network I/O: packets received 8055, sent 8117
+
+Cleaning up...
+Machine halting!
+
+Ticks: total 445698582, idle 444750458, system 946530, user 1594
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 21
+Paging: faults 0
+Network I/O: packets received 6093, sent 10768
+
+Cleaning up...
+00
+
+Bytes received: 125
+This is a long message that I am going to transfer in this test. It should belonger than the typical size of the package ... 
+TRANSFER FINISHED 
+0
+Machine halting!
+
+Ticks: total 260834722, idle 259901326, system 930530, user 2866
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 150
+Paging: faults 0
+Network I/O: packets received 8598, sent 8598
+
+Cleaning up...
+Machine halting!
+
+Ticks: total 404331311, idle 403332847, system 996870, user 1594
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 21
+Paging: faults 0
+Network I/O: packets received 6482, sent 11403
+
+Cleaning up...
+0
+0
+TRANSFER FBINyIStHEeD s
+ received: 125
+This is a long message that I am going to transfer in this test. It should belonger than the typical size of the package ... 
+0
+Machine halting!
+
+Ticks: total 239952921, idle 239018375, system 931680, user 2866
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 150
+Paging: faults 0
+Network I/O: packets received 8548, sent 8609
+
+Cleaning up...
+Machine halting!
+
+Ticks: total 400783970, idle 399773276, system 1009100, user 1594
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 21
+Paging: faults 0
+Network I/O: packets received 6515, sent 11455
+
+Cleaning up...
+0
+0
+TBRyAtNeSsF ErRe cFeIiNvIeSdH:E D 1
+25
+This is a long message that I am going to transfer in this test. It should belonger than the typical size of the package ... 
+0
+Machine halting!
+
+Ticks: total 299500707, idle 298609631, system 888210, user 2866
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 150
+Paging: faults 0
+Network I/O: packets received 8118, sent 8185
+
+Cleaning up...
+Machine halting!
+
+Ticks: total 463892642, idle 462938848, system 952200, user 1594
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 21
+Paging: faults 0
+Network I/O: packets received 6163, sent 10843
+
+Cleaning up...
+00
+
+BTyRtAeNsS FrEeRce ivFedI:N I1S25H
+EDT 
+his is a long message that I am going to transfer in this test. It should belonger than the typical size of the package ... 
+0
+Machine halting!
+
+Ticks: total 280683836, idle 279727030, system 953940, user 2866
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 150
+Paging: faults 0
+Network I/O: packets received 8851, sent 8848
+
+Cleaning up...
+Machine halting!
+
+Ticks: total 434228302, idle 433194828, system 1031880, user 1594
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 21
+Paging: faults 0
+Network I/O: packets received 6687, sent 11828
+
+Cleaning up...
+0
+0
+TBRyAtNeSsF ErRe cFeIiNvIeSdH:E D 1
+25
+This is a long message that I am going to transfer in this test. It should belonger than the typical size of the package ... 
+0
+Machine halting!
+
+Ticks: total 315308046, idle 314363180, system 942000, user 2866
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 150
+Paging: faults 0
+Network I/O: packets received 8677, sent 8742
+
+Cleaning up...
+Machine halting!
+
+Ticks: total 465048791, idle 464033177, system 1014020, user 1594
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 21
+Paging: faults 0
+Network I/O: packets received 6503, sent 11621
+
+Cleaning up...
+Machine halting!
+
+Ticks: total 319623, idle 271032, system 19160, user 29431
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 0
+Paging: faults 0
+Network I/O: packets received 128, sent 128
+
+Cleaning up...
+Machine halting!
+
+Ticks: total 160132302, idle 160040930, system 61940, user 29432
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 0
+Paging: faults 0
+Network I/O: packets received 128, sent 768
+
+Cleaning up...
+Machine halting!
+
+Ticks: total 1260964, idle 1212323, system 19210, user 29431
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 0
+Paging: faults 0
+Network I/O: packets received 128, sent 128
+
+Cleaning up...
+Machine halting!
+
+Ticks: total 160040185, idle 159948973, system 61780, user 29432
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 0
+Paging: faults 0
+Network I/O: packets received 128, sent 768
+
+Cleaning up...
+Machine halting!
+
+Ticks: total 3624151, idle 3575440, system 19280, user 29431
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 0
+Paging: faults 0
+Network I/O: packets received 128, sent 128
+
+Cleaning up...
+Machine halting!
+
+Ticks: total 172044204, idle 171949522, system 65250, user 29432
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 0
+Paging: faults 0
+Network I/O: packets received 128, sent 816
+
+Cleaning up...
+Machine halting!
+
+Ticks: total 894392, idle 845711, system 19250, user 29431
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 0
+Paging: faults 0
+Network I/O: packets received 128, sent 128
+
+Cleaning up...
+Machine halting!
+
+Ticks: total 176040618, idle 175945206, system 65980, user 29432
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 0
+Paging: faults 0
+Network I/O: packets received 128, sent 832
+
+Cleaning up...
+Machine halting!
+
+Ticks: total 2024245, idle 1975564, system 19250, user 29431
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 0
+Paging: faults 0
+Network I/O: packets received 128, sent 128
+
+Cleaning up...
+Machine halting!
+
+Ticks: total 184041095, idle 183943333, system 68330, user 29432
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 0
+Paging: faults 0
+Network I/O: packets received 128, sent 864
+
+Cleaning up...
+Machine halting!
+
+Ticks: total 2758342, idle 2709711, system 19200, user 29431
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 0
+Paging: faults 0
+Network I/O: packets received 128, sent 128
+
+Cleaning up...
+Machine halting!
+
+Ticks: total 184061459, idle 183963747, system 68280, user 29432
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 0
+Paging: faults 0
+Network I/O: packets received 128, sent 864
+
+Cleaning up...
+Machine halting!
+
+Ticks: total 1913876, idle 1865105, system 19340, user 29431
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 0
+Paging: faults 0
+Network I/O: packets received 128, sent 128
+
+Cleaning up...
+Machine halting!
+
+Ticks: total 184040815, idle 183943053, system 68330, user 29432
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 0
+Paging: faults 0
+Network I/O: packets received 128, sent 864
+
+Cleaning up...
+Machine halting!
+
+Ticks: total 3036940, idle 2988199, system 19310, user 29431
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 0
+Paging: faults 0
+Network I/O: packets received 128, sent 128
+
+Cleaning up...
+Machine halting!
+
+Ticks: total 188041046, idle 187942224, system 69390, user 29432
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 0
+Paging: faults 0
+Network I/O: packets received 128, sent 880
+
+Cleaning up...
+Machine halting!
+
+Ticks: total 3717866, idle 3669015, system 19420, user 29431
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 0
+Paging: faults 0
+Network I/O: packets received 128, sent 128
+
+Cleaning up...
+Machine halting!
+
+Ticks: total 188041705, idle 187942663, system 69610, user 29432
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 0
+Paging: faults 0
+Network I/O: packets received 128, sent 880
+
+Cleaning up...
+Machine halting!
+
+Ticks: total 69153, idle 20182, system 19540, user 29431
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 0
+Paging: faults 0
+Network I/O: packets received 128, sent 128
+
+Cleaning up...
+Machine halting!
+
+Ticks: total 172206189, idle 172111757, system 65000, user 29432
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 0
+Paging: faults 0
+Network I/O: packets received 128, sent 816
+
+Cleaning up...

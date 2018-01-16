@@ -6,9 +6,9 @@
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
-EXECUTABLE="../../build/nachos-step4 -x"
-EXECUTABLE_RAND="../../build/nachos-step4 -rs -x"
-EXECUTABLE_RAND_SEED="../../build/nachos-step4 -rs 1 -x"
+EXECUTABLE="../../build/nachos-step6 -x"
+EXECUTABLE_RAND="../../build/nachos-step6 -rs -x"
+EXECUTABLE_RAND_SEED="../../build/nachos-step6 -rs 18 -x"
 
 nbFails=0
 Check_Result(){
@@ -118,9 +118,16 @@ else
     nbFails=$(($nbFails + 1))
 fi
 
+
+
+#----------------------------------------------------------------------------
+printf "${NC}\n\n### STEP 6 ###\n"
+python execute.py
+Check_Result
+
+
 printf "${NC}\n\n### STEP 5 ###\n"
 
-printf "${NC}\n\n### STEP 6 ###\n"
 
 
 #############################################

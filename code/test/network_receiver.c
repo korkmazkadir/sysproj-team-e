@@ -23,7 +23,11 @@ int main() {
     NetworkSendToByConnId(connId, smallData, strlen(smallData));
 #endif
 
-    ReceiveFile(connId, "OMG_THIS_IS_HALT.O");
-
+    int fileStatus = ReceiveFile(connId, "OMG_THIS_IS_HALT.O");
+    SynchPutInt(fileStatus);
+    PutChar('\n');
+    //NOTE: This assert CAN happen and is NORMAL
+    //      If checker sees it, it should just skip file comparison part
+    _ASSERT(fileStatus == 0);
     return 0;
 }

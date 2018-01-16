@@ -2,7 +2,7 @@
 #include "nachos_stdio.h"
 #include "utility.h"
 
-#define BIG_THREAD_NUM 10000
+#define BIG_THREAD_NUM 100000
 
 /*
  * manyThreads2: Creation of large number of threads.
@@ -23,7 +23,7 @@ void fun2(void *ptr) {
 int test1(void (*fun) (void*)) {
     int i = 0;
     int tid = 0;
-    for (; tid != -1 && i < BIG_THREAD_NUM; i++) {
+    for (; tid >= 0 && i < BIG_THREAD_NUM; i++) {
         tid = UserThreadCreate(fun, 0);
     }
     if (tid < 0) {

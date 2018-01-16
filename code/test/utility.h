@@ -21,5 +21,6 @@ int strlen(const char *s) {
     return length;
 }
 
+
 #endif // UTILITY_H
 

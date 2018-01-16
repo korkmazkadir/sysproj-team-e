@@ -36,7 +36,7 @@ SynchPost::~SynchPost()
  *        -2        <- if attempt has been made to transfer more than NETWORK_MAX_TRANSFER_BYTES (2048) bytes
  *        -1        <- if at least one sent packet has not been acknowledged by the recepient
  */
-int SynchPost::SendTo(int addr, int mailbox, const char *data, int len)
+int SynchPost::SendTo(int addr, int mailbox, const char *data, int len, unsigned specialMask)
 {
     PacketHeader outPktHdr;
     PacketHeader inPktHdr;
@@ -68,11 +68,11 @@ int SynchPost::SendTo(int addr, int mailbox, const char *data, int len)
             memset(buffer, 0x00, sizeof(buffer));
             int chunkLength = std::min(MaxMailSize, static_cast<unsigned>(len));
             outMailHdr.length = chunkLength;
-            outMailHdr.index = ii;
+            outMailHdr.index = getMasked(ii, specialMask);
             len -= chunkLength;
             memcpy(currentChunk, data + ii * MaxMailSize, chunkLength);
         } else { /* if this is a FIRST data packet */
-            outMailHdr.index = len;
+            outMailHdr.index = getMasked(static_cast<unsigned>(len), HEADER_MASK);
             outMailHdr.length = strlen(HEADER_WORD);
             char headerData[MaxMailSize] = HEADER_WORD;
             memcpy(currentChunk, headerData, outMailHdr.length);
@@ -93,14 +93,18 @@ int SynchPost::SendTo(int addr, int mailbox, const char *data, int len)
 
             // Expect usual ACK for usual packets, HEADER_ACK for headers
             if (ii >= 0) {
+                // Fail the acknowledgement if indexes do not match
                 cmpRes = strncmp(buffer, ACK_WORD, strlen(ACK_WORD));
-            } else {
-                cmpRes = strncmp(buffer, HEADER_ACK, strlen(HEADER_ACK));
-            }
+                if (outMailHdr.index != getIndex(inMailHdr.index, ACK_MASK)) {
+                    cmpRes = -1;
 
-            // Fail the acknowledgement if indexes do not match
-            if (outMailHdr.index != inMailHdr.index) {
-                cmpRes = -1;
+                }
+            } else {
+                // Fail the acknowledgement if indexes do not match
+                cmpRes = strncmp(buffer, HEADER_ACK, strlen(HEADER_ACK));
+                if (getIndex(outMailHdr.index, HEADER_MASK) != getIndex(inMailHdr.index, HEADER_ACK_MASK)) {
+                    cmpRes = -1;
+                }
             }
 
             ++numAttempts;
@@ -121,7 +125,7 @@ int SynchPost::SendTo(int addr, int mailbox, const char *data, int len)
  * data MUST be able to accomodate MaxMailSize bytes
  * if out_pktHeader is not null, it will contain received packet header
  */
-int SynchPost::ReceiveSingleChunkFrom(int mailbox, char *data, int timeout, PacketHeader *out_pktHeader)
+unsigned SynchPost::ReceiveSingleChunkFrom(int mailbox, char *data, int timeout, PacketHeader *out_pktHeader)
 {
     MailHeader inMailHdr;
     PacketHeader inPktHdr;
@@ -138,16 +142,22 @@ int SynchPost::ReceiveSingleChunkFrom(int mailbox, char *data, int timeout, Pack
 
     // Depending on the data type generate an appropriate acknowledgement message
     // TODO: header flag should be set directly in the packet properties rather than being derived from data
-    if (strncmp(HEADER_WORD, data, strlen(HEADER_WORD)) == 0) {
+    unsigned mask = 0;
+    unsigned pureIndex = 0;
+    if (isHeader(inMailHdr.index)) {
         ackMessage = HEADER_ACK;
+        mask = HEADER_ACK_MASK;
+        pureIndex = getIndex(inMailHdr.index, HEADER_MASK);
     } else {
         ackMessage = ACK_WORD;
+        mask = ACK_MASK;
+        pureIndex = inMailHdr.index;
     }
 
     outPktHdr.to = inPktHdr.from;
     outMailHdr.to = inMailHdr.from;
     outMailHdr.length = strlen(ackMessage);
-    outMailHdr.index = inMailHdr.index;
+    outMailHdr.index = getMasked(pureIndex, mask);
 
     postOffice->Send(outPktHdr, outMailHdr, ackMessage);
 
@@ -155,7 +165,7 @@ int SynchPost::ReceiveSingleChunkFrom(int mailbox, char *data, int timeout, Pack
         *out_pktHeader = inPktHdr;
     }
 
-    return (int)inMailHdr.index;
+    return inMailHdr.index;
 }
 
 /*!
@@ -172,20 +182,26 @@ int SynchPost::ReceiveFrom(int mailbox, char *data, PacketHeader *out_pktHeader)
         memset(buffer, 0x00, sizeof(buffer));
         if (-1 == ix) { /* If we are to receive first packet - header */
             char headerData[MaxMailSize] = { 0 };
-            len = ReceiveSingleChunkFrom(mailbox, headerData, -1, out_pktHeader);
+            unsigned maskedIndex = ReceiveSingleChunkFrom(mailbox, headerData, -1, out_pktHeader);
+            len = (int)getIndex(maskedIndex, HEADER_MASK);
             retLen = len;
 
             // Check we have a valid header
             // TODO: Move header property to mail header
             int cmpRes = strncmp(headerData, HEADER_WORD, strlen(HEADER_WORD));
-            if ((cmpRes != 0) || (len <= 0)) {
+            if ((cmpRes != 0) || (len <= 0) || (!isHeader(maskedIndex))) {
                 continue;
             }
+
             numChunks = divRoundUp(len, MaxMailSize);
         } else {
-            int packetIndex = ReceiveSingleChunkFrom(mailbox, buffer, -1);
+            unsigned packetIndex = ReceiveSingleChunkFrom(mailbox, buffer, -1);
 
-            if (packetIndex != ix) {
+            if (getMask(packetIndex) >= SPECIAL_FILE_END) {
+                return -15;
+            }
+
+            if ((int)packetIndex != ix) {
                 continue;
             }
             int curLength = std::min(MaxMailSize, static_cast<unsigned>(len));
@@ -213,16 +229,16 @@ int SynchPost::ConnectAsServer(int mailbox)
     char data[MaxMailSize] = { 0 };
     PacketHeader inPacketHeader;
 
-    do {
-        status = ReceiveFrom(mailbox, data, &inPacketHeader);
-        cmpRes = strncmp(data, INIT_CONN, strlen(INIT_CONN));
-    } while ((cmpRes != 0) || (status <= 0));
-
     int connectionIx = availConnections.Find();
     if (connectionIx == -1) {
         retVal = -2;
         goto early_exit;
     }
+
+    do {
+        status = ReceiveFrom(mailbox, data, &inPacketHeader);
+        cmpRes = strncmp(data, INIT_CONN, strlen(INIT_CONN));
+    } while ((cmpRes != 0) || (status <= 0));
 
     connections[connectionIx].connectionID = connectionIx;
     connections[connectionIx].serverAddress = selfAddress;
@@ -240,21 +256,28 @@ int SynchPost::ConnectAsServer(int mailbox)
  * Initiates connection to the server specified by address and mailbox
  * \returns connection identifier in case of success
  *          -2 if quota of connection is exceeded
- *          -1 RESERVED for future use
+ *          -1 if connection canno be established
  */
 int SynchPost::ConnectAsClient(int address, int mailbox)
 {
     int retVal = -1;
     int status = 0;
 
-    status = SendTo(address, mailbox, INIT_CONN, strlen(INIT_CONN));
-    (void)status;
-
     int connectionIx = availConnections.Find();
     if (connectionIx == -1) {
         retVal = -2;
         goto early_exit;
     }
+
+    status = SendTo(address, mailbox, INIT_CONN, strlen(INIT_CONN));
+    (void)status;
+#if 0
+    if (0 != status) {
+        availConnections.Clear(connectionIx);
+        retVal = -1;
+        goto early_exit;
+    }
+#endif
 
     connections[connectionIx].connectionID = connectionIx;
     connections[connectionIx].clientAddress = selfAddress;
@@ -272,7 +295,7 @@ int SynchPost::ConnectAsClient(int address, int mailbox)
 #define INVALID_THREAD (-20)
 #define INVALID_ACCESS (-30)
 
-int SynchPost::SendToByConnId(int connId, const char *data, int len)
+int SynchPost::SendToByConnId(int connId, const char *data, int len, unsigned specialMask)
 {
     int retVal = 0;
 
@@ -285,9 +308,9 @@ int SynchPost::SendToByConnId(int connId, const char *data, int len)
 
     if (curConnection.isServer) {
 
-        retVal = SendTo(curConnection.clientAddress, curConnection.mailbox, data, len);
+        retVal = SendTo(curConnection.clientAddress, curConnection.mailbox, data, len, specialMask);
     } else {
-        retVal = SendTo(curConnection.serverAddress, curConnection.mailbox, data, len);
+        retVal = SendTo(curConnection.serverAddress, curConnection.mailbox, data, len, specialMask);
     }
     return retVal;
 }
@@ -309,7 +332,7 @@ int SynchPost::ReceiveFromByConnId(int connId, char *data)
  *
  * \return -1       < File cannot be opened
  */
-int SynchPost::SendFile(int connId, const char *fileName) {
+int SynchPost::SendFile(int connId, const char *fileName, int *transferSpeed) {
     int retVal = 0;
 
     OpenFile *file = fileSystem->Open(fileName);
@@ -340,9 +363,14 @@ int SynchPost::SendFile(int connId, const char *fileName) {
 #endif
     }
     std::chrono::high_resolution_clock::time_point afterFile = std::chrono::high_resolution_clock::now();
-    printf("@@@@@@@@@@@@@ >>>>>>>>>>>>>> TOTAL SPEED (KBytes / second): %lf \n",
-           (double)totalBytes /
-           (double)std::chrono::duration_cast<std::chrono::milliseconds>(afterFile - beforeFile).count());
+    if (transferSpeed) {
+        *transferSpeed = static_cast<int> (
+                (double)totalBytes /
+                (double)std::chrono::duration_cast<std::chrono::milliseconds>(afterFile - beforeFile).count()
+                );
+    }
+
+    SendToByConnId(connId, TERMINATION_INDICATOR, strlen(TERMINATION_INDICATOR), SPECIAL_FILE_END);
 
     //TODO: Integrate with Phil
     delete file;
@@ -354,12 +382,16 @@ int SynchPost::ReceiveFile(int connId, const char *fileName) {
 
     OpenFile *file = fileSystem->Open(fileName);
     bool creationSucc = true;
-    if (!file) {
-        creationSucc = fileSystem->Create(fileName, 0);
-        file = fileSystem->Open(fileName);
+
+    if (file) {
+        delete file;
+        fileSystem->Remove(fileName);
     }
 
-    if (!creationSucc) {
+    creationSucc = fileSystem->Create(fileName, 0);
+    file = fileSystem->Open(fileName);
+
+    if (!creationSucc || !file) {
         retVal = -1;
         return retVal;
     }
@@ -383,6 +415,9 @@ int SynchPost::ReceiveFile(int connId, const char *fileName) {
 
         file->Write(buffer, bytesRead);
     }
+
+    //Receive terminator
+    (void)ReceiveFromByConnId(connId, buffer);
 
     //TODO: Integrate with Phil
     delete file;
