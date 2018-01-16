@@ -99,7 +99,7 @@ SynchList::Remove ()
 //----------------------------------------------------------------------
 
 void *
-SynchList::RemoveTimeout(int timeout)
+SynchList::RemoveTimeout()
 {
     void *item;
     lock->Acquire ();       // enforce mutual exclusion

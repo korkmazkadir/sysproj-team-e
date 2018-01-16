@@ -4,6 +4,13 @@
 
 
 #include <strings.h> /* for bzero */
+#include <iostream>
+#include <sstream>
+#include <cstring>
+
+const char* HANDSHAKEMESSAGE = "handshaking";
+const char* ACK = "ack";
+const char* SYN = "sync";
 
 void TimeoutHandler (int b)
 {
@@ -19,6 +26,19 @@ void TimeoutHandler (int b)
 
 }
 
+Connection::Connection() {
+    remoteAddr = -1;
+    remoteBox = -1;
+    localBox = -1;
+}
+
+void
+Connection::Reset()
+{
+    remoteAddr = -1;
+    remoteBox = -1;
+    localBox = -1;
+}
 //----------------------------------------------------------------------
 // Mail::Mail
 //      Initialize a single mail message, by concatenating the headers to
@@ -50,8 +70,9 @@ MailSecure::MailSecure(PacketHeader pktH, MailHeaderSecure mailH, char *msgData)
 MailBoxSecure::MailBoxSecure()
 { 
     messages = new SynchList();
-    timeout = 1000000000;
+    timeout = 500000000;
     initialTicks = -1;
+    connected = -1;
 }
 
 void MailBoxSecure::StartCountingTimeout() {
@@ -161,19 +182,27 @@ MailBoxSecure::Put(PacketHeader pktHdr, MailHeaderSecure mailHdr, char *data)
 //----------------------------------------------------------------------
 
 void 
-MailBoxSecure::Get(PacketHeader *pktHdr, MailHeaderSecure *mailHdr, char *data) 
+MailBoxSecure::Get(PacketHeader *pktHdr, MailHeaderSecure *mailHdr, char *data, bool timeO) 
 { 
 
     DEBUG('n', "Waiting for mail in MailBoxSecure\n");
-    //StartCountingTimeout();
-    MailSecure *mail = (MailSecure *) messages->Remove();   // remove message from list;
-                        // will wait if list is empty
-    if(mail == NULL) {
-        mailHdr->segments = -1;
-        return;
-    }
+    MailSecure *mail;
 
-    //StopCountingTimeout();
+    if(timeO) {
+        StartCountingTimeout();
+        mail = (MailSecure *) messages->RemoveTimeout();   // remove message from list;
+                            // will wait if list is empty
+        if(mail == NULL) {
+            mailHdr->segments = -1;
+
+            return;
+        }
+
+        StopCountingTimeout();
+    } else {
+        mail = (MailSecure *) messages->Remove();   // remove message from list;
+                            // will wait if list is empty
+    }
 
     *pktHdr = mail->pktHdr;
     *mailHdr = mail->mailHdr;
@@ -190,6 +219,16 @@ MailBoxSecure::Get(PacketHeader *pktHdr, MailHeaderSecure *mailHdr, char *data)
     delete mail;            // we've copied out the stuff we
                     // need, we can now discard the message
     delete timerTimeout;
+}
+
+bool
+MailBoxSecure::IsAvailable() {
+    return (initialTicks == -1) ? true : false;
+}
+
+int
+MailBoxSecure::GetRemoteConnected() {
+    return connected;
 }
 
 //----------------------------------------------------------------------
@@ -238,6 +277,9 @@ SecurePost::SecurePost(NetworkAddress addr, double reliability, int nBoxes)
     netAddr = addr; 
     numBoxes = nBoxes;
     boxes = new MailBoxSecure[nBoxes];
+
+    connections = new Connection[nBoxes];
+    
 
 // Third, initialize the network; tell it which interrupt handlers to call
     network = new Network(addr, reliability, ReadAvail, WriteDone, (int) this);
@@ -290,10 +332,14 @@ SecurePost::PostalDelivery()
         pktHdr = network->Receive(buffer);
 
         mailHdr = *(MailHeaderSecure *)buffer;
+        //printf("Received a message from: %d with FIN %d\n", pktHdr.from, mailHdr.FIN);
         if (DebugIsEnabled('n')) {
         printf("Putting mail into MailBoxSecure: ");
         PrintHeader(pktHdr, mailHdr);
         }
+
+        //printf("Putting mail into MailBoxSecure: ");
+        //PrintHeader(pktHdr, mailHdr);
 
     // check that arriving message is legal!
     ASSERT(0 <= mailHdr.to && mailHdr.to < numBoxes);
@@ -301,7 +347,447 @@ SecurePost::PostalDelivery()
 
     // put into MailBoxSecure
         boxes[mailHdr.to].Put(pktHdr, mailHdr, buffer + sizeof(MailHeaderSecure));
+        /*else {
+            int result;
+
+            Connection* con = GetConnection(pktHdr.from);
+            result = RespondCloseHandshake(con);
+            printf("Result of answer CLOSE handshake: %d\n",result);
+        }*/
     }
+}
+
+int
+SecurePost::SendMessageWithAck(PacketHeader pH, MailHeaderSecure mH, PacketHeader *inPH, 
+    MailHeaderSecure *inMH, const char* outMessage, char* inMessage)
+{
+    for(int i = 0; i < MAXREEMISSIONS; i++) {
+        printf("Attempt: %d\n", i);
+        Send(pH, mH, outMessage);
+
+        //Receive hanshake ack
+        Receive(mH.from, inPH, inMH, inMessage, true);
+
+        if(inMH->segments != -1) return true;
+    }
+
+    return false;
+}
+
+/*
+ * Three step handshake
+ *
+ */
+
+int
+SecurePost::PerformHandshake(int dest) {
+    char buffer[MaxMailSizeSecure];
+    PacketHeader outPktHdr, inPktHdr;
+    MailHeaderSecure outMailHdr, inMailHdr;
+
+    int avBox = GetAvailableBox(); //synchronize this
+    if(avBox == -1) return -1;
+
+    std::stringstream str;
+    str << avBox;
+    const char* message = str.str().c_str();
+
+    //Send a synch message
+    outPktHdr.to = dest;
+    outPktHdr.from = netAddr;
+    outMailHdr.to = HANDSHAKEREQUESTBOX;
+    outMailHdr.from = HANDSHAKEANSWERBOX;
+    outMailHdr.length = strlen(message) + 1;
+    outMailHdr.ACK = 0;
+    outMailHdr.SYN = 1;
+
+    bool result = SendMessageWithAck(outPktHdr, outMailHdr, &inPktHdr, &inMailHdr, message, buffer);
+
+    if(!result || inMailHdr.ACK != 1 || inMailHdr.SYN != 1) { //We did't get what we expected
+        return -1;
+    }
+
+    //Send the last ack
+    outMailHdr.ACK = 1;
+    outMailHdr.SYN = 0;
+    outMailHdr.to = HANDSHAKEANSWERBOX;
+
+    Send(outPktHdr, outMailHdr, message);
+    
+
+    //Get the box in the answer message
+    printf("Finished handshake: Remote box to send to: %s\n", buffer);
+
+    int remoteBox = atoi(buffer);
+
+    connections[avBox].remoteAddr = dest;
+    connections[avBox].remoteBox = remoteBox;
+    connections[avBox].localBox = avBox; //Keep track of connections
+
+    //Set the box 
+    return remoteBox;
+
+}
+
+/*
+ * Three step handshake
+ *
+ */
+
+int
+SecurePost::AcceptHandshake() {
+    printf("Started accepting handshake\n");
+    char buffer[MaxMailSizeSecure];
+    PacketHeader outPktHdr, inPktHdr;
+    MailHeaderSecure outMailHdr, inMailHdr;
+
+    //Receive handshake initial
+    Receive(HANDSHAKEREQUESTBOX, &inPktHdr, &inMailHdr, buffer, false);
+
+    int remoteBox = atoi(buffer);
+
+    int avBox = GetAvailableBox(); //synchronize this
+    if(avBox == -1 || inMailHdr.SYN != 1) return -1;
+
+    printf("Received handshake message\n");
+
+    std::stringstream str;
+    str << avBox;
+    const char* message = str.str().c_str();
+
+    //Send a synch message
+    outPktHdr.to = inPktHdr.from;
+    outPktHdr.from = netAddr;
+    outMailHdr.to = inMailHdr.from;
+    outMailHdr.from = HANDSHAKEANSWERBOX;
+    outMailHdr.length = strlen(message) + 1;
+    outMailHdr.ACK = 1;
+    outMailHdr.SYN = 1;
+
+    bool result = SendMessageWithAck(outPktHdr, outMailHdr, &inPktHdr, &inMailHdr, message, buffer);
+
+    if(!result || inMailHdr.ACK != 1) { //We did't get what we expected
+        return -1;
+    }
+
+    connections[avBox].remoteAddr = inPktHdr.from;
+    connections[avBox].remoteBox = remoteBox;
+    connections[avBox].localBox = avBox; //Keep track of connections
+
+    printf("Finished accepting handshake for remote addr %d: \n", connections[avBox].remoteAddr);
+
+    //Set the box 
+    return remoteBox;
+
+}
+
+int
+SecurePost::RespondCloseHandshake(Connection *con) {
+    char buffer[MaxMailSizeSecure];
+    PacketHeader outPktHdr, inPktHdr;
+    MailHeaderSecure outMailHdr, inMailHdr;
+    const char* message = "fin";
+
+    //Send a FIN message
+    outPktHdr.to = con->remoteAddr;
+    outPktHdr.from = netAddr;
+    outMailHdr.to = con->remoteBox;
+    outMailHdr.from = con->localBox;
+    outMailHdr.length = strlen(message) + 1;
+    outMailHdr.ACK = 1;
+    outMailHdr.SYN = 0;
+    outMailHdr.FIN = 0;
+
+    Send(outPktHdr, outMailHdr, message);
+
+    //Do something in between maybe
+
+    outMailHdr.ACK = 0;
+    outMailHdr.SYN = 0;
+    outMailHdr.FIN = 1;
+    bool result = SendMessageWithAck(outPktHdr, outMailHdr, &inPktHdr, &inMailHdr, message, buffer);
+
+    if(!result || inMailHdr.ACK != 1) { //Not what we expected
+        return -1;
+    }   
+
+    //Get the box in the answer message
+    printf("Finished close handshake: Remote box to send to: %s\n", buffer);
+
+    //Set box assigned to this dest
+    connections[con->localBox].Reset();
+
+    //Set the box 
+    return true;
+
+}
+
+Connection*
+SecurePost::GetConnection(int dest) {
+    for(int i = 2; i < numBoxes; i++) {
+
+        //printf("connection %d with remoteAddr %d\n", i, connections[i].remoteAddr);
+        if(connections[i].remoteAddr == dest) return &(connections[i]);
+    }
+    return NULL;
+}
+
+int
+SecurePost::PerformCloseHandshake(Connection* con) {
+    char buffer[MaxMailSizeSecure];
+    PacketHeader outPktHdr, inPktHdr;
+    MailHeaderSecure outMailHdr, inMailHdr;
+    const char* message = "fin";
+
+    //Send a FIN message
+    outPktHdr.to = con->remoteAddr;
+    outPktHdr.from = netAddr;
+    outMailHdr.to = con->remoteBox;
+    outMailHdr.from = con->localBox;
+    outMailHdr.length = strlen(message) + 1;
+    outMailHdr.ACK = 0;
+    outMailHdr.SYN = 0;
+    outMailHdr.FIN = 1;
+
+    printf("Sending message to close to ned addr %d: ",netAddr);
+    PrintHeader(outPktHdr, outMailHdr);
+    
+    bool result = SendMessageWithAck(outPktHdr, outMailHdr, &inPktHdr, &inMailHdr, message, buffer);
+
+    if(!result || inMailHdr.ACK != 1) { //Not what we expected
+        return -1;
+    }
+
+    //Expect the FIN message of the other side
+    Receive(con->localBox, &inPktHdr, &inMailHdr, buffer, true);
+
+    if(inMailHdr.segments == -1 || inMailHdr.FIN != 1) return -1; //we didn't get what we expected
+
+    //Send the last ack
+    outMailHdr.ACK = 1;
+    outMailHdr.SYN = 0;
+    outMailHdr.FIN = 0;
+    outMailHdr.to = con->remoteBox;
+
+    Send(outPktHdr, outMailHdr, message);
+    
+
+    //Get the box in the answer message
+    printf("Finished close handshake: Remote box to send to: %s\n", buffer);
+
+    //Set box assigned to this dest
+    connections[con->localBox].Reset();
+
+    //Set the box 
+    return 1;
+
+}
+
+/*int
+SecurePost::ListenHandshake(int origin)
+{
+    //Listen for handshake first if not stablished connection already
+    char* buffer = new char[MaxPacketSize];
+    PacketHeader outPktHdr, inPktHdr;
+    MailHeaderSecure outMailHdr, inMailHdr;
+    
+    Receive(HANDSHAKEREQUESTBOX, &inPktHdr, &inMailHdr, buffer); //First listen handshake
+
+    if(inMailHdr.segments == -1) return -1;
+
+    int avBox = GetAvailableBox(); //synchronize this
+    if(avBox == -1) return -1; //Thee's no av box
+
+    printf("Available box!!!: %d\n", avBox);
+
+    //Keep track of connection;
+    connections[avBox].;
+
+    std::stringstream str;
+    str << avBox;
+    const char* message = str.str().c_str();
+
+    outPktHdr.to = origin;
+    outPktHdr.from = netAddr;
+    outMailHdr.to = HANDSHAKEANSWERBOX;
+    outMailHdr.from = HANDSHAKEANSWERBOX;
+    outMailHdr.length = strlen(message) + 1;
+
+    Send(outPktHdr, outMailHdr, message);
+
+    printf("Finished handshake listening\n");
+    //Wait for ack confirmation?
+    return avBox;
+}*/
+
+
+/*int
+SecurePost::SendSecure(int dest, char *message)
+{
+    char* buffer = new char[MaxPacketSize];
+    PacketHeader outPktHdr, inPktHdr;
+    MailHeaderSecure outMailHdr, inMailHdr;
+    int remoteBox;
+    
+    for(int i = 0; i < MAXREEMISSIONS; i++) {
+        printf("Attempt handshake: %d\n", i);
+        remoteBox = PerformHandshake(dest);
+        if(remoteBox != -1) break;
+    }
+
+    
+    if(remoteBox == -1) {
+        printf("Remote box: %d\n", remoteBox);
+        return -1; // if handshake fails don't do anything
+    }
+
+    int avBox = GetAvailableBox(); //synchronize this
+    if(avBox == -1) return -1;
+
+    //Set unavailable(box)
+
+    outPktHdr.to = dest;
+    outPktHdr.from = netAddr;
+    outMailHdr.to = remoteBox;
+    outMailHdr.from = avBox;
+    outMailHdr.length = strlen(message) + 1;
+
+    int i = 0;
+    for(i = 0; i <= MAXREEMISSIONS; i++)
+    {
+        printf("First transmission: %d\n", i);
+        Send(outPktHdr, outMailHdr, message);
+
+        Receive(avBox, &inPktHdr, &inMailHdr, buffer);
+
+        if(inMailHdr.segments != -1) break;
+    }
+
+    if(i == MAXREEMISSIONS + 1) return -1;
+    else return true;
+
+    return true;
+}*/
+
+/*int
+SecurePost::ReceiveSecure(int origin) {
+
+    int segments = 0;
+    int totalSegments = 1;
+
+    //Listen for handshake first if not stablished connection already
+    char* buffer = new char[MaxPacketSize];
+    PacketHeader outPktHdr, inPktHdr;
+    MailHeaderSecure outMailHdr, inMailHdr;
+
+    //int box = ListenHandshake(origin);
+    int box = -1;
+    if(box == -1) return -1;
+
+   
+
+    do { //keep track of which segment we got
+        Receive(box, &inPktHdr, &inMailHdr, buffer); //Listen
+
+        if(inMailHdr.segments == -1) continue;
+
+        segments += 1;
+        totalSegments = inMailHdr.segments;
+
+        printf("Sending confirmation to: %d\n",inMailHdr.from);
+        //Send ack
+        outPktHdr.to = origin;
+        outPktHdr.from = netAddr;
+        outMailHdr.to = inMailHdr.from;
+        outMailHdr.from = box;
+        outMailHdr.length = strlen(ACK) + 1;
+
+        Send(outPktHdr, outMailHdr, ACK);
+    } while (segments < totalSegments);
+
+    return 1;
+
+}*/
+
+int
+SecurePost::OpenConnection(int dest)
+{
+    int remoteBox;
+
+    remoteBox = PerformHandshake(dest);
+
+    return remoteBox;
+}
+
+int
+SecurePost::CloseConnection(int dest)
+{
+    int result;
+
+    Connection* con = GetConnection(dest);
+    result = PerformCloseHandshake(con);
+
+    return result;
+}
+
+int
+SecurePost::ReceiveSecure(int org) {
+    char buffer[MaxMailSizeSecure];
+    PacketHeader outPktHdr, inPktHdr;
+    MailHeaderSecure outMailHdr, inMailHdr;
+    const char* ack = "ack";
+    //printf("Origin: %d\n", org);
+    Connection* con = GetConnection(org);
+    //printf("Connection got: %d\n", con->remoteAddr);
+    if(con == false) {
+        //printf("No connection for: %d\n", org);
+        return false;
+    }
+
+    Receive(con->localBox, &inPktHdr, &inMailHdr, buffer, false);
+
+    //printf("Received message secure with FIN %d\n", inMailHdr.FIN);
+
+    if(inMailHdr.FIN == 1) {
+        RespondCloseHandshake(con);
+        return true;
+    }
+
+    //Send  message
+    outPktHdr.to = con->remoteAddr;
+    outPktHdr.from = netAddr;
+    outMailHdr.to = con->remoteBox;
+    outMailHdr.from = con->localBox;
+    outMailHdr.length = strlen(ack) + 1;
+    outMailHdr.ACK = 1;
+
+
+    Send(outPktHdr, outMailHdr, ack);
+
+    return true;
+
+}
+
+int
+SecurePost::SendSecure(char *message, int dest) {
+    char buffer[MaxMailSizeSecure];
+    PacketHeader outPktHdr, inPktHdr;
+    MailHeaderSecure outMailHdr, inMailHdr;
+
+    Connection* con = GetConnection(dest);
+
+    //Send  message
+    outPktHdr.to = con->remoteAddr;
+    outPktHdr.from = netAddr;
+    outMailHdr.to = con->remoteBox;
+    outMailHdr.from = con->localBox;
+    outMailHdr.length = strlen(message) + 1;
+    outMailHdr.ACK = 0;
+    outMailHdr.SYN = 0;
+    outMailHdr.FIN = 0;
+
+    int result = SendMessageWithAck(outPktHdr, outMailHdr, &inPktHdr, &inMailHdr, message, buffer);
+    return result;
 }
 
 //----------------------------------------------------------------------
@@ -366,13 +852,15 @@ SecurePost::Send(PacketHeader pktHdr, MailHeaderSecure mailHdr, const char* data
 
 void
 SecurePost::Receive(int box, PacketHeader *pktHdr, 
-                MailHeaderSecure *mailHdr, char* data)
+                MailHeaderSecure *mailHdr, char* data, bool timeout)
 {
-    ASSERT((box >= 0) && (box < numBoxes));
+        ASSERT((box >= 0) && (box < numBoxes));
 
-    boxes[box].Get(pktHdr, mailHdr, data);
-    
-    if(mailHdr->segments != -1) {ASSERT(mailHdr->length <= MaxMailSizeSecure);}
+        boxes[box].Get(pktHdr, mailHdr, data, timeout);
+        
+        if(mailHdr->segments != -1) {
+            ASSERT(mailHdr->length <= MaxMailSizeSecure);
+        }
 }
 
 //----------------------------------------------------------------------
@@ -411,4 +899,13 @@ SecurePost::CheckTimeout()
     for(int box = 0; box < numBoxes; box++) {
         boxes[box].Check();
     }
+}
+
+int
+SecurePost::GetAvailableBox() {
+    for(int box = 2; box < numBoxes; box++) {
+        if (connections[box].remoteAddr == -1) return box;
+    }
+
+    return -1;
 }

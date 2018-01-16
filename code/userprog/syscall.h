@@ -45,6 +45,11 @@
 #define SC_SemDestroy 23
 #define SC_UserThreadSelfId 24
 #define SC_ForkExec 25
+#define SC_Send     26
+#define SC_Receive  27
+#define SC_OpenConnection     28
+#define SC_CloseConnection    29
+#define SC_Accept               30
 
 #define SC_AssertionFailed     100
 
@@ -175,6 +180,16 @@ void AssertionFailed(char *fileName, int lineNumber);
  * 
  */
 int ForkExec(char *fileName);
+
+
+
+int Send(char *message, int dest);
+int Receive(int dest);
+
+int OpenConnection(int dest);
+int CloseConnection(int dest);
+
+int Accept();
 
 #endif // IN_USER_MODE
 

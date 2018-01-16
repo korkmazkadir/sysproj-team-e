@@ -31,7 +31,7 @@ class SynchList
     // and wake up any thread waiting in remove
     void *Remove ();		// remove the first item from the front of
     // the list, waiting if the list is empty
-    void *RemoveTimeout(int timeout);
+    void *RemoveTimeout();
     // apply function to every item in the list
     void Mapcar (VoidFunctionPtr func);
 

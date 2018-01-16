@@ -166,7 +166,7 @@ main (int argc, char **argv)
             Delay (2);	// delay for 2 seconds
             // to give the user time to
             // start up another nachos
-            MailTest0 (atoi (*(argv + 1)));
+            MailTest (atoi (*(argv + 1)));
             argCount = 2;
         } else if(!strcmp (*argv, "-rt")) {
             ASSERT (argc > 1);

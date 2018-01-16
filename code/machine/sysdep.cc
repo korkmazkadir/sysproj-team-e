@@ -388,7 +388,7 @@ SendToSocket(int sockID, const char *buffer, int packetSize, const char *toName)
     InitSocketName(&uName, toName);
     retVal = sendto(sockID, buffer, packetSize, 0,
 			  (sockaddr *) &uName, sizeof(uName));
-    printf("Retval is %d and packet size is %d\n", retVal, packetSize);
+    //printf("Retval: %d\n", retVal);
     ASSERT(retVal == packetSize);
 }
 

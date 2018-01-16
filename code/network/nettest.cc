@@ -59,7 +59,7 @@ MailTest(int farAddr)
         
         for(int i = 0; i < 4; i+=2) {
            // Wait for the first message from the other machine
-           postOffice->Receive(i, &inPktHdr, &inMailHdr, buffer);
+           postOffice->Receive(i, &inPktHdr, &inMailHdr, buffer, true);
            if(inMailHdr.segments != -1) {
                printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.to);
                fflush(stdout);
@@ -78,7 +78,7 @@ MailTest(int farAddr)
 
         for(int i = 1; i < 4; i+=2) {
             // Wait for the ack from the other machine to the first message we sent.
-           postOffice->Receive(i, &inPktHdr, &inMailHdr, buffer);
+           postOffice->Receive(i, &inPktHdr, &inMailHdr, buffer, true);
            if(inMailHdr.segments != -1) {
                printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.from);
                fflush(stdout);
@@ -111,7 +111,7 @@ RingTopology(int myID, int n) {
         postOffice->Send(outPktHdr, outMailHdr, data);
     }
 
-    postOffice->Receive(0, &inPktHdr, &inMailHdr, buffer);
+    postOffice->Receive(0, &inPktHdr, &inMailHdr, buffer, true);
     printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.to);
     fflush(stdout);
 
@@ -161,7 +161,7 @@ MailTest0(int farAddr)
     postOffice->Send(outPktHdr, outMailHdr, data); 
 
     // Wait for the first message from the other machine
-    postOffice->Receive(0, &inPktHdr, &inMailHdr, buffer);
+    postOffice->Receive(0, &inPktHdr, &inMailHdr, buffer, true);
     printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.from);
     fflush(stdout);
 
@@ -173,7 +173,7 @@ MailTest0(int farAddr)
     postOffice->Send(outPktHdr, outMailHdr, ack); 
 
     // Wait for the ack from the other machine to the first message we sent.
-    postOffice->Receive(1, &inPktHdr, &inMailHdr, buffer);
+    postOffice->Receive(1, &inPktHdr, &inMailHdr, buffer, true);
     printf("Got \"%s\" from %d, box %d\n",buffer,inPktHdr.from,inMailHdr.from);
     fflush(stdout);
 

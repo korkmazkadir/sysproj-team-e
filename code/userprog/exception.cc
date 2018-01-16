@@ -255,6 +255,60 @@ void ExceptionHandler (ExceptionType which)
                 fprintf(stderr,"\nERROR : Assertion failed. FILE : %s LINE : %d\n\n", fileName, lineNumber);
                 Exit (123);
             } break;
+
+            case SC_OpenConnection:
+            {
+                int dest = machine->ReadRegister(FIRST_PARAM_REGISTER);
+
+                int result = postOffice->OpenConnection(dest);
+
+                machine->WriteRegister(RET_VALUE_REGISTER, result);
+
+                break;
+            }
+
+            case SC_CloseConnection:
+            {
+                int dest = machine->ReadRegister(FIRST_PARAM_REGISTER);
+
+                int result = postOffice->CloseConnection(dest);
+
+                machine->WriteRegister(RET_VALUE_REGISTER, result);
+
+                break;
+            }
+
+            case SC_Accept:
+            {
+                int result = postOffice->AcceptHandshake();
+                machine->WriteRegister(RET_VALUE_REGISTER, result);
+                break;
+            }
+
+            case SC_Send:
+            {
+                int messageAddr = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                int dest = machine->ReadRegister(SECOND_PARAM_REGISTER);
+                char message [MAX_WRITE_BUF_SIZE];
+                copyStringFromMachine(messageAddr, message, MAX_WRITE_BUF_SIZE);
+
+                // Send the first message
+                int result = postOffice->SendSecure(message, dest);
+
+                machine->WriteRegister(RET_VALUE_REGISTER,result);
+                break;
+            }
+
+            case SC_Receive:
+            {
+                int origin = machine->ReadRegister(FIRST_PARAM_REGISTER);
+
+                int result = postOffice->ReceiveSecure(origin);
+                
+                machine->WriteRegister(RET_VALUE_REGISTER, result);
+                
+                break;
+            }
             
             default:
             {

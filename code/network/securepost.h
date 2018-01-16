@@ -19,9 +19,25 @@ class MailHeaderSecure {
                 // mail header)
     int segments;
     unsigned checksum;
+    int ACK;
+    int SYN;
+    int FIN;
+};
+
+class Connection {
+    public:
+        Connection();
+        void Reset();
+        int remoteAddr;
+        int remoteBox;
+        int localBox;
 };
 
 #define MaxMailSizeSecure     (MaxPacketSize - sizeof(MailHeaderSecure))
+#define MAXREEMISSIONS 2
+#define HANDSHAKEREQUESTBOX 0
+#define HANDSHAKEANSWERBOX 1
+
 
 // The following class defines the format of an incoming/outgoing 
 // "Mail" message.  The message format is layered: 
@@ -54,7 +70,7 @@ class MailBoxSecure {
     void StopCountingTimeout();
     void Put(PacketHeader pktHdr, MailHeaderSecure mailHdr, char *data);
                 // Atomically put a message into the mailbox
-    void Get(PacketHeader *pktHdr, MailHeaderSecure *mailHdr, char *data); 
+    void Get(PacketHeader *pktHdr, MailHeaderSecure *mailHdr, char *data, bool timeO); 
                 // Atomically get a message out of the 
                 // mailbox (and wait if there is no message 
                 // to get!)
@@ -64,12 +80,17 @@ class MailBoxSecure {
     void ReachTimeout();
 
     void Check();
+    int GetRemoteConnected();
+    bool IsAvailable();
+
+
 
   private:
     SynchList *messages;    // A mailbox is just a list of arrived messages
     Timer *timerTimeout;
     long long int initialTicks;
     long long int timeout;
+    int connected;
 };
 
 class SecurePost {
@@ -86,7 +107,7 @@ public:
                 // the return box for ack's.
     
     void Receive(int box, PacketHeader *pktHdr, 
-        MailHeaderSecure *mailHdr, char *data);
+        MailHeaderSecure *mailHdr, char *data, bool timeout);
                     // Retrieve a message from "box".  Wait if
                 // there is no message in the box.
 
@@ -101,6 +122,32 @@ public:
                 // off of network (i.e., time to call 
                 // PostalDelivery)
     void CheckTimeout();
+
+    int SendMessageWithAck(PacketHeader pH, MailHeaderSecure mH, PacketHeader *inPH, 
+        MailHeaderSecure *inMH, const char* outMessage, char* inMessage);
+
+    int PerformHandshake(int dest);
+
+    int PerformCloseHandshake(Connection * con);
+
+    //int ListenHandshake(int origin);
+
+    int SendSecure(char *message, int dest);
+
+    int ReceiveSecure(int origin);
+
+    int GetAvailableBox();
+
+    int OpenConnection(int dest);
+
+    int CloseConnection(int dest);
+
+    Connection* GetConnection(int dest);
+
+    int AcceptHandshake();
+    int RespondCloseHandshake(Connection* con);
+
+
 private:
 	Network *network;      // Physical network connection
     NetworkAddress netAddr; // Network address of this machine
@@ -110,6 +157,8 @@ private:
     Semaphore *messageSent; // V'ed when next message can be sent to network
     Lock *sendLock;     // Only one outgoing message at a time
     Timer *timerTimeout;
+    //int *connections;
+    Connection *connections;
 };
 
 #endif

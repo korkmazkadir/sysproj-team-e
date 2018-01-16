@@ -257,6 +257,47 @@ ForkExec :
     syscall
     j	$31
     .end ForkExec
+
+    .globl Send
+    .ent    Send
+Send :
+    addiu $2,$0,SC_Send
+    syscall
+    j   $31
+    .end Send
+
+    .globl OpenConnection
+    .ent OpenConnection
+OpenConnection :
+    addiu $2,$0,SC_OpenConnection
+    syscall
+    j    $31
+    .end OpenConnection
+
+    .globl CloseConnection
+    .ent CloseConnection
+CloseConnection :
+    addiu $2,$0,SC_CloseConnection
+    syscall
+    j    $31
+    .end CloseConnection
+
+    .globl Accept
+    .ent Accept
+Accept :
+    addiu $2,$0,SC_Accept
+    syscall
+    j    $31
+    .end Accept
+
+
+    .globl Receive
+    .ent    Receive
+Receive :
+    addiu $2,$0,SC_Receive
+    syscall
+    j   $31
+    .end Receive
 /* dummy function to keep gcc happy */
         .globl  __main
         .ent    __main
