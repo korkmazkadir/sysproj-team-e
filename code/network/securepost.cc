@@ -377,7 +377,7 @@ SecurePost::SendMessageWithAck(PacketHeader pH, MailHeaderSecure mH, PacketHeade
     MailHeaderSecure *inMH, const char* outMessage, char* inMessage)
 {
     for(int i = 0; i < MAXREEMISSIONS; i++) {
-        printf("Attempt: %d\n", i);
+        //printf("Attempt: %d\n", i);
         Send(pH, mH, outMessage);
 
         //Receive hanshake ack
@@ -431,7 +431,7 @@ SecurePost::PerformHandshake(int dest) {
     
 
     //Get the box in the answer message
-    printf("Finished handshake: Remote box to send to: %s\n", buffer);
+    //printf("Finished handshake: Remote box to send to: %s\n", buffer);
 
     int remoteBox = atoi(buffer);
     conLock->Acquire();
@@ -492,7 +492,7 @@ SecurePost::AcceptHandshake() {
     connections[avBox].remoteBox = remoteBox;
     connections[avBox].localBox = avBox; //Keep track of connections
     conLock->Release();
-    printf("Finished accepting handshake for remote addr %d: \n", connections[avBox].remoteAddr);
+    //printf("Finished accepting handshake for remote addr %d: \n", connections[avBox].remoteAddr);
 
     //Set the box 
     return avBox;
@@ -571,8 +571,8 @@ SecurePost::PerformCloseHandshake(Connection* con) {
     outMailHdr.SYN = 0;
     outMailHdr.FIN = 1;
 
-    printf("Sending message to close to ned addr %d: ",netAddr);
-    PrintHeader(outPktHdr, outMailHdr);
+    //printf("Sending message to close to ned addr %d: ",netAddr);
+    //PrintHeader(outPktHdr, outMailHdr);
     
     bool result = SendMessageWithAck(outPktHdr, outMailHdr, &inPktHdr, &inMailHdr, message, buffer);
 
@@ -603,132 +603,6 @@ SecurePost::PerformCloseHandshake(Connection* con) {
     return 1;
 
 }
-
-/*int
-SecurePost::ListenHandshake(int origin)
-{
-    //Listen for handshake first if not stablished connection already
-    char* buffer = new char[MaxPacketSize];
-    PacketHeader outPktHdr, inPktHdr;
-    MailHeaderSecure outMailHdr, inMailHdr;
-    
-    Receive(HANDSHAKEREQUESTBOX, &inPktHdr, &inMailHdr, buffer); //First listen handshake
-
-    if(inMailHdr.segments == -1) return -1;
-
-    int avBox = GetAvailableBox(); //synchronize this
-    if(avBox == -1) return -1; //Thee's no av box
-
-    printf("Available box!!!: %d\n", avBox);
-
-    //Keep track of connection;
-    connections[avBox].;
-
-    std::stringstream str;
-    str << avBox;
-    const char* message = str.str().c_str();
-
-    outPktHdr.to = origin;
-    outPktHdr.from = netAddr;
-    outMailHdr.to = HANDSHAKEANSWERBOX;
-    outMailHdr.from = HANDSHAKEANSWERBOX;
-    outMailHdr.length = strlen(message) + 1;
-
-    Send(outPktHdr, outMailHdr, message);
-
-    printf("Finished handshake listening\n");
-    //Wait for ack confirmation?
-    return avBox;
-}*/
-
-
-/*int
-SecurePost::SendSecure(int dest, char *message)
-{
-    char* buffer = new char[MaxPacketSize];
-    PacketHeader outPktHdr, inPktHdr;
-    MailHeaderSecure outMailHdr, inMailHdr;
-    int remoteBox;
-    
-    for(int i = 0; i < MAXREEMISSIONS; i++) {
-        printf("Attempt handshake: %d\n", i);
-        remoteBox = PerformHandshake(dest);
-        if(remoteBox != -1) break;
-    }
-
-    
-    if(remoteBox == -1) {
-        printf("Remote box: %d\n", remoteBox);
-        return -1; // if handshake fails don't do anything
-    }
-
-    int avBox = GetAvailableBox(); //synchronize this
-    if(avBox == -1) return -1;
-
-    //Set unavailable(box)
-
-    outPktHdr.to = dest;
-    outPktHdr.from = netAddr;
-    outMailHdr.to = remoteBox;
-    outMailHdr.from = avBox;
-    outMailHdr.length = strlen(message) + 1;
-
-    int i = 0;
-    for(i = 0; i <= MAXREEMISSIONS; i++)
-    {
-        printf("First transmission: %d\n", i);
-        Send(outPktHdr, outMailHdr, message);
-
-        Receive(avBox, &inPktHdr, &inMailHdr, buffer);
-
-        if(inMailHdr.segments != -1) break;
-    }
-
-    if(i == MAXREEMISSIONS + 1) return -1;
-    else return true;
-
-    return true;
-}*/
-
-/*int
-SecurePost::ReceiveSecure(int origin) {
-
-    int segments = 0;
-    int totalSegments = 1;
-
-    //Listen for handshake first if not stablished connection already
-    char* buffer = new char[MaxPacketSize];
-    PacketHeader outPktHdr, inPktHdr;
-    MailHeaderSecure outMailHdr, inMailHdr;
-
-    //int box = ListenHandshake(origin);
-    int box = -1;
-    if(box == -1) return -1;
-
-   
-
-    do { //keep track of which segment we got
-        Receive(box, &inPktHdr, &inMailHdr, buffer); //Listen
-
-        if(inMailHdr.segments == -1) continue;
-
-        segments += 1;
-        totalSegments = inMailHdr.segments;
-
-        printf("Sending confirmation to: %d\n",inMailHdr.from);
-        //Send ack
-        outPktHdr.to = origin;
-        outPktHdr.from = netAddr;
-        outMailHdr.to = inMailHdr.from;
-        outMailHdr.from = box;
-        outMailHdr.length = strlen(ACK) + 1;
-
-        Send(outPktHdr, outMailHdr, ACK);
-    } while (segments < totalSegments);
-
-    return 1;
-
-}*/
 
 int
 SecurePost::OpenConnection(int dest)
@@ -947,7 +821,7 @@ SecurePost::GetAvailableBox() {
     conLock->Acquire();
     for(int box = 2; box < numBoxes; box++) {
         if (connections[box].remoteAddr == -1) {
-            printf("Available box given: %d\n", box);
+            //printf("Available box given: %d\n", box);
             conLock->Release();
             return box;
         }

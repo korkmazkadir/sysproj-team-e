@@ -68,17 +68,18 @@ int main() {
                 /*SynchPutString("Receiving in ");
                 SynchPutInt(cons[i]);
                 SynchPutString("\n");*/
-                printstatus(cons);
+                //printstatus(cons);
                 int result = Receive(cons[i], 1, buff);
                 if(result == -2) {
                     cons[i] = -1;
-                    printstatus(cons);
+                    //printstatus(cons);
                     SynchPutString("Connection in position closed for ");
                     SynchPutInt(i);
                     SynchPutString("\n");
                 } else if(result > 0 && buff != (void *)0) {
                     SynchPutString("Received message: ");
                     SynchPutString(buff);
+                    SynchPutString("\n");
                 }
             }
             //SemPost(&listSem);

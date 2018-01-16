@@ -207,7 +207,7 @@ void Condition::Signal (Lock * conditionLock) {
     thread = static_cast<Thread *>(m_queueBlocked.Remove());
 
     if (!thread) {
-        printf("No thread to unblock \n");
+        //printf("No thread to unblock \n");
         goto error_exit;
     }
     scheduler->ReadyToRun(thread);
