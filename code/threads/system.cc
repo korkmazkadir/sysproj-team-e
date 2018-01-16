@@ -251,8 +251,7 @@ int openFile(char *name){
     
     OpenFile *file = fileSystem->Open(name);
     if(file == NULL){
-        int initialSize = sizeof(char) * 1024; // 1 KB
-        bool result = fileSystem->Create(name,initialSize);
+        bool result = fileSystem->CreateUserFile(name);
         if(!result){
             return -2;
         }

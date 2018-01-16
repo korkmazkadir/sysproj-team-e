@@ -235,6 +235,62 @@ FileSystem::Create(const char *name, int initialSize)
     return success;
 }
 
+
+bool
+FileSystem::CreateUserFile(const char *name)
+{
+
+    lock->Acquire();
+    
+    std::string fileName = this->getFileName(name);
+    OpenFile *currentDirectoryFile = this->handlePath(name);
+    
+    //printf("creating file %s\n",fileName.c_str());
+    
+    Directory *directory;
+    BitMap *freeMap;
+    FileHeader *hdr;
+    int sector;
+    bool success;
+
+    DEBUG('f', "Creating file %s, size %d\n", fileName.c_str());
+
+    directory = new Directory(NumDirEntries);
+    directory->FetchFrom(currentDirectoryFile);
+
+    
+    if (directory->Find(fileName.c_str()) != -1)
+      success = FALSE;			// file is already in directory
+    else {	
+        freeMap = new BitMap(NumSectors);
+        freeMap->FetchFrom(freeMapFile);
+        sector = freeMap->Find();	// find a sector to hold the file header
+    	if (sector == -1) 		
+            success = FALSE;		// no free block for file header 
+        else if (!directory->Add(fileName.c_str(), sector))
+            success = FALSE;	// no space in directory
+	else {
+    	    hdr = new FileHeader;
+	    if (!hdr->FixSizeFile(freeMap))
+            	success = FALSE;	// no space on disk for data
+	    else {	
+	    	success = TRUE;
+		// everthing worked, flush all changes back to disk
+    	    	hdr->WriteBack(sector); 		
+    	    	directory->WriteBack(currentDirectoryFile);
+    	    	freeMap->WriteBack(freeMapFile);
+	    }
+            delete hdr;
+	}
+        delete freeMap;
+    }
+    delete directory;
+    
+    lock->Release();
+    
+    return success;
+}
+
 bool
 FileSystem::CreateDirectory(const char *name){
 

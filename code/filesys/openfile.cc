@@ -74,6 +74,11 @@ OpenFile::Seek(int position)
 int
 OpenFile::Read(char *into, int numBytes)
 {
+   
+   if(hdr->isFixSizeFile() == FALSE){
+       hdr->FetchFrom(sector);
+   }
+    
    int result = ReadAt(into, numBytes, seekPosition);
    seekPosition += result;
    return result;
@@ -82,8 +87,15 @@ OpenFile::Read(char *into, int numBytes)
 int
 OpenFile::Write(const char *into, int numBytes)
 {
+
+   if(hdr->isFixSizeFile() == FALSE){
+     hdr->UpdateFileLength(numBytes);
+     hdr->WriteBack(sector);
+   }
+   
    int result = WriteAt(into, numBytes, seekPosition);
    seekPosition += result;
+      
    return result;
 }
 

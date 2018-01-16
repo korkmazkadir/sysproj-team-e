@@ -41,7 +41,7 @@
 bool
 FileHeader::Allocate(BitMap *freeMap, int fileSize)
 { 
-
+    isFixSize = 1;
     numBytes = fileSize;
     numSectors  = divRoundUp(fileSize, SectorSize);
     if (freeMap->NumClear() < numSectors)
@@ -62,6 +62,18 @@ FileHeader::Allocate(BitMap *freeMap, int fileSize)
     }
 
     return TRUE;        
+}
+
+
+bool FileHeader::FixSizeFile(BitMap *freeMap){
+    bool result = Allocate(freeMap, FixByteSize);
+    if(result){
+        isFixSize = 0;
+        numBytes = 0;
+        
+    }
+    
+    return result;
 }
 
 //----------------------------------------------------------------------
@@ -151,6 +163,18 @@ FileHeader::FileLength()
     return numBytes;
 }
 
+
+int FileHeader::UpdateFileLength(int numNewBytes){
+    
+    if( (numBytes + numNewBytes) < FixByteSize){
+        numBytes =numBytes + numNewBytes;
+    }else{
+        numBytes = FixByteSize - 1;
+    }
+    
+    return numBytes;
+}
+
 //----------------------------------------------------------------------
 // FileHeader::Print
 // 	Print the contents of the file header, and the contents of all
@@ -196,6 +220,10 @@ FileHeader::Print()
     delete [] data;
 }
 
+
+bool FileHeader::isFixSizeFile(){
+    return isFixSize;
+}
 
 void IndirectDataBlock::fetchIndirectBlocks(int sector){
     synchDisk->ReadSector(sector, (char *)this);
