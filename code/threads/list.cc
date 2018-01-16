@@ -59,7 +59,7 @@ List::List ()
 List::~List ()
 {
     while (Remove () != NULL)
-	;			// delete all the list elements
+    ;			// delete all the list elements
 }
 
 //----------------------------------------------------------------------

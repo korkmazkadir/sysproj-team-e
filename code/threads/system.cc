@@ -19,6 +19,7 @@ Interrupt *interrupt;		// interrupt status
 Statistics *stats;		// performance metrics
 Timer *timer;			// the hardware timer device,
 					// for invoking context switches
+
 SynchConsole *syncConsole;
 SemaphoreManager *semaphoreManager;
 
@@ -35,7 +36,7 @@ Machine *machine;		// user program memory and registers
 #endif
 
 #ifdef NETWORK
-PostOffice *postOffice;
+SynchPost *synchPost;
 #endif
 
 
@@ -60,11 +61,13 @@ extern void Cleanup ();
 //      "dummy" is because every interrupt handler takes one argument,
 //              whether it needs it or not.
 //----------------------------------------------------------------------
-static void
-TimerInterruptHandler (int dummy)
+static void TimerInterruptHandler (int dummy)
 {
-    if (interrupt->getStatus () != IdleMode)
-	interrupt->YieldOnReturn ();
+    (void)dummy;
+
+    if (interrupt->getStatus () != IdleMode) {
+        interrupt->YieldOnReturn ();
+    }
 }
 
 //----------------------------------------------------------------------
@@ -174,7 +177,7 @@ Initialize (int argc, char **argv)
 #endif
 
 #ifdef NETWORK
-    postOffice = new PostOffice (netname, rely, 10);
+    synchPost = new SynchPost(netname, rely, NUM_MAIL_BOXES);
 #endif
 }
 
@@ -214,7 +217,7 @@ Cleanup ()
 {
     printf ("\nCleaning up...\n");
 #ifdef NETWORK
-    delete postOffice;
+    delete synchPost;
 #endif
 
 #ifdef USER_PROGRAM

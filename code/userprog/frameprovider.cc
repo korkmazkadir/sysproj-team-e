@@ -10,7 +10,6 @@ FrameProvider::FrameProvider() {
     numberOfPhysicalPages = NumPhysPages;
     physicalPageBitmap = new BitMap(NumPhysPages);
 
-    srand(time(NULL));
 }
 
 FrameProvider::~FrameProvider() {

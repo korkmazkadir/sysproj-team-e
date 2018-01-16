@@ -46,6 +46,16 @@
 #define SC_UserThreadSelfId 24
 #define SC_ForkExec 25
 
+// ================= NETWORK ====================
+
+#define SC_NetworkConnectAsServer 28
+#define SC_NetworkConnectAsClient 29
+#define SC_NetworkSendToByConnId 30
+#define SC_NetworkReceiveFromByConnId 31
+#define SC_NetworkSendFile 32
+#define SC_NetworkReceiveFile 33
+// ==============================================
+
 #define SC_AssertionFailed     100
 
 
@@ -86,6 +96,13 @@ int SemInit(sem_t *semPtr, int val);
 int SemPost(sem_t *semPtr);
 int SemWait(sem_t *semPtr);
 int SemDestroy(sem_t *semPtr);
+
+int NetworkConnectAsServer(int mailbox);
+int NetworkConnectAsClient(int address, int mailbox);
+int NetworkSendToByConnId(int connId, const char *data, int len);
+int NetworkReceiveFromByConnId(int connId, char *data);
+int SendFile(int connId, const char *fileName);
+int ReceiveFile(int connId, const char *fileName);
 
 /* Address space control operations: Exit, Exec, and Join */
 

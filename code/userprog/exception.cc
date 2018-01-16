@@ -25,8 +25,10 @@
 #include "userthread.h"
 #include "addrspace.h"
 #include "usersemaphore.h"
+#include "SynchPost.h"
 
 Semaphore haltSync("HaltSync", 1);
+
 
 //----------------------------------------------------------------------
 // UpdatePC : Increments the Program Counter register in order to resume
@@ -255,7 +257,70 @@ void ExceptionHandler (ExceptionType which)
                 fprintf(stderr,"\nERROR : Assertion failed. FILE : %s LINE : %d\n\n", fileName, lineNumber);
                 Exit (123);
             } break;
+
+            case SC_NetworkConnectAsServer:
+            {
+                int mailbox = machine->ReadRegister(FIRST_PARAM_REGISTER);
+
+                int retVal = synchPost->ConnectAsServer(mailbox);
+                machine->WriteRegister(RET_VALUE_REGISTER, retVal);
+            } break;
+
+            case SC_NetworkConnectAsClient:
+            {
+                int addr = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                int mailbox = machine->ReadRegister(SECOND_PARAM_REGISTER);
+                int retVal = synchPost->ConnectAsClient(addr, mailbox);
+                machine->WriteRegister(RET_VALUE_REGISTER, retVal);
+            } break;
             
+            case SC_NetworkSendToByConnId:
+            {
+                int connId = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                int dataAddr = machine->ReadRegister(SECOND_PARAM_REGISTER);
+                int len = machine->ReadRegister(THIRD_PARAM_REGISTER);
+
+                if (len >= NETWORK_MAX_TRANSFER_BYTES - 1) {
+                    len = NETWORK_MAX_TRANSFER_BYTES - 1;
+                }
+                char buffer[NETWORK_MAX_TRANSFER_BYTES] = { 0 };
+                copyStringFromMachine(dataAddr, buffer, len + 1);
+                int retVal = synchPost->SendToByConnId(connId, buffer, len);
+                machine->WriteRegister(RET_VALUE_REGISTER, retVal);
+            } break;
+
+            case SC_NetworkReceiveFromByConnId:
+            {
+                int connId = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                int dataAddr = machine->ReadRegister(SECOND_PARAM_REGISTER);
+                char dataBuffer[NETWORK_MAX_TRANSFER_BYTES];
+                //TODO: Check for length
+                int bytesReceived = synchPost->ReceiveFromByConnId(connId, dataBuffer);
+                copyStringToMachine(dataBuffer, dataAddr, (unsigned)bytesReceived);
+                machine->WriteRegister(RET_VALUE_REGISTER, bytesReceived);
+
+            } break;
+
+            case SC_NetworkSendFile:
+            {
+                int connId = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                int dataAddr = machine->ReadRegister(SECOND_PARAM_REGISTER);
+                char dataBuffer[NETWORK_MAX_FILE_LENGTH] = { 0 };
+                copyStringFromMachine(dataAddr, dataBuffer, NETWORK_MAX_FILE_LENGTH);
+                int retVal = synchPost->SendFile(connId, dataBuffer);
+                machine->WriteRegister(RET_VALUE_REGISTER, retVal);
+            } break;
+
+            case SC_NetworkReceiveFile:
+            {
+                int connId = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                int dataAddr = machine->ReadRegister(SECOND_PARAM_REGISTER);
+                char dataBuffer[NETWORK_MAX_FILE_LENGTH] = { 0 };
+                copyStringFromMachine(dataAddr, dataBuffer, NETWORK_MAX_FILE_LENGTH);
+                int retVal = synchPost->ReceiveFile(connId, dataBuffer);
+                machine->WriteRegister(RET_VALUE_REGISTER, retVal);
+            } break;
+
             default:
             {
                 printf ("Unexpected SYSCALL %d %d\n", which, type);

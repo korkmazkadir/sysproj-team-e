@@ -119,9 +119,9 @@ Interrupt::SetLevel(IntStatus now)
 {
     IntStatus old = level;
     
-    ASSERT((now == IntOff) || (inHandler == FALSE));// interrupt handlers are 
-						// prohibited from enabling 
-						// interrupts
+    ASSERT((now == IntOff) || (inHandler == FALSE));// interrupt handlers are
+                        // prohibited from enabling
+                        // interrupts
 
     ChangeLevel(old, now);			// change to new state
     if ((now == IntOn) && (old == IntOff))

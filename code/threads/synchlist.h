@@ -15,6 +15,8 @@
 #include "list.h"
 #include "synch.h"
 
+#include <stdint.h>
+
 // The following class defines a "synchronized list" -- a list for which:
 // these constraints hold:
 //      1. Threads trying to remove an item from a list will
@@ -29,15 +31,18 @@ class SynchList
 
     void Append (void *item);	// append item to the end of the list,
     // and wake up any thread waiting in remove
-    void *Remove ();		// remove the first item from the front of
+    void *Remove (int timeout = -1);		// remove the first item from the front of
     // the list, waiting if the list is empty
     // apply function to every item in the list
     void Mapcar (VoidFunctionPtr func);
+    static void HandleTimeout(int);
 
-  private:
-      List * list;		// the unsynchronized list
+
+private:
+    List * list;		// the unsynchronized list
     Lock *lock;			// enforce mutual exclusive access to the list
     Condition *listEmpty;	// wait in Remove if the list is empty
+    int m_timeout = -1;
 };
 
 #endif // SYNCHLIST_H

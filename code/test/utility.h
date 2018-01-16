@@ -15,5 +15,11 @@ int stringCompare(const char *s1, const char *s2)
     return ((*(unsigned char *)s1 < *(unsigned char *)s2) ? -1 : +1);
 }
 
+int strlen(const char *s) {
+    int length = 0;
+    while (*s++ != 0) { ++length; }
+    return length;
+}
+
 #endif // UTILITY_H
 

@@ -257,6 +257,55 @@ ForkExec :
     syscall
     j	$31
     .end ForkExec
+
+    .globl NetworkConnectAsServer
+    .ent NetworkConnectAsServer
+NetworkConnectAsServer:
+    addiu $2,$0,SC_NetworkConnectAsServer
+    syscall
+    j   $31
+    .end NetworkConnectAsServer
+
+    .globl NetworkConnectAsClient
+    .ent NetworkConnectAsClient
+NetworkConnectAsClient:
+    addiu $2,$0,SC_NetworkConnectAsClient
+    syscall
+    j   $31
+    .end NetworkConnectAsClient
+
+    .globl NetworkSendToByConnId
+    .ent NetworkSendToByConnId
+NetworkSendToByConnId:
+    addiu $2,$0,SC_NetworkSendToByConnId
+    syscall
+    j   $31
+    .end NetworkSendToByConnId
+
+    .globl NetworkReceiveFromByConnId
+    .ent NetworkReceiveFromByConnId
+NetworkReceiveFromByConnId:
+    addiu $2,$0,SC_NetworkReceiveFromByConnId
+    syscall
+    j   $31
+    .end NetworkReceiveFromByConnId
+
+    .globl SendFile
+    .ent SendFile
+SendFile:
+    addiu $2,$0,SC_NetworkSendFile
+    syscall
+    j   $31
+    .end SendFile
+
+    .globl ReceiveFile
+    .ent ReceiveFile
+ReceiveFile:
+    addiu $2,$0,SC_NetworkReceiveFile
+    syscall
+    j   $31
+    .end ReceiveFile
+
 /* dummy function to keep gcc happy */
         .globl  __main
         .ent    __main

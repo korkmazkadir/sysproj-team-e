@@ -1,4 +1,4 @@
-// synch.h 
+// synch.h
 //      Data structures for synchronizing threads.
 //
 //      Three kinds of synchronization are defined here: semaphores,
@@ -78,7 +78,7 @@ class Lock
         return m_name;
     }				// debugging assist
 
-    void Acquire ();		// these are the only operations on a lock
+    int Acquire(bool nblock = false);		// these are the only operations on a lock
     void Release ();		// they are both *atomic*
 
     bool isHeldByCurrentThread () const;	// true if the current thread
@@ -141,7 +141,7 @@ class Condition
     // condition variables; releasing the 
     // lock and going to sleep are 
     // *atomic* in Wait()
-    void Signal (Lock * conditionLock);	// conditionLock must be held by
+    int Signal(Lock * conditionLock);	// conditionLock must be held by
     void Broadcast (Lock * conditionLock);	// the currentThread for all of 
     // these operations
 

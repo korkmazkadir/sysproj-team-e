@@ -118,18 +118,29 @@ Lock::~Lock ()
 {
 }
 
-void Lock::Acquire ()
+int Lock::Acquire (bool nblock)
 {
+    int retVal = 0;
     IntStatus oldLevel = interrupt->SetLevel (IntOff);	// disable interrupts
-
     while (m_currentThread)
     {
+        if (nblock) {
+            retVal = -2;
+            goto early_exit;
+        }
+        if (m_currentThread == currentThread) {
+            retVal = -1;
+            goto early_exit;
+        }
         m_queue.Append ((void *) currentThread);	// so go to sleep
         currentThread->Sleep ();
+
     }
     m_currentThread = currentThread;
 
+    early_exit:
     (void) interrupt->SetLevel (oldLevel);	// re-enable interrupts
+    return retVal;
 }
 
 void Lock::Release ()
@@ -145,7 +156,6 @@ void Lock::Release ()
     if (likely(thread != nullptr))	{	// make thread ready, consuming the V immediately
         scheduler->ReadyToRun (thread);
     }
-
     m_currentThread = nullptr;
 
 early_exit:
@@ -192,28 +202,31 @@ error_exit:
     (void)interrupt->SetLevel(oldLevel);
 }
 
-void Condition::Signal (Lock * conditionLock) {
+int Condition::Signal (Lock * conditionLock) {
 
+    int retVal = 0;
     IntStatus oldLevel = interrupt->SetLevel(IntOff);
     Thread *thread;
     if (unlikely(!conditionLock)) {
+        retVal = -1;
         goto error_exit;
     }
 
     if (unlikely(!conditionLock->isHeldByCurrentThread())) {
+        retVal = -1;
         goto error_exit;
     }
 
     thread = static_cast<Thread *>(m_queueBlocked.Remove());
 
     if (!thread) {
-        printf("No thread to unblock \n");
         goto error_exit;
     }
     scheduler->ReadyToRun(thread);
 
 error_exit:
     (void)interrupt->SetLevel(oldLevel);
+    return retVal;
 }
 
 void Condition::Broadcast (Lock * conditionLock) {

@@ -63,6 +63,12 @@ extern void StartProcess (char *file);
 extern void ConsoleTest (char *in, char *out);
 extern void SynchConsoleTest(char *, char *);
 extern void MailTest (int networkID);
+extern void Mail10Test (int networkID);
+extern void MailTimeoutTest(int networkID);
+extern void MailSynchTest1(int farAddr);
+extern void MailSynchTest2(int farAddr);
+
+
 
 //----------------------------------------------------------------------
 // main
@@ -160,10 +166,19 @@ main (int argc, char **argv)
         if (!strcmp (*argv, "-o"))
         {
             ASSERT (argc > 1);
-            Delay (2);	// delay for 2 seconds
+            Delay (5);	// delay for 5 seconds
             // to give the user time to
             // start up another nachos
-            MailTest (atoi (*(argv + 1)));
+            //MailTest (atoi (*(argv + 1)));
+
+            int t = atoi (*(argv + 1));
+            if (1 == t) {
+                printf("EXECUTING TEST 1 \n");
+                MailSynchTest1 (t);
+            } else {
+                printf("EXECUTING TEST 2 \n");
+                MailSynchTest2(t);
+            }
             argCount = 2;
         }
 #endif // NETWORK

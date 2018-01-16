@@ -18,6 +18,8 @@
 
 #include "copyright.h"
 #include "post.h"
+#include "timer.h"
+#include "system.h"
 
 #include <strings.h> /* for bzero */
 
@@ -51,7 +53,7 @@ Mail::Mail(PacketHeader pktH, MailHeader mailH, char *msgData)
 
 MailBox::MailBox()
 { 
-    messages = new SynchList(); 
+    messages = new SynchList();
 }
 
 //----------------------------------------------------------------------
@@ -118,24 +120,30 @@ MailBox::Put(PacketHeader pktHdr, MailHeader mailHdr, char *data)
 //	"data" -- address to put: payload message data
 //----------------------------------------------------------------------
 
-void 
-MailBox::Get(PacketHeader *pktHdr, MailHeader *mailHdr, char *data) 
+int
+MailBox::Get(PacketHeader *pktHdr, MailHeader *mailHdr, char *data, int timeout)
 { 
     DEBUG('n', "Waiting for mail in mailbox\n");
-    Mail *mail = (Mail *) messages->Remove();	// remove message from list;
-						// will wait if list is empty
+    Mail *mail = NULL;
+
+    mail = (Mail *) messages->Remove(timeout);	// remove message from list;
+                            // will wait if list is empty
+    if (!mail) {
+        return -1;
+    }
 
     *pktHdr = mail->pktHdr;
     *mailHdr = mail->mailHdr;
     if (DebugIsEnabled('n')) {
-	printf("Got mail from mailbox: ");
-	PrintHeader(*pktHdr, *mailHdr);
+        printf("Got mail from mailbox: ");
+        PrintHeader(*pktHdr, *mailHdr);
     }
     bcopy(mail->data, data, mail->mailHdr.length);
 					// copy the message data into
 					// the caller's buffer
     delete mail;			// we've copied out the stuff we
 					// need, we can now discard the message
+    return 0;
 }
 
 //----------------------------------------------------------------------
@@ -153,6 +161,7 @@ static void ReadAvail(int arg)
 { PostOffice* po = (PostOffice *) arg; po->IncomingPacket(); }
 static void WriteDone(int arg)
 { PostOffice* po = (PostOffice *) arg; po->PacketSent(); }
+
 
 //----------------------------------------------------------------------
 // PostOffice::PostOffice
@@ -232,8 +241,8 @@ PostOffice::PostalDelivery()
 
         mailHdr = *(MailHeader *)buffer;
         if (DebugIsEnabled('n')) {
-	    printf("Putting mail into mailbox: ");
-	    PrintHeader(pktHdr, mailHdr);
+            printf("Putting mail into mailbox: ");
+            PrintHeader(pktHdr, mailHdr);
         }
 
 	// check that arriving message is legal!
@@ -305,14 +314,18 @@ PostOffice::Send(PacketHeader pktHdr, MailHeader mailHdr, const char* data)
 //	"data" -- address to put: payload message data
 //----------------------------------------------------------------------
 
-void
+int
 PostOffice::Receive(int box, PacketHeader *pktHdr, 
-				MailHeader *mailHdr, char* data)
+                MailHeader *mailHdr, char* data, int timeout)
 {
     ASSERT((box >= 0) && (box < numBoxes));
 
-    boxes[box].Get(pktHdr, mailHdr, data);
+    int status = boxes[box].Get(pktHdr, mailHdr, data, timeout);
+    if (status != 0) {
+        return -1;
+    }
     ASSERT(mailHdr->length <= MaxMailSize);
+    return 0;
 }
 
 //----------------------------------------------------------------------

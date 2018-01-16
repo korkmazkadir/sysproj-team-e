@@ -101,3 +101,7 @@ code/test/prog_1.c
 code/test/prog_2.c
 code/userprog/frameprovider.cc
 code/userprog/frameprovider.h
+code/network/SynchPost.h
+code/network/SynchPost.cc
+code/test/network_sender.c
+code/test/network_receiver.c

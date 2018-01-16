@@ -75,7 +75,7 @@ BitMap::Clear (int which)
 //----------------------------------------------------------------------
 
 bool
-BitMap::Test (int which)
+BitMap::Test (int which) const
 {
     ASSERT (which >= 0 && which < numBits);
 

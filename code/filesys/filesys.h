@@ -45,15 +45,15 @@ class FileSystem {
   public:
     FileSystem(bool format) {}
 
-    bool Create(const char *name, int initialSize) { 
-	int fileDescriptor = OpenForWrite(name);
+    bool Create(const char *name, int initialSize) {
+        int fileDescriptor = OpenForWrite(name);
 
-	if (fileDescriptor == -1) return FALSE;
-	Close(fileDescriptor); 
-	return TRUE; 
-	}
+        if (fileDescriptor == -1) return FALSE;
+        Close(fileDescriptor);
+        return TRUE;
+    }
 
-    OpenFile* Open(char *name) {
+    OpenFile* Open(const char *name) {
 	  int fileDescriptor = OpenForReadWrite(name, FALSE);
 
 	  if (fileDescriptor == -1) return NULL;

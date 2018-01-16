@@ -8,6 +8,10 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
+#include <stdint.h>
+#include <set>
+#include <functional>
+
 #include "copyright.h"
 #include "utility.h"
 #include "thread.h"
@@ -17,9 +21,14 @@
 #include "timer.h"
 #include "synchconsole.h"
 #include "usersemaphore.h"
+#include "SynchPost.h"
 
 #define MAX_WRITE_BUF_SIZE 128
 #define MAX_INT_LEN 11
+
+// max number of mail boxes for network communication
+// this number must be even
+#define NUM_MAIL_BOXES 10
 
 // Initialization and cleanup routines
 extern void Initialize (int argc, char **argv);	// Initialization,
@@ -55,7 +64,7 @@ extern SynchDisk *synchDisk;
 
 #ifdef NETWORK
 #include "post.h"
-extern PostOffice *postOffice;
+extern SynchPost *synchPost;
 #endif
 
 #endif // SYSTEM_H
