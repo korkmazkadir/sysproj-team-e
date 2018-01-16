@@ -167,6 +167,7 @@ MailBoxSecure::Put(PacketHeader pktHdr, MailHeaderSecure mailHdr, char *data)
     messages->Append((void *)mail); // put on the end of the list of 
                     // arrived messages, and wake up 
                     // any waiters
+    tickOfLastMessage = stats->totalTicks;
 }
 
 //----------------------------------------------------------------------
@@ -231,6 +232,15 @@ MailBoxSecure::GetRemoteConnected() {
     return connected;
 }
 
+bool
+MailBoxSecure::IsReusable() {
+    if((stats->totalTicks - tickOfLastMessage) > timeout) {
+        return true;
+    }
+
+    return false;
+}
+
 //----------------------------------------------------------------------
 // PostalHelper, ReadAvail, WriteDone
 //  Dummy functions because C++ can't indirectly invoke member functions
@@ -274,11 +284,13 @@ SecurePost::SecurePost(NetworkAddress addr, double reliability, int nBoxes)
     sendLock = new Lock("message send lock");
 
 // Second, initialize the MailBoxSecurees
-    netAddr = addr; 
+    netAddr = addr;
     numBoxes = nBoxes;
     boxes = new MailBoxSecure[nBoxes];
 
     connections = new Connection[nBoxes];
+    conLock = new Lock("Connection lock");
+    //connections = new SynchList();
     
 
 // Third, initialize the network; tell it which interrupt handlers to call
@@ -309,6 +321,8 @@ SecurePost::~SecurePost()
         delete timerTimeout;
         timerTimeout = NULL;
     }
+    delete [] connections;
+    delete conLock;
 }
 
 //----------------------------------------------------------------------
@@ -346,6 +360,7 @@ SecurePost::PostalDelivery()
     ASSERT(mailHdr.length <= MaxMailSizeSecure);
 
     // put into MailBoxSecure
+    //printf("Got mail in box %d\n", mailHdr.to);
         boxes[mailHdr.to].Put(pktHdr, mailHdr, buffer + sizeof(MailHeaderSecure));
         /*else {
             int result;
@@ -419,13 +434,13 @@ SecurePost::PerformHandshake(int dest) {
     printf("Finished handshake: Remote box to send to: %s\n", buffer);
 
     int remoteBox = atoi(buffer);
-
+    conLock->Acquire();
     connections[avBox].remoteAddr = dest;
     connections[avBox].remoteBox = remoteBox;
     connections[avBox].localBox = avBox; //Keep track of connections
-
+    conLock->Release();
     //Set the box 
-    return remoteBox;
+    return avBox;
 
 }
 
@@ -436,20 +451,22 @@ SecurePost::PerformHandshake(int dest) {
 
 int
 SecurePost::AcceptHandshake() {
-    printf("Started accepting handshake\n");
+    //printf("Started accepting handshake\n");
     char buffer[MaxMailSizeSecure];
     PacketHeader outPktHdr, inPktHdr;
     MailHeaderSecure outMailHdr, inMailHdr;
 
     //Receive handshake initial
-    Receive(HANDSHAKEREQUESTBOX, &inPktHdr, &inMailHdr, buffer, false);
+    Receive(HANDSHAKEREQUESTBOX, &inPktHdr, &inMailHdr, buffer, true);
+
+    if(inMailHdr.segments == -1) return -1;
 
     int remoteBox = atoi(buffer);
 
     int avBox = GetAvailableBox(); //synchronize this
     if(avBox == -1 || inMailHdr.SYN != 1) return -1;
 
-    printf("Received handshake message\n");
+    //printf("Received handshake message\n");
 
     std::stringstream str;
     str << avBox;
@@ -470,14 +487,15 @@ SecurePost::AcceptHandshake() {
         return -1;
     }
 
+    conLock->Acquire();
     connections[avBox].remoteAddr = inPktHdr.from;
     connections[avBox].remoteBox = remoteBox;
     connections[avBox].localBox = avBox; //Keep track of connections
-
+    conLock->Release();
     printf("Finished accepting handshake for remote addr %d: \n", connections[avBox].remoteAddr);
 
     //Set the box 
-    return remoteBox;
+    return avBox;
 
 }
 
@@ -512,11 +530,12 @@ SecurePost::RespondCloseHandshake(Connection *con) {
     }   
 
     //Get the box in the answer message
-    printf("Finished close handshake: Remote box to send to: %s\n", buffer);
+    //printf("Finished close handshake: Remote box to send to: %s\n", buffer);
 
     //Set box assigned to this dest
+    
+    
     connections[con->localBox].Reset();
-
     //Set the box 
     return true;
 
@@ -527,7 +546,10 @@ SecurePost::GetConnection(int dest) {
     for(int i = 2; i < numBoxes; i++) {
 
         //printf("connection %d with remoteAddr %d\n", i, connections[i].remoteAddr);
-        if(connections[i].remoteAddr == dest) return &(connections[i]);
+        if(connections[i].localBox == dest) {
+            //conLock->Release();
+            return &(connections[i]);
+        }
     }
     return NULL;
 }
@@ -573,11 +595,10 @@ SecurePost::PerformCloseHandshake(Connection* con) {
     
 
     //Get the box in the answer message
-    printf("Finished close handshake: Remote box to send to: %s\n", buffer);
+    //printf("Finished close handshake: Remote box to send to: %s\n", buffer);
 
     //Set box assigned to this dest
     connections[con->localBox].Reset();
-
     //Set the box 
     return 1;
 
@@ -720,39 +741,35 @@ SecurePost::OpenConnection(int dest)
 }
 
 int
-SecurePost::CloseConnection(int dest)
+SecurePost::CloseConnection(int con)
 {
     int result;
 
-    Connection* con = GetConnection(dest);
-    result = PerformCloseHandshake(con);
+    conLock->Acquire();
+    Connection* connect = GetConnection(con);
+    result = PerformCloseHandshake(connect);
+    conLock->Release();
 
     return result;
 }
 
 int
-SecurePost::ReceiveSecure(int org) {
+SecurePost::ReceiveSecure(int org, int timeout, char *buff) {
+    //printf("Starting receive secure for origin box: %d\n", org);
+    //buff = NULL;
     char buffer[MaxMailSizeSecure];
     PacketHeader outPktHdr, inPktHdr;
     MailHeaderSecure outMailHdr, inMailHdr;
     const char* ack = "ack";
     //printf("Origin: %d\n", org);
+
+    conLock->Acquire();
     Connection* con = GetConnection(org);
-    //printf("Connection got: %d\n", con->remoteAddr);
-    if(con == false) {
+    if(con == NULL) {
         //printf("No connection for: %d\n", org);
-        return false;
+        conLock->Release();
+        return -1;
     }
-
-    Receive(con->localBox, &inPktHdr, &inMailHdr, buffer, false);
-
-    //printf("Received message secure with FIN %d\n", inMailHdr.FIN);
-
-    if(inMailHdr.FIN == 1) {
-        RespondCloseHandshake(con);
-        return true;
-    }
-
     //Send  message
     outPktHdr.to = con->remoteAddr;
     outPktHdr.from = netAddr;
@@ -761,20 +778,42 @@ SecurePost::ReceiveSecure(int org) {
     outMailHdr.length = strlen(ack) + 1;
     outMailHdr.ACK = 1;
 
+    //printf("Connection got: %d\n", con->remoteAddr);
+    
+
+    Receive(outMailHdr.from, &inPktHdr, &inMailHdr, buffer, timeout);
+
+    if(inMailHdr.segments == -1) {
+        conLock->Release();
+        //printf("Received bad message in secure post secure receive\n");
+        return -1;
+    }
+    //printf("Received message secure with message %s in box %d\n", buffer, org);
+
+    if(inMailHdr.FIN == 1) {
+        RespondCloseHandshake(con);
+        conLock->Release();
+        return -2;
+    }
+
+    conLock->Release();
+
 
     Send(outPktHdr, outMailHdr, ack);
 
-    return true;
+    bcopy(buffer, buff, inMailHdr.length);
 
+    return true;
 }
 
 int
-SecurePost::SendSecure(char *message, int dest) {
+SecurePost::SendSecure(char *message, int conn) {
     char buffer[MaxMailSizeSecure];
     PacketHeader outPktHdr, inPktHdr;
     MailHeaderSecure outMailHdr, inMailHdr;
 
-    Connection* con = GetConnection(dest);
+    conLock->Acquire();
+    Connection* con = GetConnection(conn);
 
     //Send  message
     outPktHdr.to = con->remoteAddr;
@@ -785,6 +824,8 @@ SecurePost::SendSecure(char *message, int dest) {
     outMailHdr.ACK = 0;
     outMailHdr.SYN = 0;
     outMailHdr.FIN = 0;
+
+    conLock->Release();
 
     int result = SendMessageWithAck(outPktHdr, outMailHdr, &inPktHdr, &inMailHdr, message, buffer);
     return result;
@@ -903,9 +944,14 @@ SecurePost::CheckTimeout()
 
 int
 SecurePost::GetAvailableBox() {
+    conLock->Acquire();
     for(int box = 2; box < numBoxes; box++) {
-        if (connections[box].remoteAddr == -1) return box;
+        if (connections[box].remoteAddr == -1) {
+            printf("Available box given: %d\n", box);
+            conLock->Release();
+            return box;
+        }
     }
-
+    conLock->Release();
     return -1;
 }

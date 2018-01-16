@@ -34,7 +34,7 @@ class Connection {
 };
 
 #define MaxMailSizeSecure     (MaxPacketSize - sizeof(MailHeaderSecure))
-#define MAXREEMISSIONS 2
+#define MAXREEMISSIONS 5
 #define HANDSHAKEREQUESTBOX 0
 #define HANDSHAKEANSWERBOX 1
 
@@ -82,6 +82,7 @@ class MailBoxSecure {
     void Check();
     int GetRemoteConnected();
     bool IsAvailable();
+    bool IsReusable();
 
 
 
@@ -91,6 +92,7 @@ class MailBoxSecure {
     long long int initialTicks;
     long long int timeout;
     int connected;
+    long long int tickOfLastMessage;
 };
 
 class SecurePost {
@@ -134,7 +136,7 @@ public:
 
     int SendSecure(char *message, int dest);
 
-    int ReceiveSecure(int origin);
+    int ReceiveSecure(int origin, int timeout, char *buff);
 
     int GetAvailableBox();
 
@@ -159,6 +161,8 @@ private:
     Timer *timerTimeout;
     //int *connections;
     Connection *connections;
+    Lock *conLock;
+    //SynchList connections;
 };
 
 #endif

@@ -176,6 +176,17 @@ int List::Size() const {
     return size;
 }
 
+void *
+List::GetElement(void *el) {
+    ListElement *cur = first;
+    while(cur != NULL) {
+        if(cur->item == el) {
+            return cur->item;
+        }
+    }
+    return NULL; //didnt find it
+}
+
 //----------------------------------------------------------------------
 // List::SortedInsert
 //      Insert an "item" into a list, so that the list elements are

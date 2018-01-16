@@ -292,8 +292,12 @@ void ExceptionHandler (ExceptionType which)
                 char message [MAX_WRITE_BUF_SIZE];
                 copyStringFromMachine(messageAddr, message, MAX_WRITE_BUF_SIZE);
 
+
                 // Send the first message
+                //printf("Message in exception send: %s to %d\n", message, dest);
+                fflush(stdout);
                 int result = postOffice->SendSecure(message, dest);
+
 
                 machine->WriteRegister(RET_VALUE_REGISTER,result);
                 break;
@@ -302,9 +306,14 @@ void ExceptionHandler (ExceptionType which)
             case SC_Receive:
             {
                 int origin = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                int timeout = machine->ReadRegister(SECOND_PARAM_REGISTER);
+                int buffer = machine->ReadRegister(THIRD_PARAM_REGISTER);
+                char local[MAX_WRITE_BUF_SIZE];
 
-                int result = postOffice->ReceiveSecure(origin);
-                
+
+                int result = postOffice->ReceiveSecure(origin, timeout, local);
+
+                copyStringToMachine(local, buffer, 100);
                 machine->WriteRegister(RET_VALUE_REGISTER, result);
                 
                 break;

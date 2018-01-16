@@ -69,6 +69,7 @@ SynchList::Append (void *item)
     lock->Release ();
 }
 
+
 //----------------------------------------------------------------------
 // SynchList::Remove
 //      Remove an "item" from the beginning of the list.  Wait if
@@ -112,6 +113,16 @@ SynchList::RemoveTimeout()
     lock->Release ();
     return item;
 }
+
+/*void *
+SynchList::RemoveElement() {
+    void *item;
+    lock->Acquire ();       // enforce mutual exclusion
+    if(list->IsEmpty) return NULL;
+    else {
+        for() {}
+    }
+}*/
 
 //----------------------------------------------------------------------
 // SynchList::Mapcar

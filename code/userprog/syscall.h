@@ -184,7 +184,7 @@ int ForkExec(char *fileName);
 
 
 int Send(char *message, int dest);
-int Receive(int dest);
+int Receive(int dest, int timeout, char *buff);
 
 int OpenConnection(int dest);
 int CloseConnection(int dest);
