@@ -260,8 +260,13 @@ FileSystem::Create(std::string fileName, int initialSize, bool isDir)
          path.erase(pos, std::string::npos);
     }
     //change to the right dir, and keep opposite path to be able to come back
-    if (!path.empty())
+    if (!path.empty()) {
         backTrackPath = Chdir(path);
+        if (backTrackPath == "!") {
+            printf("FileSystem::Create Chrdir failed\n");
+            return -1;
+        }
+    }
     
     
     Directory *directory;
@@ -316,8 +321,9 @@ FileSystem::Create(std::string fileName, int initialSize, bool isDir)
     }
     delete directory;
     //go back to initial dir
-    if (!backTrackPath.empty())
-        Chdir(backTrackPath);
+    if (!backTrackPath.empty()) {
+        if (Chdir(backTrackPath) == "!") return -1;
+    }
     dbgChecks();
     return success;
 }
@@ -328,6 +334,8 @@ FileSystem::Create(std::string fileName, int initialSize, bool isDir)
  */
 int 
 FileSystem::ThreadOpen(std::string fileName) {
+    //change to: thread specific table keeps pairs of openfile object + index in global table
+    //global table will no longer contain openFile * (or will but only used for dirs)
     int index;
     int i;
     for (i = 0; i < 10; i++) {
@@ -386,8 +394,13 @@ FileSystem::Open(std::string fileName)
          path.erase(pos, std::string::npos);
     }
     //change to the right dir, and keep opposite path to be able to come back
-    if (!path.empty())
+    if (!path.empty()) {
         backTrackPath = Chdir(path);
+        if (backTrackPath == "!") {
+            printf("FileSystem::Open Chrdir failed\n");
+            return NULL;
+        }
+    }
     
         
     Directory *directory = new Directory(NumDirEntries);
@@ -400,8 +413,10 @@ FileSystem::Open(std::string fileName)
     if (sector < 0) {	
         // name was not found in directory 
         printf("FileSystem::Open didnt find file %s in dir %s\n", name.c_str(), GetWorkingPath().c_str());
-        if (!backTrackPath.empty())
-            Chdir(backTrackPath);
+        //go back to initial dir
+        if (!backTrackPath.empty()) {
+            if (Chdir(backTrackPath) == "!") return NULL;
+        }
         return NULL;
     }
     delete directory;
@@ -432,9 +447,10 @@ FileSystem::Open(std::string fileName)
         }
         else {
             printf("FileSystem::Open max open file number reached. Cannot open %s\n", name.c_str());
-            //return to initial dir
-            if (!backTrackPath.empty())
-                Chdir(backTrackPath);
+            //go back to initial dir
+            if (!backTrackPath.empty()) {
+                if (Chdir(backTrackPath) == "!") return NULL;
+            }
             return NULL;
         }
     }
@@ -442,18 +458,21 @@ FileSystem::Open(std::string fileName)
         if (openFiles[i]->toBeRemoved) {
             //cannot open as file is waiting to be destroyed
             printf("FileSystem::Open file %s is waiting for destruction, cannot open\n", name.c_str());
-            if (!backTrackPath.empty())
-                Chdir(backTrackPath);
+            //go back to initial dir
+            if (!backTrackPath.empty()) {
+                if (Chdir(backTrackPath) == "!") return NULL;
+            }
             return NULL;
-        }
+        } 
         openFiles[i]->nbOpens++;
         openFile = openFiles[i]->file;
         //printf("(re-)Open: file %s %x nbopens =%d\n",name.c_str(), (unsigned int)openFiles[i]->file, openFiles[i]->nbOpens);
     }
     
     //go back to initial dir
-    if (!backTrackPath.empty())
-        Chdir(backTrackPath);
+    if (!backTrackPath.empty()) {
+        if (Chdir(backTrackPath) == "!") return NULL;
+    }
         
     //printf("filesys::open opened file ptr is %d\n", (int)openFile);
     dbgChecks();
@@ -523,6 +542,7 @@ FileSystem::Close(OpenFile *ofid) {
 //  A call to Remove() on an open file will set flag so that no other can open it.
 //  When the last thread closes the file, this flag will trigger a call to Remove, which will then be able to run.
 //	"name" -- the text name of the file to be removed
+//  The calling thread must have called Close either before or after, otherwise will never remove
 //----------------------------------------------------------------------
 
 int
@@ -544,8 +564,13 @@ FileSystem::Remove(std::string fileName)
          path.erase(pos, std::string::npos);
     }
     //change to the right dir, and keep opposite path to be able to come back
-    if (!path.empty())
+    if (!path.empty()) {
         backTrackPath = Chdir(path);
+        if (backTrackPath == "!") {
+            printf("FileSystem::Create Chrdir failed\n");
+            return -1;
+        }
+    }
         
 
         
@@ -560,8 +585,10 @@ FileSystem::Remove(std::string fileName)
     if (sector == -1) {
        delete directory;
         //go back to initial dir
-        if (!backTrackPath.empty())
-        Chdir(backTrackPath);
+        //go back to initial dir
+        if (!backTrackPath.empty()) {
+            if (Chdir(backTrackPath) == "!") return -1;
+        }
        return -1;			 // file not found 
     }
     
@@ -600,8 +627,9 @@ FileSystem::Remove(std::string fileName)
     delete directory;
     delete freeMap;
     //go back to initial dir
-    if (!backTrackPath.empty())
-        Chdir(backTrackPath);
+    if (!backTrackPath.empty()) {
+        if (Chdir(backTrackPath) == "!") return -1;
+    }
     dbgChecks();
     return 0;
 } 
@@ -695,16 +723,22 @@ FileSystem::Mkdir(const char* dirName) {
         path.erase(pos, std::string::npos);
     }
     //change to the right dir, and keep opposite path to be able to come back
-    if (!path.empty())
+    if (!path.empty()) {
         backTrackPath = Chdir(path);
+        if (backTrackPath == "!") {
+            printf("FileSystem::Create Chrdir failed\n");
+            return -1;
+        }
+    }
 
     //create file representing the new dir in our current directory
     //printf("creating file with name %s\n", name.c_str());
     if (-1 == Create(name.c_str(), DirectoryFileSize, 1))  {
         printf("fileSys::mkdir: could not create newDir file %s\n", dirName);
-        //return to initial dir
-        if (!backTrackPath.empty())
-            Chdir(backTrackPath);
+        //go back to initial dir
+        if (!backTrackPath.empty()) {
+            if (Chdir(backTrackPath) == "!") return -1;
+        }
         return -1;
     }
     
@@ -714,9 +748,10 @@ FileSystem::Mkdir(const char* dirName) {
     int cDSector = directoryFile->getSector();
     if (cDSector < 0) {
         printf("fileSys::Mkdir: currentDir sector is bad\n");
-        //return to initial dir
-        if (!backTrackPath.empty())
-            Chdir(backTrackPath);
+        //go back to initial dir
+        if (!backTrackPath.empty()) {
+            if (Chdir(backTrackPath) == "!") return -1;
+        }
         return -1;
     }
     
@@ -724,9 +759,10 @@ FileSystem::Mkdir(const char* dirName) {
     int nDSector = currentDir->Find(name.c_str());
     if (nDSector < 0) {
         printf("fileSys::Mkdir: newDir sector is bad\n");
-        //return to initial dir
-        if (!backTrackPath.empty())
-            Chdir(backTrackPath);
+        //go back to initial dir
+        if (!backTrackPath.empty()) {
+            if (Chdir(backTrackPath) == "!") return -1;
+        }
         return -1;
     }
     
@@ -742,9 +778,10 @@ FileSystem::Mkdir(const char* dirName) {
     OpenFile * newDirFile = Open(name.c_str());
     if (newDirFile == NULL) {
         printf("fileSys::Mkdir: could not open newDirFile %s\n", dirName);
-        //return to initial dir
-        if (!backTrackPath.empty())
-            Chdir(backTrackPath);
+        //go back to initial dir
+        if (!backTrackPath.empty()) {
+            if (Chdir(backTrackPath) == "!") return -1;
+        }
         return -1;
     }
     newDir->WriteBack(newDirFile);
@@ -759,6 +796,7 @@ FileSystem::Mkdir(const char* dirName) {
 //Rmdir
 //pre: directory must be empty
 //removes the directory specifed by dirName
+//if directory is open by another thread, will wait until thread leaves it to delete dir
 
 int
 FileSystem::Rmdir(const char* dirName) {
@@ -779,17 +817,23 @@ FileSystem::Rmdir(const char* dirName) {
          path.erase(pos, std::string::npos);
     }
     //change to the right dir, and keep opposite path to be able to come back
-    if (!path.empty())
+    if (!path.empty()) {
         backTrackPath = Chdir(path);
+        if (backTrackPath == "!") {
+            printf("FileSystem::Create Chrdir failed\n");
+            return -1;
+        }
+    }
     
     //create directory object for the dir in memory
     Directory *rmDir = new Directory(NumDirEntries);
     OpenFile *rmDirFile = Open(name.c_str());
     if (rmDirFile == NULL) {
         printf("fileSys::Rmdir: could not open rmDirFile %s\n", dirName);
-        //return to initial dir
-        if (!backTrackPath.empty())
-            Chdir(backTrackPath);
+        //go back to initial dir
+        if (!backTrackPath.empty()) {
+            if (Chdir(backTrackPath) == "!") return -1;
+        }
         return -1;
     }
     rmDir->FetchFrom(rmDirFile);
@@ -802,9 +846,10 @@ FileSystem::Rmdir(const char* dirName) {
     }
     Remove(name.c_str());
     
-    //return to initial dir
-    if (!backTrackPath.empty())
-        Chdir(backTrackPath);
+    //go back to initial dir
+    if (!backTrackPath.empty()) {
+        if (Chdir(backTrackPath) == "!") return -1;
+    }
         
     return 0;
 
@@ -812,7 +857,9 @@ FileSystem::Rmdir(const char* dirName) {
  
  
 
-
+/*
+ * returns path "!" on error
+ */
 std::string
 FileSystem::Chdir(std::string path) {
     
@@ -837,7 +884,7 @@ FileSystem::Chdir(std::string path) {
             if (!oppositePath.empty()) {
                 Chdir(oppositePath);
             }
-            return NULL;
+            return "!";
         }
         Close(directoryFile);
         directoryFile = destDirFile;
@@ -925,12 +972,7 @@ FileSystem::ReadAt(char *buffer, int numBytes, int pos, int index) {
         printf("Thread %s does not have this file Open: cannot read\n", currentThread->getName());
         return -1;
     }
-    if (pos == 0) {
-        return ofid->Read(buffer, numBytes);
-    }
-    else {
-        return ofid->ReadAt(buffer, numBytes, pos);
-    }
+    return ofid->ReadAt(buffer, numBytes, pos);
 }
 
 int 
@@ -940,12 +982,8 @@ FileSystem::WriteAt(char *buffer, int numBytes, int pos, int index) {
         printf("Thread %s does not have this file Open: cannot Write\n", currentThread->getName());
         return -1;
     }
-    if (pos == 0) {
-        return ofid->Write(buffer, numBytes);
-    }
-    else {
-        return ofid->WriteAt(buffer, numBytes, pos);
-    }
+    //grab a lock on ofid-> here
+    return ofid->WriteAt(buffer, numBytes, pos);
 }
 
 

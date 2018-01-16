@@ -207,6 +207,6 @@ Directory::Empty() {
     for (int i = 0; i < tableSize; i++)
         if (table[i].inUse)
             fileCount++;
-    printf("directory::empty: fileCount = %d\n", fileCount);
+    //printf("directory::empty: fileCount = %d\n", fileCount);
     return (fileCount == 2);
 }
