@@ -26,11 +26,12 @@
 //	"sector" -- the location on disk of the file header for this file
 //----------------------------------------------------------------------
 
-OpenFile::OpenFile(int sector)
+OpenFile::OpenFile(int sector_)
 { 
     hdr = new FileHeader;
-    hdr->FetchFrom(sector);
+    hdr->FetchFrom(sector_);
     seekPosition = 0;
+    this->sector = sector_;
 }
 
 //----------------------------------------------------------------------
@@ -73,6 +74,11 @@ OpenFile::Seek(int position)
 int
 OpenFile::Read(char *into, int numBytes)
 {
+   
+   if(hdr->isFixSizeFile() == FALSE){
+       hdr->FetchFrom(sector);
+   }
+    
    int result = ReadAt(into, numBytes, seekPosition);
    seekPosition += result;
    return result;
@@ -81,8 +87,15 @@ OpenFile::Read(char *into, int numBytes)
 int
 OpenFile::Write(const char *into, int numBytes)
 {
+
+   if(hdr->isFixSizeFile() == FALSE){
+     hdr->UpdateFileLength(numBytes);
+     hdr->WriteBack(sector);
+   }
+   
    int result = WriteAt(into, numBytes, seekPosition);
    seekPosition += result;
+      
    return result;
 }
 
@@ -177,9 +190,11 @@ OpenFile::WriteAt(const char *from, int numBytes, int position)
     bcopy(from, &buf[position - (firstSector * SectorSize)], numBytes);
 
 // write modified sectors back
-    for (i = firstSector; i <= lastSector; i++)	
+    for (i = firstSector; i <= lastSector; i++){
         synchDisk->WriteSector(hdr->ByteToSector(i * SectorSize), 
-					&buf[(i - firstSector) * SectorSize]);
+                                &buf[(i - firstSector) * SectorSize]);
+    }
+
     delete [] buf;
     return numBytes;
 }
@@ -193,4 +208,8 @@ int
 OpenFile::Length() 
 { 
     return hdr->FileLength(); 
+}
+
+int OpenFile::GetInode(){
+    return sector;
 }

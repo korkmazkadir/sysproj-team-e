@@ -102,7 +102,7 @@ static void StartUserThread(int f) {
  *         -3 if there is no space left on stack for a new thread
  *         -4 ran out of memory
  */
-int do_UserThreadCreate(int funPtr, int arg, int retAddress, AddrSpace *space, bool kernelRequest) {
+int do_UserThreadCreate(int funPtr, int arg, int retAddress, AddrSpace *space, OpenFile *workingDirectoryFile, Thread *parent ,bool kernelRequest) {
 
     int retVal = -1;
     static bool firstTime = true;
@@ -180,6 +180,13 @@ int do_UserThreadCreate(int funPtr, int arg, int retAddress, AddrSpace *space, b
         newThread->SetTID(threadNum);
         newThread->space = space;
         newThread->Fork(StartUserThread, (int)serializedThreadParam);
+        newThread->SetWorkingDirectory(workingDirectoryFile);
+        if(parent != NULL){
+            printf("Setting current thread table \n");
+            newThread->setOpenFileTable(parent->getOpenFileTable());
+        }
+        
+                
         retVal = threadNum;
         ++numThreads;
 
@@ -274,8 +281,8 @@ early_exit:
 }
 
 
-int do_KernelThreadCreate(AddrSpace *space) {
-    int retVal = do_UserThreadCreate(0, 0, 0, space, true);
+int do_KernelThreadCreate(AddrSpace *space, OpenFile *workingDirectoryFile) {
+    int retVal = do_UserThreadCreate(0, 0, 0, space, workingDirectoryFile,NULL,true );
     return retVal;
 }
 
@@ -283,6 +290,7 @@ int do_KernelThreadCreate(AddrSpace *space) {
 void do_ExitCurrentProcess()
 {    
     int tid = currentThread->Tid();
+
 
     //Check if it has userlevel threads
     while(!thread_args[tid - 1].children.IsEmpty()) {
@@ -301,6 +309,9 @@ void do_ExitCurrentProcess()
     }
 
     IntStatus oldLevel = interrupt->SetLevel(IntOff);
+
+    thread_args[tid - 1].synch->V();
+    
     scheduler->EvictThreadsById(tid);
     delete currentThread->space;
     currentThread->space = nullptr;
@@ -308,10 +319,12 @@ void do_ExitCurrentProcess()
     interrupt->SetLevel(oldLevel);
 
     --numProcesses;
+
     //--numThreads; //deleting thread from count?
     //printf("xiting num proc %d %d \n", numProcesses, tid );
+
     if (0 >= numProcesses) {
-//        haltSync.V();
+    //  haltSync.V();
         interrupt->Halt();
     }
 

@@ -57,6 +57,18 @@ void SynchConsole::SynchPutString(const char *s)
     writeMutex.V();
 }
 
+void SynchConsole::SynchPutString(const char *s, const int numberOfBytes)
+{
+    writeMutex.P();
+    {
+        for(int i = 0; i < numberOfBytes; i++ ){
+            synchPutChar(s[i]);
+        }
+            
+    }
+    writeMutex.V();
+}
+
 void SynchConsole::SynchGetString(char *s, int n)
 {
     readMutex.P();
