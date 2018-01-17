@@ -24,6 +24,8 @@
 void
 StartProcess (char *filename)
 {
+}
+/*
     OpenFile *executable = fileSystem->Open (filename);
     AddrSpace *space;
 
@@ -45,7 +47,7 @@ StartProcess (char *filename)
     // the address space exits
     // by doing the syscall "exit"
 }
-
+*/
 // Data structures needed for the console test.  Threads making
 // I/O requests wait on a Semaphore to delay until the I/O completes.
 

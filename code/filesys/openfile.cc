@@ -29,6 +29,7 @@
 OpenFile::OpenFile(int headerSector)
 { 
     sector = headerSector;
+    printf("openFile() hdr %x\n", (unsigned int)hdr);
     hdr = new FileHeader;
     hdr->FetchFrom(sector);
     seekPosition = 0;
@@ -41,7 +42,9 @@ OpenFile::OpenFile(int headerSector)
 
 OpenFile::~OpenFile()
 {
+    printf("OpenFile ~ called on file %x by thread %s\n", (unsigned int)this, currentThread->getName());
     delete hdr;
+    hdr = (FileHeader*)0xdeadbeef;
 }
 
 //----------------------------------------------------------------------
@@ -116,14 +119,31 @@ OpenFile::Write(const char *into, int numBytes)
 int
 OpenFile::ReadAt(char *into, int numBytes, int position)
 {
-    int fileLength = hdr->FileLength();
+    int fileLength = hdr->FileLength(); //THIS FAILS?§?..§§!
+        //printf("yo\n");
+
     int i, firstSector, lastSector, numSectors;
     char *buf;
+    
 
-    if ((numBytes <= 0) || (position >= fileLength) || (position < 0)) {
-        printf("OpenFile::ReadAt badRequest\n");
+    if (numBytes <= 0) {
+        printf("OpenFile::ReadAt badRequest1\n");
+        Exit(-1);
     	return -1; 				// check request
     }
+    if (position >= fileLength) { 
+        printf("OpenFile::ReadAt badRequest2 pos %d filelen %d\n", position, fileLength);
+        Exit(-2);
+    	return -1;
+    } 
+        
+        
+    if (position < 0) {
+        printf("OpenFile::ReadAt badRequest3\n");
+        Exit(-3);
+    	return -1;
+    } 
+    
     if ((position + numBytes) > fileLength)		
         numBytes = fileLength - position;
     DEBUG('f', "Reading %d bytes at %d, from file of length %d.\n", 	

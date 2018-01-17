@@ -152,8 +152,10 @@ Initialize (int argc, char **argv)
 
     // We didn't explicitly allocate the current thread we are running in.
     // But if it ever tries to give up the CPU, we better have a Thread
-    // object to save its state.
-    currentThread = new Thread ("main", NULL, NULL);
+    // object to save its state
+    std::string *wp = new std::string("/");
+    std::string *wdn = new std::string("/");
+    currentThread = new Thread ("main", wp, wdn);
     //inform the thread of it's filesys state
     currentThread->setStatus (RUNNING);
 
@@ -178,9 +180,10 @@ Initialize (int argc, char **argv)
 #ifdef FILESYS_NEEDED
     //need flag for filesys to avoid scheduler calling 
     //filesys->save / restore before filesystem is created
-    FileSysIsUp = 0;
     fileSystem = new FileSystem (format);
-    fileSystem->saveThreadState();
+    //filesys has opened / at construction. so update thread tables to reflect that
+    currentThread->saveFilesysState();
+    currentThread->restoreFilesysState();
     //printf("System::Initialize() has setup first thread's filesys info\n");
     FileSysIsUp = 1;
     
@@ -223,8 +226,8 @@ int createProcess(char *filename) {
     if (execDir != NULL) {
         backTrackPath = fileSystem->Chdir(execDir);
     }
-
-    OpenFile *executable = fileSystem->Open(filename);
+    int index = fileSystem->Open(filename);
+    OpenFile *executable = fileSystem->getOpenFile(index);
     AddrSpace *space;
 
     if (executable == NULL) {
@@ -241,10 +244,13 @@ int createProcess(char *filename) {
         currentThread->space = space;
     }
     
+    fileSystem->fsLock->Acquire();
+    fileSystem->Close(index); // close executable file
+    fileSystem->fsLock->Release();
+    
     int retVal = do_KernelThreadCreate(space);
 
-    fileSystem->Close(executable); // close file
-    
+  
     //return to initial dir
     if (!backTrackPath.empty())
         fileSystem->Chdir(backTrackPath);

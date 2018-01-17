@@ -73,9 +73,7 @@ static void StartUserThread(int f) {
 
     cvtParam->space->InitRegisters();
     cvtParam->space->RestoreState();
-    
-    //filesys
-    fileSystem->restoreThreadState();
+    currentThread->restoreFilesysState();
     
     int instr = (int)cvtParam->functionPtr;
 
@@ -106,7 +104,7 @@ static void StartUserThread(int f) {
  *         -4 ran out of memory
  */
 int do_UserThreadCreate(int funPtr, int arg, int retAddress, AddrSpace *space, bool kernelRequest) {
-
+printf("èèèèèèè DOING USER THREAD CREATE            OOOOO\n\n\n");
     int retVal = -1;
     static bool firstTime = true;
 
@@ -161,7 +159,7 @@ int do_UserThreadCreate(int funPtr, int arg, int retAddress, AddrSpace *space, b
         // TODO: Remove after active dev phase
         int threadNum = (int)freeThreadIds.Remove();
         
-        if (currentThread->directoryFile == NULL) {
+        if (currentThread->directoryFile == -1) {
             printf("do_UserThreadCreate creator's directoryFile is NULL\n");
             Exit(-1);
         }
@@ -173,7 +171,19 @@ int do_UserThreadCreate(int funPtr, int arg, int retAddress, AddrSpace *space, b
         Thread *newThread = new (std::nothrow) Thread(dbgName->c_str(), 
                                                       currentThread->workingPath, 
                                                       currentThread->workingDirName);
-
+                                                
+        //filesys
+        fileSystem->fsLock->Acquire();
+        int res = fileSystem->InitializeThreadWorkingDir(newThread);
+        fileSystem->fsLock->Release();
+        if (res == -1) {
+            printf("UserThreadCreate fs initThreadWorkingDir failed\n");
+            retVal = -5;
+            goto early_exit;
+        }
+        //NOPE I THINK THIS IS BAD give new thread the same environment as its creator
+        //newThread->saveFilesysState();
+        
         /* Memory allocation failed */
         if (!newThread) {
             retVal = -4;
@@ -206,8 +216,6 @@ int do_UserThreadCreate(int funPtr, int arg, int retAddress, AddrSpace *space, b
             int pTid = currentThread->Tid();
             thread_args[pTid - 1].children.Append((void*)threadNum);//store children tid
         }
-
-
     }
 
     early_exit:
@@ -233,6 +241,12 @@ void do_UserThreadExit() {
 //        haltSync.V();
     }
 
+    //filesys
+    fileSystem->fsLock->Acquire();
+    printf("!!            do UserThreadExit from %s closing %s index %d\n", currentThread->getName(), currentThread->workingDirName->c_str(), currentThread->directoryFile); 
+    fileSystem->Close(currentThread->directoryFile);
+    fileSystem->fsLock->Release();
+    
     //TODO: Consider removing threadPtr from the descriptor
     descriptor->threadPtr->Finish();
 

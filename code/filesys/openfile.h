@@ -91,7 +91,7 @@ class OpenFile {
   private:
     int sector;
     char *name;
-    FileHeader *hdr;			                            // Header for this file 
+    FileHeader *hdr = NULL;	                            // Header for this file 
     int seekPosition;			                            // Current position within the file
 };
 

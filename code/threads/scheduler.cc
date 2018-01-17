@@ -105,7 +105,8 @@ Scheduler::Run (Thread * nextThread)
 #endif
     //filesys
     if (FileSysIsUp) {
-        fileSystem->saveThreadState();
+        //printf("save from schedu run:\n");
+        currentThread->saveFilesysState();
     }
 
     oldThread->CheckOverflow ();	// check if the old thread
@@ -145,7 +146,8 @@ Scheduler::Run (Thread * nextThread)
 #endif
     //filesys
     if (FileSysIsUp) {
-        fileSystem->restoreThreadState();
+        //printf("restore from schedu run:\n");
+        currentThread->restoreFilesysState();
     }
 }
 

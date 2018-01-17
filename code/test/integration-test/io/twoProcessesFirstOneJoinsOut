@@ -1,8 +1,17 @@
-abcdMachine halting!
+èèèèèèè DOING USER THREAD CREATE            OOOOO
 
-Ticks: total 4781003, idle 4739762, system 41010, user 231
-Disk I/O: reads 945, writes 287
-Console I/O: reads 0, writes 4
+
+OpenFile::ReadAt badRequest
+FileSystem::Open didnt find file up0j in dir /
+Unable to open file up0j
+OpenFile::ReadAt badRequest
+FileSystem::Open didnt find file up1 in dir /
+Unable to open file up1
+Machine halting!
+
+Ticks: total 4717273, idle 4673570, system 43670, user 33
+Disk I/O: reads 871, writes 287
+Console I/O: reads 0, writes 0
 Paging: faults 0
 Network I/O: packets received 0, sent 0
 

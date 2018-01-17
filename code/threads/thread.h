@@ -118,6 +118,9 @@ class Thread
 
     void SetTID(int _tid);
     int Tid() const;
+    void restoreFilesysState();
+    void saveFilesysState();
+
 
   private:
     // some of the private data for this class is listed above
@@ -148,10 +151,12 @@ class Thread
 #endif
 
     //filesys
-    OpenFile *directoryFile; //current directory file pointer
-    OpenFile *openFileIds[10];
+    int directoryFile; //current directory file index in openFiles table
+    ThreadFileInfo *openFiles[10];              
     std::string *workingPath;
     std::string *workingDirName;
+    
+    void setupFilesysInfo(); //to be run upon thread startup, opens current directory
 };
 
 // Magical machine-dependent routines, defined in switch.s

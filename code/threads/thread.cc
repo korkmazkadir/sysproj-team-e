@@ -50,23 +50,16 @@ Thread::Thread (const char *threadName, std::string *initialWP, std::string *ini
 #endif
 
     //filesys
-    if (initialWP != NULL) { //do not update fs info if passed NULL (first thread created, will have info from FS via fs->savestate)
-        workingPath = new std::string(*initialWP);
-        workingDirName = new std::string(*initialWDN);
-        if (*workingDirName == "/") {
-            directoryFile = fileSystem->Open(".");
-        } else {
-            std::string dirname("../");
-            dirname.append(*workingDirName);
-            //printf("Thread creation: appended %s to ../\n", workingDirName->c_str());
-            directoryFile = fileSystem->Open(dirname);
-        }
-       //printf("    !!!!   created thread with WP %s WDN %s DF %x\n", workingPath->c_str(), workingDirName->c_str(), (unsigned int)directoryFile);
-    }
+    
     for (int i = 0; i < 10; i++) {
-        openFileIds[i] = NULL;
+        openFiles[i] = (ThreadFileInfo *) malloc(sizeof(struct S_threadFileInfo));
+        openFiles[i]->file = NULL;
     }
-
+    
+    workingPath = new std::string(*initialWP);
+    workingDirName = new std::string(*initialWDN);
+    //printf("    !!!!   created thread with WP %s WDN %s \n", workingPath->c_str(), workingDirName->c_str();
+    //do not update fs info if passed NULL (first thread created, will have info from FS via fs->savestate)
 }
 
 //----------------------------------------------------------------------
@@ -95,7 +88,6 @@ Thread::~Thread ()
     if (workingDirName != NULL) {
         delete workingDirName;
     }
-    fileSystem->Close(directoryFile);
 }
 
 //----------------------------------------------------------------------
@@ -349,7 +341,11 @@ SetupThreadState ()
 
     //filesys
     if (FileSysIsUp) {
-        fileSystem->restoreThreadState();
+        /*fileSystem->fsLock->Acquire();
+        printf("Thread::SetupThreadState for %s opening %s\n", currentThread->getName(), currentThread->workingDirName->c_str()); 
+        fileSystem->Open(currentThread->workingDirName->c_str());
+        fileSystem->fsLock->Release();*/
+        currentThread->saveFilesysState();
     }
   // LB: The default level for interrupts is IntOn.
   InterruptEnable (); 
@@ -453,4 +449,77 @@ Thread::RestoreUserState ()
 }
 #endif
 
+
+/*
+ * Save filesystem state to thread
+ */
+void 
+Thread::saveFilesysState() {   
+    //printf("Filesys running thread save state        to: %s\n",currentThread->getName());
+    if (fileSystem->directoryFile == -1) {
+        printf("FileSystem::saveThreadState directoryFile is -1\n");
+        Exit(-1);
+    }
+    
+    //printf("CT WP = %x CT WDN = %x CT DF = %x\n", (unsigned int)(currentThread->workingPath), (unsigned int)(currentThread->workingDirName), (unsigned int)currentThread->directoryFile);
+    
+    for (int i = 0; i < 10; i++) {
+        if (openFiles[i]->file != NULL) { 
+            printf("save to %s: thread : file: %d %s %x ",currentThread->getName(), i, openFiles[i]->systemInfo->name.c_str(), (unsigned int)openFiles[i]->file);
+        }
+        else {printf("%d was null ", i);}
+         printf("\n");
+        if (fileSystem->threadOpenFiles[i]->file != NULL) {
+            printf("save to %s: fs: file: %d %s %x ",currentThread->getName(), i, fileSystem->threadOpenFiles[i]->systemInfo->name.c_str(), (unsigned int)fileSystem->threadOpenFiles[i]->file);
+        }
+        else {printf("%d was null ", i);}
+         printf("\n");
+        openFiles[i]->file = fileSystem->threadOpenFiles[i]->file;
+        openFiles[i]->systemInfo = fileSystem->threadOpenFiles[i]->systemInfo;
+        if (openFiles[i]->file != NULL) {
+            //printf("save to %s: file: %d %s %x\n", currentThread->getName(), i, fileSystem->threadOpenFiles[i]->systemInfo->name.c_str(), (unsigned int)openFiles[i]->file );
+        }
+    }
+    *workingPath = *(fileSystem->workingPath);
+    *workingDirName = *(fileSystem->workingDirName);
+    directoryFile = fileSystem->directoryFile;
+    //printf("FS WP = %s FS WDN = %s FS DF = %d\n", workingPath->c_str(), workingDirName->c_str(), directoryFile);
+    //dbgChecks();
+    
+}
+ 
+ 
+/*
+ * Load filesystem state from thread
+ */
+ //seems to be wrong even at first call to restore
+void 
+Thread::restoreFilesysState() {
+    
+    for (int i = 0; i < 10; i++) {
+        if (openFiles[i]->file != NULL) { 
+            printf("restore from %s: thread : file: %d %s %x ",currentThread->getName(), i, openFiles[i]->systemInfo->name.c_str(), (unsigned int)openFiles[i]->file);
+        }
+        else {printf("%d was null ", i);}
+        printf("\n");
+        if (fileSystem->threadOpenFiles[i]->file != NULL) {
+            printf("restore from %s: fs: file: %d %s %x ",currentThread->getName(), i, fileSystem->threadOpenFiles[i]->systemInfo->name.c_str(), (unsigned int)fileSystem->threadOpenFiles[i]->file);
+        }
+        else {printf("%d was null ", i);}
+        printf("\n");
+        fileSystem->threadOpenFiles[i]->file = openFiles[i]->file;
+        fileSystem->threadOpenFiles[i]->systemInfo = openFiles[i]->systemInfo;
+
+    }
+    
+    (*fileSystem->workingPath) = *workingPath;
+    (*fileSystem->workingDirName) = *workingDirName;
+    fileSystem->directoryFile = directoryFile;
+    //printf("Filesys has run thread restore state         from: %s\n",currentThread->getName());
+    //printf("FS WP ptr = %x FS WDN ptr = %x FS DF = %d\n", (unsigned int)workingPath, (unsigned int)workingDirName, directoryFile);
+    //printf("FS WP = %s", workingPath->c_str());
+    //printf("FS WDN = %s \n", workingDirName->c_str());
+    //dbgChecks();
+    
+} 
 

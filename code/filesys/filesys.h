@@ -69,15 +69,22 @@ class FileSystem {
 #else // FILESYS
 
 
-class Semaphore;
 class Lock;
+class Thread;
 
 typedef struct S_fileInfo {
-    OpenFile *file;
+    int sector;
     int nbOpens;
     int toBeRemoved;
     std::string name;
+    Lock *lck;
 } FileInfo;
+
+typedef struct S_threadFileInfo {
+    FileInfo *systemInfo;
+    OpenFile *file;
+} ThreadFileInfo;
+
 
 class FileSystem {
   public:
@@ -92,11 +99,8 @@ class FileSystem {
     int Create(std::string fileName, int initialSize, bool isDir); // Create a file (UNIX creat)
                                                     
 
-    int ThreadOpen(std::string fileName);
-    OpenFile* Open(std::string fileName); 	         // Open a file (UNIX open)
-    
-    int ThreadClose(int index);
-    int Close(OpenFile *ofid);
+    int Open(std::string fileName); 	         // Open a file (UNIX open)
+    int Close(int index);
     int Remove(std::string fileName);  	         // Delete a file (UNIX unlink)
 
     void List();			                         // List all the files in the file system
@@ -107,59 +111,32 @@ class FileSystem {
     std::string Chdir(std::string path);
     std::string GetWorkingPath();
     std::string GetWorkingDir();
-    void saveThreadState();                          //handles context switch
-    void restoreThreadState();
+
     int Read(char *buffer, int numBytes, int index);
     int Write(char *buffer, int numBytes, int index);     
     int ReadAt(char *buffer, int numBytes, int pos, int index);
     int WriteAt(char *buffer, int numBytes, int pos, int index);  
+    
+    OpenFile *getOpenFile(int index);
+    int InitializeThreadWorkingDir(Thread *newThread);
 
     Lock *fsLock;
+    ThreadFileInfo *threadOpenFiles[10];               //copy of table in thread class containing 
+    int directoryFile;		                // current directory -- list of 
+                                            //indices referring to (global) openFiles table
+    std::string *workingPath;
+    std::string *workingDirName;                       //name of current directory (starts as root)
 
   private:
   
     void dbgChecks(); //helper
     OpenFile* freeMapFile;		                    // Bit map of free disk blocks,
                                                     // represented as a file
-    OpenFile* directoryFile;		                // current directory -- list of 
                                                      // file names, represented as a file
-    //OpenFile **openFiles;                           
-    FileInfo **openFiles;                           //system-wide table of currently open files
-    OpenFile **threadOpenFiles;                     //points to table in thread class containing 
-                                                    //indices referring to (global) openFiles table
-    std::string *workingPath;
-    std::string *workingDirName;                       //name of current directory (starts as root)
+    FileInfo *openFiles[10];                           //system-wide table of currently open files
+   
     
 };
-
-/* ideas:
- * Global table for whole OS of 10 OpenFile ptrs.
- * Per thread table of correspondances between OpenFileIds 
- * (file descriptors, different from OpenFile ptrs) and positions in global table.
- * on Open: if already open, reference the right place in global table
- *          if not open yet, if can make new entry, make it.
- * on close: remove entry from local table, decrement counter on global table
- *          if counter = 0 remove from global table
- * on remove: if is open, set toBeDestroyed flag to stop other Open() calls
- *             wait until counter = 0, then delete
- */
- /*
-  * model:
-  * thread cannot open or remove file that is already open.
-  * Objective: multiple threads can have same file open
-  * conseq: need to give a different openFile  object, but referencing the same file on disk.
-  * problems: things like mkdir need to open the directory files. Probably disallow concurrent running of that?
-  * what happens on remove of a shared file? disallow further opens, do remove once all current open instances have been closed...
-  * read/write will work with a rw lock per file
-  * 
-  * Context switching: load per thread table into filesys per thread table.
-  * per thread table just tells you where to look in global table. that way you can update and see what other threads have done (numopens)
-  *
-  */
-  /* what can get changed? Directory can be changed -> other threads need to know
-   *        they will: system openFile table.
-   * things like mkdir rmdir need to be run atomically otherwise incoherent.
-   */
 
 #endif // FILESYS
 

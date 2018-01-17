@@ -153,7 +153,10 @@ FileHeader::ByteToSector(int offset)
 int
 FileHeader::FileLength()
 {
-    return numBytes;
+    //printf("hifrom FileHeader::FileLength\n");
+    int tmp = numBytes;
+    //printf("hi again from FileHeader::FileLength\n");
+    return tmp;
 }
 
 //----------------------------------------------------------------------

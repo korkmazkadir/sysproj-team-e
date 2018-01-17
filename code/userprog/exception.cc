@@ -187,6 +187,7 @@ void ExceptionHandler (ExceptionType which)
 
             case SC_UserThreadExit:
             {
+                printf("FUCKING HELLO?????              lolool              lolo\n\n\n");
                 do_UserThreadExit();
             } break;
 
@@ -326,7 +327,7 @@ void ExceptionHandler (ExceptionType which)
                 std::string path(local_buf);
                 
                 fileSystem->fsLock->Acquire();
-                int index = fileSystem->ThreadOpen(path);
+                int index = fileSystem->Open(path);
                 fileSystem->fsLock->Release();
                 
                 machine->WriteRegister(RET_VALUE_REGISTER, index);
@@ -334,8 +335,7 @@ void ExceptionHandler (ExceptionType which)
 
 
             case SC_Read:
-            {// TODO: don't deref pointer direclty. 
-             //keep a global open file table with IDs mapped to ptrs, translate between them here
+            {
                 int toVirtualAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
                 int numBytes = machine->ReadRegister(SECOND_PARAM_REGISTER);
                 if (numBytes > MAX_WRITE_BUF_SIZE) {
@@ -344,9 +344,7 @@ void ExceptionHandler (ExceptionType which)
                 int index = machine->ReadRegister(THIRD_PARAM_REGISTER);
                 char local_buf[MAX_WRITE_BUF_SIZE];
                 
-                fileSystem->fsLock->Acquire();
                 int result = fileSystem->Read(local_buf, numBytes, index);
-                fileSystem->fsLock->Release();
                 
                 copyStringToMachine(local_buf, toVirtualAddress, numBytes);
                 machine->WriteRegister(RET_VALUE_REGISTER, result);
@@ -365,8 +363,6 @@ void ExceptionHandler (ExceptionType which)
                 char local_buf[MAX_WRITE_BUF_SIZE];
                 
                 copyStringFromMachine(fromAddress, local_buf, MAX_WRITE_BUF_SIZE);
-                fileSystem->fsLock->Acquire();
-                fileSystem->fsLock->Release();
                 
                 int result = fileSystem->Write(local_buf, numBytes, index);
                 machine->WriteRegister(RET_VALUE_REGISTER, result);
@@ -385,9 +381,7 @@ void ExceptionHandler (ExceptionType which)
                 int pos = machine->ReadRegister(FOURTH_PARAM_REGISTER);
                 char local_buf[MAX_WRITE_BUF_SIZE];
                 
-                fileSystem->fsLock->Acquire();
                 int result = fileSystem->ReadAt(local_buf, numBytes, pos, index);
-                fileSystem->fsLock->Release();
                 
                 copyStringToMachine(local_buf, toVirtualAddress, numBytes);
                 machine->WriteRegister(RET_VALUE_REGISTER, result);
@@ -407,9 +401,7 @@ void ExceptionHandler (ExceptionType which)
                 char local_buf[MAX_WRITE_BUF_SIZE];
                 copyStringFromMachine(fromAddress, local_buf, MAX_WRITE_BUF_SIZE);
                 
-                fileSystem->fsLock->Acquire();
                 int result = fileSystem->WriteAt(local_buf, numBytes, pos, index);
-                fileSystem->fsLock->Release();
                 
                 machine->WriteRegister(RET_VALUE_REGISTER, result);
             } break;
@@ -419,7 +411,7 @@ void ExceptionHandler (ExceptionType which)
                 int index = machine->ReadRegister(FIRST_PARAM_REGISTER);
                 
                 fileSystem->fsLock->Acquire();
-                int result = fileSystem->ThreadClose(index);
+                int result = fileSystem->Close(index);
                 fileSystem->fsLock->Release();
                 
                 machine->WriteRegister(RET_VALUE_REGISTER, result);
