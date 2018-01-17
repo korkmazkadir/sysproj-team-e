@@ -154,14 +154,29 @@ int MailBox::Peek(PacketHeader *pktHdr, MailHeader *mailHdr)
     mail = (Mail *) messages->Peek();
 
     if (mail) {
-        *pktHdr = mail->pktHdr;
-        *mailHdr = mail->mailHdr;
+        if (pktHdr) {
+            *pktHdr = mail->pktHdr;
+        }
+
+        if (mailHdr) {
+            *mailHdr = mail->mailHdr;
+        }
         retVal = 0;
     } else {
         retVal = -1;
     }
 
     return retVal;
+}
+
+int MailBox::Discard()
+{
+    void *item = messages->Remove();
+    if (item) {
+        return 0;
+    } else {
+        return -1;
+    }
 }
 
 //----------------------------------------------------------------------
@@ -217,7 +232,7 @@ PostOffice::PostOffice(NetworkAddress addr, double reliability, int nBoxes)
 
 
 // Finally, create a thread whose sole job is to wait for incoming messages,
-//   and put them in the right mailbox. 
+//   and put them in the right mailbox.
     Thread *t = new Thread("postal worker");
 
     t->Fork(PostalHelper, (int) this);
@@ -357,6 +372,12 @@ int PostOffice::Peek(int box, PacketHeader *pktHdr, MailHeader *mailHdr)
     retVal = boxes[box].Peek(pktHdr, mailHdr);
 
     early_exit:
+    return retVal;
+}
+
+int PostOffice::Remove(int box)
+{
+    int retVal = boxes[box].Discard();
     return retVal;
 }
 

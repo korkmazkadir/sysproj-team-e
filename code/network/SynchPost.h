@@ -49,6 +49,7 @@ private:
     bool checkConnClosed(int connId);
     static void periodicCloseChecker(int arg);
     int performConnClose(int connId);
+//    void clearMailBox
 
     static const int MAX_ACK_TIMEOUT = 4000000;
     static const int MAX_ATTEMPTS = 65;
@@ -62,13 +63,13 @@ private:
     static const unsigned SPECIAL_FILE_END   = 0x10000000u;
     static const unsigned SPECIAL_CLOSE_CONN = 0x20000000u;
 
-    static inline unsigned getMasked(unsigned index, unsigned mask) { return (index | mask);                }
-    static inline unsigned getIndex(unsigned masked, unsigned mask) { return (masked & (~mask));            }
-    static inline unsigned getMask(unsigned masked)                 { return (masked & 0xff000000);         }
-    static inline bool isHeader(unsigned value)                     { return (value & HEADER_MASK);         }
-    static inline bool isAck(unsigned value)                        { return (value & ACK_MASK);            }
-    static inline bool isHeaderAck(unsigned value)                  { return (value & HEADER_ACK_MASK);     }
-    static inline bool isClose(unsigned value)                      { return (value & SPECIAL_CLOSE_CONN);  }
+    static inline unsigned getMasked    (unsigned index,  unsigned mask ) { return (index | mask);                }
+    static inline unsigned getIndex     (unsigned masked, unsigned mask ) { return (masked & (~mask));            }
+    static inline unsigned getMask      (unsigned masked                ) { return (masked & 0xff000000);         }
+    static inline bool     isHeader     (unsigned value                 ) { return (value & HEADER_MASK);         }
+    static inline bool     isAck        (unsigned value                 ) { return (value & ACK_MASK);            }
+    static inline bool     isHeaderAck  (unsigned value                 ) { return (value & HEADER_ACK_MASK);     }
+    static inline bool     isClose      (unsigned value                 ) { return (value & SPECIAL_CLOSE_CONN);  }
 
 
 
