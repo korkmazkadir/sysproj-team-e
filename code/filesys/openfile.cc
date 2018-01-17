@@ -29,7 +29,7 @@
 OpenFile::OpenFile(int headerSector)
 { 
     sector = headerSector;
-    printf("openFile() hdr %x\n", (unsigned int)hdr);
+    //printf("openFile() hdr %x\n", (unsigned int)hdr);
     hdr = new FileHeader;
     hdr->FetchFrom(sector);
     seekPosition = 0;
@@ -42,9 +42,7 @@ OpenFile::OpenFile(int headerSector)
 
 OpenFile::~OpenFile()
 {
-    printf("OpenFile ~ called on file %x by thread %s\n", (unsigned int)this, currentThread->getName());
     delete hdr;
-    hdr = (FileHeader*)0xdeadbeef;
 }
 
 //----------------------------------------------------------------------

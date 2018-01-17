@@ -187,7 +187,6 @@ void ExceptionHandler (ExceptionType which)
 
             case SC_UserThreadExit:
             {
-                printf("FUCKING HELLO?????              lolool              lolo\n\n\n");
                 do_UserThreadExit();
             } break;
 
@@ -312,8 +311,9 @@ void ExceptionHandler (ExceptionType which)
                 copyStringFromMachine(fromAddress, local_buf, MAX_WRITE_BUF_SIZE);
                 std::string path(local_buf);
                 
+                printf("execp.cc creating file with size %d\n", MaxFileSize/10);
                 fileSystem->fsLock->Acquire();
-                int result = fileSystem->Create(path, MaxFileSize, 0);
+                int result = fileSystem->Create(path, MaxFileSize/10, 0);
                 fileSystem->fsLock->Release();
                 
                 machine->WriteRegister(RET_VALUE_REGISTER, result);                

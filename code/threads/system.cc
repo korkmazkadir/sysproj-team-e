@@ -181,9 +181,7 @@ Initialize (int argc, char **argv)
     //need flag for filesys to avoid scheduler calling 
     //filesys->save / restore before filesystem is created
     fileSystem = new FileSystem (format);
-    //filesys has opened / at construction. so update thread tables to reflect that
-    currentThread->saveFilesysState();
-    currentThread->restoreFilesysState();
+    //fileSystem->InitializeThreadWorkingDir(currentThread);
     //printf("System::Initialize() has setup first thread's filesys info\n");
     FileSysIsUp = 1;
     
@@ -278,6 +276,7 @@ Cleanup ()
 
 #ifdef FILESYS_NEEDED
     delete fileSystem;
+    fileSystem = nullptr;
 #endif
 
 #ifdef FILESYS

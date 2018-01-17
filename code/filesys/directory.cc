@@ -64,9 +64,9 @@ Directory::~Directory()
 void
 Directory::FetchFrom(OpenFile *file)
 {
-    printf("fetchFrom start read\n");
+    //printf("fetchFrom start read\n");
     (void) file->ReadAt((char *)table, tableSize * sizeof(DirectoryEntry), 0);
-    printf("fetchFrom done read\n");
+    //printf("fetchFrom done read\n");
 }
 
 //----------------------------------------------------------------------

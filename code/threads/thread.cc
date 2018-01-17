@@ -464,18 +464,13 @@ Thread::saveFilesysState() {
     //printf("CT WP = %x CT WDN = %x CT DF = %x\n", (unsigned int)(currentThread->workingPath), (unsigned int)(currentThread->workingDirName), (unsigned int)currentThread->directoryFile);
     
     for (int i = 0; i < 10; i++) {
-        if (openFiles[i]->file != NULL) { 
+        /*if (openFiles[i]->file != NULL) { 
             printf("save to %s: thread : file: %d %s %x ",currentThread->getName(), i, openFiles[i]->systemInfo->name.c_str(), (unsigned int)openFiles[i]->file);
         }
         else {printf("%d was null ", i);}
-         printf("\n");
-        if (fileSystem->threadOpenFiles[i]->file != NULL) {
-            printf("save to %s: fs: file: %d %s %x ",currentThread->getName(), i, fileSystem->threadOpenFiles[i]->systemInfo->name.c_str(), (unsigned int)fileSystem->threadOpenFiles[i]->file);
-        }
-        else {printf("%d was null ", i);}
-         printf("\n");
-        openFiles[i]->file = fileSystem->threadOpenFiles[i]->file;
-        openFiles[i]->systemInfo = fileSystem->threadOpenFiles[i]->systemInfo;
+         printf("\n");*/
+        //openFiles[i]->file = fileSystem->threadOpenFiles[i]->file;
+        //openFiles[i]->systemInfo = fileSystem->threadOpenFiles[i]->systemInfo;
         if (openFiles[i]->file != NULL) {
             //printf("save to %s: file: %d %s %x\n", currentThread->getName(), i, fileSystem->threadOpenFiles[i]->systemInfo->name.c_str(), (unsigned int)openFiles[i]->file );
         }
@@ -497,18 +492,13 @@ void
 Thread::restoreFilesysState() {
     
     for (int i = 0; i < 10; i++) {
-        if (openFiles[i]->file != NULL) { 
+        /*if (openFiles[i]->file != NULL) { 
             printf("restore from %s: thread : file: %d %s %x ",currentThread->getName(), i, openFiles[i]->systemInfo->name.c_str(), (unsigned int)openFiles[i]->file);
         }
         else {printf("%d was null ", i);}
-        printf("\n");
-        if (fileSystem->threadOpenFiles[i]->file != NULL) {
-            printf("restore from %s: fs: file: %d %s %x ",currentThread->getName(), i, fileSystem->threadOpenFiles[i]->systemInfo->name.c_str(), (unsigned int)fileSystem->threadOpenFiles[i]->file);
-        }
-        else {printf("%d was null ", i);}
-        printf("\n");
-        fileSystem->threadOpenFiles[i]->file = openFiles[i]->file;
-        fileSystem->threadOpenFiles[i]->systemInfo = openFiles[i]->systemInfo;
+        printf("\n");*/
+        //fileSystem->threadOpenFiles[i]->file = openFiles[i]->file;
+        //fileSystem->threadOpenFiles[i]->systemInfo = openFiles[i]->systemInfo;
 
     }
     

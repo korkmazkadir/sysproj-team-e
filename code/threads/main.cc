@@ -175,6 +175,12 @@ main (int argc, char **argv)
         }
 #endif // NETWORK
     }
+    
+    //filesys
+    fileSystem->fsLock->Acquire();
+    printf("!!            do UserThreadExit from %s closing %s index %d\n", currentThread->getName(), currentThread->workingDirName->c_str(), currentThread->directoryFile); 
+    fileSystem->Close(currentThread->directoryFile);
+    fileSystem->fsLock->Release();
 
     currentThread->Finish ();	// NOTE: if the procedure "main" 
     // returns, then the program "nachos"

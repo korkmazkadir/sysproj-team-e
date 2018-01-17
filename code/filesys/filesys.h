@@ -95,6 +95,9 @@ class FileSystem {
                                                     // the disk, so initialize the directory
                                                     // and the bitmap of free blocks.
     ~FileSystem();
+    FileSystem(const FileSystem&) = delete;
+    FileSystem& operator =(const FileSystem&) = delete;
+    FileSystem(FileSystem&&) = delete;
     
     int Create(std::string fileName, int initialSize, bool isDir); // Create a file (UNIX creat)
                                                     
@@ -121,7 +124,7 @@ class FileSystem {
     int InitializeThreadWorkingDir(Thread *newThread);
 
     Lock *fsLock;
-    ThreadFileInfo *threadOpenFiles[10];               //copy of table in thread class containing 
+    //ThreadFileInfo *threadOpenFiles[10];               //copy of table in thread class containing 
     int directoryFile;		                // current directory -- list of 
                                             //indices referring to (global) openFiles table
     std::string *workingPath;

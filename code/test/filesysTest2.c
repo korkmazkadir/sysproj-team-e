@@ -3,7 +3,7 @@
 #define BUF_SIZE 15
 
 int main() {    
-    Mkdir("newDir2");
+    /*Mkdir("newDir2");
     Chdir("newDir2");
     Mkdir("newSubDir");
     Chdir("..");
@@ -18,9 +18,21 @@ int main() {
     Chdir("../..");
     _printf("chdir to ../.. (should lead to /) done!\n");
     List();
-    _printf("\n");
+    _printf("\n");*/
     
+    Create("loltxt");
+    OpenFileId wid = Open("loltxt");
+    OpenFileId rid = Open("loltxt");
+    Write("hello world!", 15, wid);
+    char buf[15];
+    Read(buf, 15, rid);
+    Close(wid);
+    Close(rid);
+    SynchPutString(buf);
+    Remove("loltxt");
+    List();
     
+    /*
     
     //sniper mkdir and rmdir (long distance)
     _printf("sniper mkdir and rmdir (long distance(very far(multiple directories awaaaay...)))\n");
@@ -43,6 +55,6 @@ int main() {
     Chdir("./newDir2/newSubDir");
     List();
     _printf("\n");
-    _printf("KILL CONFIRMED\n");
+    _printf("KILL CONFIRMED\n");*/
     return 0;
 }

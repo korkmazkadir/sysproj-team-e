@@ -100,12 +100,12 @@ FileSystem::FileSystem(bool format)
         openFiles[i]->toBeRemoved = 0;
         openFiles[i]->lck = new Lock("file lock");
     }
-    //allocate space for entries in threadOpenFiles[]
-    for (int i = 0; i < 10; i++) {
-        threadOpenFiles[i] = (ThreadFileInfo*) malloc(sizeof(struct S_threadFileInfo));
-        threadOpenFiles[i]->file = NULL;
-        threadOpenFiles[i]->systemInfo = NULL;
-    }    
+    //allocate space for entries in currentThread->openFiles[]
+    /*for (int i = 0; i < 10; i++) {
+        currentThread->openFiles[i] = (ThreadFileInfo*) malloc(sizeof(struct S_threadFileInfo));
+        currentThread->openFiles[i]->file = NULL;
+        currentThread->openFiles[i]->systemInfo = NULL;
+    }    */
     
     //set up synch
     fsLock = new Lock("fileSysLock");
@@ -155,11 +155,11 @@ FileSystem::FileSystem(bool format)
         openFiles[0]->name = "/";
         
         //add to thread table
-        threadOpenFiles[0]->file = new OpenFile(DirectorySector);
-        threadOpenFiles[0]->systemInfo = openFiles[0];
+        currentThread->openFiles[0]->file = new OpenFile(DirectorySector);
+        currentThread->openFiles[0]->systemInfo = openFiles[0];
         
-        threadOpenFiles[0]->systemInfo->nbOpens++;
-        printf("    FILESYS CREATION : ORIGINAL / OPENFILE IS %x\n", (unsigned int)threadOpenFiles[0]->file); 
+        currentThread->openFiles[0]->systemInfo->nbOpens++;
+        printf("    FILESYS CREATION : ORIGINAL / OPENFILE IS %x\n", (unsigned int)currentThread->openFiles[0]->file); 
         
         //add the two dirs . and ..
         directory->Add(".", DirectorySector, 1);
@@ -173,7 +173,7 @@ FileSystem::FileSystem(bool format)
 
         DEBUG('f', "Writing bitmap and directory back to disk.\n");
         freeMap->WriteBack(freeMapFile);	 // flush changes to disk
-        directory->WriteBack(threadOpenFiles[0]->file);
+        directory->WriteBack(currentThread->openFiles[0]->file);
         
         if (DebugIsEnabled('f')) {
             freeMap->Print();
@@ -196,13 +196,15 @@ FileSystem::FileSystem(bool format)
         openFiles[0]->name = "/";
         
         //add to thread table
-        threadOpenFiles[0]->file = new OpenFile(DirectorySector);
-        threadOpenFiles[0]->systemInfo = openFiles[0];
-        threadOpenFiles[0]->systemInfo->nbOpens++;
+        currentThread->openFiles[0]->file = new OpenFile(DirectorySector);
+        currentThread->openFiles[0]->systemInfo = openFiles[0];
+        currentThread->openFiles[0]->systemInfo->nbOpens++;
     }
         
     
     dbgChecks();
+    
+    printf(":::::    ::::::    ::::::::::    \n FILESYS CONSTRUCTIOON \n  :::::::  :::::::\n");
 }
 
 
@@ -211,7 +213,7 @@ FileSystem::~FileSystem() {
     for (int i = 0; i < 10; i++) {
         if (openFiles[i]->sector != -1) {
                 nbOpenFiles ++;
-                printf("xxxxx %s is still open\n", openFiles[i]->name.c_str());
+                printf("DESTRUCTOR %s is still open in system %d\n", openFiles[i]->name.c_str(), i);
         }
     }
     printf("FileSystem::~FileSystem : %d files still open at exit.\n", nbOpenFiles);
@@ -305,7 +307,7 @@ FileSystem::Create(std::string fileName, int initialSize, bool isDir)
         }
         return -1;
     }
-    OpenFile *dirFile = threadOpenFiles[directoryFile]->file;
+    OpenFile *dirFile = currentThread->openFiles[directoryFile]->file;
     if (dirFile == NULL) {
         printf("FileSystem::Create dirFile is NULL\n");
         //go back to initial dir
@@ -314,11 +316,11 @@ FileSystem::Create(std::string fileName, int initialSize, bool isDir)
         }
         return -1;
     }
-    printf("Create doing fetch from dirFile %s\n", threadOpenFiles[directoryFile]->systemInfo->name.c_str());
-    threadOpenFiles[directoryFile]->systemInfo->lck->Acquire();
+    //printf("Create doing fetch from dirFile %s\n", currentThread->openFiles[directoryFile]->systemInfo->name.c_str());
+    currentThread->openFiles[directoryFile]->systemInfo->lck->Acquire();
     directory->FetchFrom(dirFile);
-    threadOpenFiles[directoryFile]->systemInfo->lck->Release();
-    printf("Create done fetch from dirFile\n");
+    currentThread->openFiles[directoryFile]->systemInfo->lck->Release();
+    //printf("Create done fetch from dirFile\n");
 
     
 
@@ -418,18 +420,18 @@ FileSystem::Open(std::string fileName)
     int sector;
 
     DEBUG('f', "Opening file %s\n", name.c_str());
-    OpenFile *dirFile = threadOpenFiles[directoryFile]->file;
+    OpenFile *dirFile = currentThread->openFiles[directoryFile]->file;
     if (dirFile == NULL) {
-        printf("FileSystem::Open dirFile %d %s is null!\n", directoryFile, threadOpenFiles[directoryFile]->systemInfo->name.c_str()); 
+        printf("FileSystem::Open dirFile %d %s is null!\n", directoryFile, currentThread->openFiles[directoryFile]->systemInfo->name.c_str()); 
         //go back to initial dir
         if (!backTrackPath.empty()) {
             if (Chdir(backTrackPath) == "!") return -1;
         }
         return -1;
     }
-    threadOpenFiles[directoryFile]->systemInfo->lck->Acquire();
+    currentThread->openFiles[directoryFile]->systemInfo->lck->Acquire();
     directory->FetchFrom(dirFile);
-    threadOpenFiles[directoryFile]->systemInfo->lck->Release();
+    currentThread->openFiles[directoryFile]->systemInfo->lck->Release();
 
     sector = directory->Find(name.c_str()); 
     if (sector < 0) {	
@@ -445,7 +447,9 @@ FileSystem::Open(std::string fileName)
     
     
     //check if is already opened in system
+    printf("Open: looking for sector %d in global table\n", sector);
     for (i = 0; i < 10; i++) {
+        printf("sectors: %d", openFiles[i]->sector);
         int tmp = openFiles[i]->sector;
         if (sector == tmp) {
             break;
@@ -484,23 +488,24 @@ FileSystem::Open(std::string fileName)
     
     //add to thread table 
     //find free slot
-    for (i = 0; i < 10; i++) {
-        if (threadOpenFiles[i]->file == NULL) {
-            index = i;
+    int j;
+    for (j = 0; j < 10; j++) {
+        if (currentThread->openFiles[j]->file == NULL) {
+            index = j;
             break;
         }
     }
-    if (i == 10) {
+    if (j == 10) {
         printf("Filesystem Open: max files open. failed to open\n");
         return -1;
     }
-    threadOpenFiles[index]->systemInfo = openFiles[i];
-    threadOpenFiles[index]->systemInfo->nbOpens++;
-    threadOpenFiles[index]->systemInfo->lck->Acquire();
-    threadOpenFiles[index]->file = new OpenFile(sector);
-    threadOpenFiles[index]->systemInfo->lck->Release();
+    currentThread->openFiles[index]->systemInfo = openFiles[i];
+    currentThread->openFiles[index]->systemInfo->nbOpens++;
+    currentThread->openFiles[index]->systemInfo->lck->Acquire();
+    currentThread->openFiles[index]->file = new OpenFile(sector);
+    currentThread->openFiles[index]->systemInfo->lck->Release();
     printf("    Open: file %s %x nbopens =%d\n",
-            name.c_str(), (unsigned int)threadOpenFiles[index]->file, threadOpenFiles[index]->systemInfo->nbOpens);
+            name.c_str(), (unsigned int)currentThread->openFiles[index]->file, currentThread->openFiles[index]->systemInfo->nbOpens);
 
 
     //printf("(re-)Open: file %s %x nbopens =%d\n",name.c_str(), (unsigned int)openFiles[i]->file, openFiles[i]->nbOpens);
@@ -525,34 +530,34 @@ FileSystem::Open(std::string fileName)
 int
 FileSystem::Close(int index) {
     //check if is opened by current thread
-    if (threadOpenFiles[index]->file == NULL) {
+    if (currentThread->openFiles[index]->file == NULL) {
         printf("FileSystem::Close the file of index %d is not open in this thread\n", index);
         return -1;
     }
     //check if is open in system
-    if (threadOpenFiles[index]->systemInfo->sector == -1) {
-        printf("FileSystem::Close the file of index %d name %s is not open in the file system\n", index, threadOpenFiles[index]->systemInfo->name.c_str());
+    if (currentThread->openFiles[index]->systemInfo->sector == -1) {
+        printf("FileSystem::Close the file of index %d name %s is not open in the file system\n", index, currentThread->openFiles[index]->systemInfo->name.c_str());
         return -1;
     }
     
     //close for the thread
-    OpenFile *ofptr = threadOpenFiles[index]->file;
+    OpenFile *ofptr = currentThread->openFiles[index]->file;
     delete ofptr;
-    threadOpenFiles[index]->file = NULL;
+    currentThread->openFiles[index]->file = NULL;
     //update global info
-    threadOpenFiles[index]->systemInfo->nbOpens--;
+    currentThread->openFiles[index]->systemInfo->nbOpens--;
     
     printf("FileSystem::Close called on index %d, for file %s openfile %x, after close has %d remaining openers\n"
-    , index, threadOpenFiles[index]->systemInfo->name.c_str(), (unsigned int)ofptr, threadOpenFiles[index]->systemInfo->nbOpens);
+    , index, currentThread->openFiles[index]->systemInfo->name.c_str(), (unsigned int)ofptr, currentThread->openFiles[index]->systemInfo->nbOpens);
 
     
     //check if we were last one to have it open
-    if (threadOpenFiles[index]->systemInfo->nbOpens == 0) {
-        printf("last person to open File. Closing %d %s in filesys\n", index, threadOpenFiles[index]->systemInfo->name.c_str());
+    if (currentThread->openFiles[index]->systemInfo->nbOpens == 0) {
+        printf("last person to open File. Closing %d %s in filesys\n", index, currentThread->openFiles[index]->systemInfo->name.c_str());
         //no one else has this file open, do global Close
-        threadOpenFiles[index]->systemInfo->sector = -1;
-        if (threadOpenFiles[index]->systemInfo->toBeRemoved) {
-            Remove(threadOpenFiles[index]->systemInfo->name);
+        currentThread->openFiles[index]->systemInfo->sector = -1;
+        if (currentThread->openFiles[index]->systemInfo->toBeRemoved) {
+            Remove(currentThread->openFiles[index]->systemInfo->name);
         }
     }
     dbgChecks();
@@ -611,10 +616,10 @@ FileSystem::Remove(std::string fileName)
     int sector;
     
     directory = new Directory(NumDirEntries);
-    OpenFile *dirFile = threadOpenFiles[directoryFile]->file;
-    threadOpenFiles[directoryFile]->systemInfo->lck->Acquire();
+    OpenFile *dirFile = currentThread->openFiles[directoryFile]->file;
+    currentThread->openFiles[directoryFile]->systemInfo->lck->Acquire();
     directory->FetchFrom(dirFile);
-    threadOpenFiles[directoryFile]->systemInfo->lck->Release();
+    currentThread->openFiles[directoryFile]->systemInfo->lck->Release();
 
     sector = directory->Find(name.c_str());
     if (sector == -1) {
@@ -653,9 +658,9 @@ FileSystem::Remove(std::string fileName)
 
     freeMap->WriteBack(freeMapFile);		// flush to disk
     
-    threadOpenFiles[directoryFile]->systemInfo->lck->Acquire();
+    currentThread->openFiles[directoryFile]->systemInfo->lck->Acquire();
     directory->WriteBack(dirFile);        // flush to disk
-    threadOpenFiles[directoryFile]->systemInfo->lck->Release();
+    currentThread->openFiles[directoryFile]->systemInfo->lck->Release();
 
     delete fileHdr;
     delete directory;
@@ -680,10 +685,10 @@ FileSystem::List()
     std::string wdn = GetWorkingDir();
     printf("List: workingdir is:%s  dirname is:%s  Contents is:\n", wp.c_str(), wdn.c_str());
     Directory *directory = new Directory(NumDirEntries);
-    OpenFile *dirFile = threadOpenFiles[directoryFile]->file;
-    threadOpenFiles[directoryFile]->systemInfo->lck->Acquire();
+    OpenFile *dirFile = currentThread->openFiles[directoryFile]->file;
+    currentThread->openFiles[directoryFile]->systemInfo->lck->Acquire();
     directory->FetchFrom(dirFile); 
-    threadOpenFiles[directoryFile]->systemInfo->lck->Release();
+    currentThread->openFiles[directoryFile]->systemInfo->lck->Release();
     directory->List();
     delete directory;
     
@@ -691,11 +696,11 @@ FileSystem::List()
     for (int i = 0; i < 10; i++) {
         if (openFiles[i]->sector != -1) {
             nbOpenFiles ++;
-            printf("xxxxx %s is still open\n", openFiles[i]->name.c_str());
+            printf("xxxxx %s is still open at system level index %d\n", openFiles[i]->name.c_str(), i);
         }
     }
-    printf("FileSystem::~FileSystem : %d files still open at exit.\n", nbOpenFiles);
-    printf("List: Total files and dirs Open %d\n", nbOpenFiles);
+    printf("%s: %d files still open at exit.\n", __FUNCTION__, nbOpenFiles);
+    printf("%s: Total files and dirs Open %d\n", __FUNCTION__, nbOpenFiles);
 }
 
 //----------------------------------------------------------------------
@@ -727,10 +732,10 @@ FileSystem::Print()
     freeMap->FetchFrom(freeMapFile);
     freeMap->Print();
 
-    OpenFile *dirFile = threadOpenFiles[directoryFile]->file;
-    threadOpenFiles[directoryFile]->systemInfo->lck->Acquire();
+    OpenFile *dirFile = currentThread->openFiles[directoryFile]->file;
+    currentThread->openFiles[directoryFile]->systemInfo->lck->Acquire();
     directory->FetchFrom(dirFile);        // flush to disk
-    threadOpenFiles[directoryFile]->systemInfo->lck->Release();
+    currentThread->openFiles[directoryFile]->systemInfo->lck->Release();
     directory->Print();
 
     delete bitHdr;
@@ -783,10 +788,10 @@ FileSystem::Mkdir(const char* dirName) {
     //get relevant info on our current directory
     printf("relevant info on our current directory\n");
     Directory *currentDir = new Directory(NumDirEntries);
-    OpenFile *dirFile = threadOpenFiles[directoryFile]->file;
-    threadOpenFiles[directoryFile]->systemInfo->lck->Acquire();
+    OpenFile *dirFile = currentThread->openFiles[directoryFile]->file;
+    currentThread->openFiles[directoryFile]->systemInfo->lck->Acquire();
     currentDir->FetchFrom(dirFile);
-    threadOpenFiles[directoryFile]->systemInfo->lck->Release();
+    currentThread->openFiles[directoryFile]->systemInfo->lck->Release();
 
     int cDSector = dirFile->getSector();
     if (cDSector < 0) {
@@ -827,7 +832,7 @@ FileSystem::Mkdir(const char* dirName) {
         }
         return -1;
     }
-    OpenFile *newDirFile = threadOpenFiles[index]->file;
+    OpenFile *newDirFile = currentThread->openFiles[index]->file;
     newDir->WriteBack(newDirFile);
     Close(index);
     
@@ -880,10 +885,10 @@ FileSystem::Rmdir(const char* dirName) {
         }
         return -1;
     }
-    OpenFile *rmDirFile = threadOpenFiles[index]->file;
-    threadOpenFiles[index]->systemInfo->lck->Acquire();
+    OpenFile *rmDirFile = currentThread->openFiles[index]->file;
+    currentThread->openFiles[index]->systemInfo->lck->Acquire();
     rmDir->FetchFrom(rmDirFile);
-    threadOpenFiles[index]->systemInfo->lck->Release();
+    currentThread->openFiles[index]->systemInfo->lck->Release();
     Close(index);
     
     //check dir is empty
@@ -973,60 +978,60 @@ FileSystem::GetWorkingDir() {
 
 int 
 FileSystem::ReadAt(char *buffer, int numBytes, int pos, int index) {
-    OpenFile *ofid = threadOpenFiles[index]->file;
+    OpenFile *ofid = currentThread->openFiles[index]->file;
     if (ofid == NULL) {
         printf("Thread %s does not have this file Open: cannot read\n", currentThread->getName());
         return -1;
     }
-    threadOpenFiles[index]->systemInfo->lck->Acquire();
+    currentThread->openFiles[index]->systemInfo->lck->Acquire();
     int result = ofid->ReadAt(buffer, numBytes, pos);
-    threadOpenFiles[index]->systemInfo->lck->Release();
+    currentThread->openFiles[index]->systemInfo->lck->Release();
     return result;
 }
 
 int 
 FileSystem::WriteAt(char *buffer, int numBytes, int pos, int index) {
-    OpenFile *ofid = threadOpenFiles[index]->file;
+    OpenFile *ofid = currentThread->openFiles[index]->file;
     if (ofid == NULL) {
         printf("Thread %s does not have this file Open: cannot Write\n", currentThread->getName());
         return -1;
     }
-    threadOpenFiles[index]->systemInfo->lck->Acquire();
+    currentThread->openFiles[index]->systemInfo->lck->Acquire();
     int result = ofid->WriteAt(buffer, numBytes, pos);
-    threadOpenFiles[index]->systemInfo->lck->Release();
+    currentThread->openFiles[index]->systemInfo->lck->Release();
     return result;
 }
 
 
 int
 FileSystem::Read(char *buffer, int numBytes, int index) {
-    OpenFile *ofid = threadOpenFiles[index]->file;
+    OpenFile *ofid = currentThread->openFiles[index]->file;
     if (ofid == NULL) {
         printf("Thread %s does not have this file Open: cannot read\n", currentThread->getName());
         return -1;
     }
-    threadOpenFiles[index]->systemInfo->lck->Acquire();
+    currentThread->openFiles[index]->systemInfo->lck->Acquire();
     int result = ofid->Read(buffer, numBytes);
-    threadOpenFiles[index]->systemInfo->lck->Release();
+    currentThread->openFiles[index]->systemInfo->lck->Release();
     return result;
 }
 
 int
 FileSystem::Write(char *buffer, int numBytes, int index) {
-    OpenFile *ofid = threadOpenFiles[index]->file;
+    OpenFile *ofid = currentThread->openFiles[index]->file;
     if (ofid == NULL) {
         printf("Thread %s does not have this file Open: cannot Write\n", currentThread->getName());
         return -1;
     }
-    threadOpenFiles[index]->systemInfo->lck->Acquire();
+    currentThread->openFiles[index]->systemInfo->lck->Acquire();
     int result = ofid->Write(buffer, numBytes);
-    threadOpenFiles[index]->systemInfo->lck->Release();
+    currentThread->openFiles[index]->systemInfo->lck->Release();
     return result;
 }
 
 OpenFile *
 FileSystem::getOpenFile(int index) {
-    return threadOpenFiles[index]->file;
+    return currentThread->openFiles[index]->file;
 }
 
 //to be called by creator thread when it is in the initial working dir of new thread
@@ -1035,23 +1040,28 @@ int
 FileSystem::InitializeThreadWorkingDir(Thread *newThread) {
     printf("InitThrdWD called from %s for %s\n", currentThread->getName(), newThread->getName());
     int index, i;
-    std::string name(*(newThread->workingDirName));
-    if (name == "/") {
+    std::string fileName(*(newThread->workingDirName));
+    std::string name("../");
+    if (fileName == "/") {
         name = ".";
     }
+    else {
+        name.append(fileName);
+    }
+    printf("initThrdWD name of dir is %s, looking for it from %s\n", name.c_str(), fileName.c_str());
     Directory *directory = new Directory(NumDirEntries);
     int sector;
 
-    OpenFile *dirFile = threadOpenFiles[directoryFile]->file;
+    OpenFile *dirFile = currentThread->openFiles[directoryFile]->file;
     if (dirFile == NULL) {
         printf("FileSystem::initThrdWd dirFile %d %s is null! sector is %d \n", 
-        directoryFile, threadOpenFiles[directoryFile]->systemInfo->name.c_str(),
-        threadOpenFiles[directoryFile]->systemInfo->sector); 
+        directoryFile, currentThread->openFiles[directoryFile]->systemInfo->name.c_str(),
+        currentThread->openFiles[directoryFile]->systemInfo->sector); 
         return -1;
     }
-    threadOpenFiles[directoryFile]->systemInfo->lck->Acquire();
+    currentThread->openFiles[directoryFile]->systemInfo->lck->Acquire();
     directory->FetchFrom(dirFile);
-    threadOpenFiles[directoryFile]->systemInfo->lck->Release();
+    currentThread->openFiles[directoryFile]->systemInfo->lck->Release();
 
     sector = directory->Find(name.c_str()); 
     if (sector < 0) {	
@@ -1107,10 +1117,10 @@ FileSystem::InitializeThreadWorkingDir(Thread *newThread) {
         printf("Filesystem Open: max files open. failed to open\n");
         return -1;
     }*/
-    if (newThread->openFiles[0]->file != NULL) {
+    /*if (newThread->openFiles[0]->file != NULL) {
         printf("initThrdWd new threads table is not empty...\n");
         return -1;
-    }
+    }*/
     index = 0;
     newThread->openFiles[index]->systemInfo = openFiles[i];
     newThread->openFiles[index]->systemInfo->nbOpens++;
