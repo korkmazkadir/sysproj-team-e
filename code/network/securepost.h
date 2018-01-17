@@ -15,10 +15,11 @@ class MailHeaderSecure {
   public:
     MailBoxAddressSecure to;      // Destination mail box
     MailBoxAddressSecure from;    // Mail box to reply to
-    unsigned length;        // Bytes of message data (excluding the 
+    //unsigned length;        // Bytes of message data (excluding the 
                 // mail header)
     int segments;
     unsigned checksum;
+    int segNum;
     int ACK;
     int SYN;
     int FIN;
@@ -37,6 +38,7 @@ class Connection {
 #define MAXREEMISSIONS 5
 #define HANDSHAKEREQUESTBOX 0
 #define HANDSHAKEANSWERBOX 1
+#define SIZEOFSEGMENT 6
 
 
 // The following class defines the format of an incoming/outgoing 
@@ -126,7 +128,7 @@ public:
     void CheckTimeout();
 
     int SendMessageWithAck(PacketHeader pH, MailHeaderSecure mH, PacketHeader *inPH, 
-        MailHeaderSecure *inMH, const char* outMessage, char* inMessage);
+        MailHeaderSecure *inMH, char* outMessage, char* inMessage);
 
     int PerformHandshake(int dest);
 
@@ -148,6 +150,8 @@ public:
 
     int AcceptHandshake();
     int RespondCloseHandshake(Connection* con);
+
+    char** GetSegments(char *message, int *segQty);
 
 
 private:

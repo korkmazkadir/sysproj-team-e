@@ -7,6 +7,7 @@
 #include <iostream>
 #include <sstream>
 #include <cstring>
+#include <cmath>
 
 const char* HANDSHAKEMESSAGE = "handshaking";
 const char* ACK = "ack";
@@ -51,11 +52,13 @@ Connection::Reset()
 
 MailSecure::MailSecure(PacketHeader pktH, MailHeaderSecure mailH, char *msgData)
 {
-    ASSERT(mailH.length <= MaxMailSizeSecure);
+    //ASSERT(mailH.length <= MaxMailSizeSecure);
+    //printf("msgData: %s with len: %d\n", msgData, strlen(msgData));
+    ASSERT(strlen(msgData) <= MaxMailSizeSecure);
 
     pktHdr = pktH;
     mailHdr = mailH;
-    bcopy(msgData, data, mailHdr.length);
+    bcopy(msgData, data, strlen(msgData));
 }
 
 //----------------------------------------------------------------------
@@ -142,8 +145,8 @@ MailBoxSecure::~MailBoxSecure()
 static void 
 PrintHeader(PacketHeader pktHdr, MailHeaderSecure mailHdr)
 {
-    printf("From (%d, %d) to (%d, %d) bytes %d\n",
-            pktHdr.from, mailHdr.from, pktHdr.to, mailHdr.to, mailHdr.length);
+    printf("From (%d, %d) to (%d, %d)\n",
+            pktHdr.from, mailHdr.from, pktHdr.to, mailHdr.to);
 }
 
 //----------------------------------------------------------------------
@@ -185,7 +188,6 @@ MailBoxSecure::Put(PacketHeader pktHdr, MailHeaderSecure mailHdr, char *data)
 void 
 MailBoxSecure::Get(PacketHeader *pktHdr, MailHeaderSecure *mailHdr, char *data, bool timeO) 
 { 
-
     DEBUG('n', "Waiting for mail in MailBoxSecure\n");
     MailSecure *mail;
 
@@ -208,13 +210,13 @@ MailBoxSecure::Get(PacketHeader *pktHdr, MailHeaderSecure *mailHdr, char *data, 
     *pktHdr = mail->pktHdr;
     *mailHdr = mail->mailHdr;
 
-    mailHdr->segments = 1;
+    //mailHdr->segments = 1;
 
     if (DebugIsEnabled('n')) {
     printf("Got mail from MailBoxSecure: ");
     PrintHeader(*pktHdr, *mailHdr);
     }
-    bcopy(mail->data, data, mail->mailHdr.length);
+    bcopy(mail->data, data, SIZEOFSEGMENT);
                     // copy the message data into
                     // the caller's buffer
     delete mail;            // we've copied out the stuff we
@@ -357,7 +359,7 @@ SecurePost::PostalDelivery()
 
     // check that arriving message is legal!
     ASSERT(0 <= mailHdr.to && mailHdr.to < numBoxes);
-    ASSERT(mailHdr.length <= MaxMailSizeSecure);
+    ASSERT(strlen(buffer) <= MaxMailSizeSecure);
 
     // put into MailBoxSecure
     //printf("Got mail in box %d\n", mailHdr.to);
@@ -374,16 +376,30 @@ SecurePost::PostalDelivery()
 
 int
 SecurePost::SendMessageWithAck(PacketHeader pH, MailHeaderSecure mH, PacketHeader *inPH, 
-    MailHeaderSecure *inMH, const char* outMessage, char* inMessage)
+    MailHeaderSecure *inMH, char* outMessage, char* inMessage)
 {
-    for(int i = 0; i < MAXREEMISSIONS; i++) {
-        //printf("Attempt: %d\n", i);
-        Send(pH, mH, outMessage);
+    int segmentQty = 0;
+    char **segments = GetSegments(outMessage, &segmentQty);
+    mH.segments = segmentQty;
 
-        //Receive hanshake ack
-        Receive(mH.from, inPH, inMH, inMessage, true);
+    //printf("Cant of segments in send message with ack %d\n", mH.segments);
+    for(int j = 0; j < segmentQty; j++) {
+        mH.segNum = j;
+        for(int i = 0; i < MAXREEMISSIONS; i++) {
+            //printf("Size of package sending: %d\n", strlen(segments[j]));
+            Send(pH, mH, segments[j]);
 
-        if(inMH->segments != -1) return true;
+            //Receive hanshake ack
+            Receive(mH.from, inPH, inMH, inMessage, true);
+
+            if(inMH->segments != -1) {
+                //printf("Received ack\n");
+                if(j == (segmentQty - 1)) return true;
+                else break;
+            }
+        }
+
+        if(inMH->segments == -1) break; //We couldn't receive this segment
     }
 
     return false;
@@ -396,6 +412,7 @@ SecurePost::SendMessageWithAck(PacketHeader pH, MailHeaderSecure mH, PacketHeade
 
 int
 SecurePost::PerformHandshake(int dest) {
+    //printf("started perform handshake\n");
     char buffer[MaxMailSizeSecure];
     PacketHeader outPktHdr, inPktHdr;
     MailHeaderSecure outMailHdr, inMailHdr;
@@ -405,20 +422,28 @@ SecurePost::PerformHandshake(int dest) {
 
     std::stringstream str;
     str << avBox;
-    const char* message = str.str().c_str();
+    char* message = (char*)str.str().c_str();
+    //char messageB[SIZEOFSEGMENT];
+
+    //bcopy(message, messageB, strlen(message));
+
+   // printf("Message sending in handshaek: %s had strlen %d\n", messageB, strlen(message));
 
     //Send a synch message
     outPktHdr.to = dest;
     outPktHdr.from = netAddr;
     outMailHdr.to = HANDSHAKEREQUESTBOX;
     outMailHdr.from = HANDSHAKEANSWERBOX;
-    outMailHdr.length = strlen(message) + 1;
+    //outMailHdr.length = strlen(message) + 1;
     outMailHdr.ACK = 0;
     outMailHdr.SYN = 1;
+
+
 
     bool result = SendMessageWithAck(outPktHdr, outMailHdr, &inPktHdr, &inMailHdr, message, buffer);
 
     if(!result || inMailHdr.ACK != 1 || inMailHdr.SYN != 1) { //We did't get what we expected
+        printf("Not what i expected in handshaek \n");
         return -1;
     }
 
@@ -452,6 +477,7 @@ SecurePost::PerformHandshake(int dest) {
 int
 SecurePost::AcceptHandshake() {
     //printf("Started accepting handshake\n");
+    fflush(stdout);
     char buffer[MaxMailSizeSecure];
     PacketHeader outPktHdr, inPktHdr;
     MailHeaderSecure outMailHdr, inMailHdr;
@@ -470,14 +496,17 @@ SecurePost::AcceptHandshake() {
 
     std::stringstream str;
     str << avBox;
-    const char* message = str.str().c_str();
+    char* message = (char*)str.str().c_str();
+    //char messageB[SIZEOFSEGMENT];
+
+    //bcopy(message, messageB, strlen(message));
 
     //Send a synch message
     outPktHdr.to = inPktHdr.from;
     outPktHdr.from = netAddr;
     outMailHdr.to = inMailHdr.from;
     outMailHdr.from = HANDSHAKEANSWERBOX;
-    outMailHdr.length = strlen(message) + 1;
+    //outMailHdr.length = strlen(message) + 1;
     outMailHdr.ACK = 1;
     outMailHdr.SYN = 1;
 
@@ -504,14 +533,15 @@ SecurePost::RespondCloseHandshake(Connection *con) {
     char buffer[MaxMailSizeSecure];
     PacketHeader outPktHdr, inPktHdr;
     MailHeaderSecure outMailHdr, inMailHdr;
-    const char* message = "fin";
+    char message[SIZEOFSEGMENT] = "fin";
 
     //Send a FIN message
     outPktHdr.to = con->remoteAddr;
     outPktHdr.from = netAddr;
     outMailHdr.to = con->remoteBox;
     outMailHdr.from = con->localBox;
-    outMailHdr.length = strlen(message) + 1;
+    //outMailHdr.length = strlen(message) + 1;
+    outMailHdr.segments = 1;
     outMailHdr.ACK = 1;
     outMailHdr.SYN = 0;
     outMailHdr.FIN = 0;
@@ -559,14 +589,15 @@ SecurePost::PerformCloseHandshake(Connection* con) {
     char buffer[MaxMailSizeSecure];
     PacketHeader outPktHdr, inPktHdr;
     MailHeaderSecure outMailHdr, inMailHdr;
-    const char* message = "fin";
+    char message[SIZEOFSEGMENT] = "fin";
 
     //Send a FIN message
     outPktHdr.to = con->remoteAddr;
     outPktHdr.from = netAddr;
     outMailHdr.to = con->remoteBox;
     outMailHdr.from = con->localBox;
-    outMailHdr.length = strlen(message) + 1;
+    //outMailHdr.length = strlen(message) + 1;
+    outMailHdr.segments = 1;
     outMailHdr.ACK = 0;
     outMailHdr.SYN = 0;
     outMailHdr.FIN = 1;
@@ -634,7 +665,8 @@ SecurePost::ReceiveSecure(int org, int timeout, char *buff) {
     char buffer[MaxMailSizeSecure];
     PacketHeader outPktHdr, inPktHdr;
     MailHeaderSecure outMailHdr, inMailHdr;
-    const char* ack = "ack";
+    char ack[SIZEOFSEGMENT] = "ack\0";
+    //char **segments = GetSegments(message, &segmentQty);
     //printf("Origin: %d\n", org);
 
     conLock->Acquire();
@@ -649,35 +681,105 @@ SecurePost::ReceiveSecure(int org, int timeout, char *buff) {
     outPktHdr.from = netAddr;
     outMailHdr.to = con->remoteBox;
     outMailHdr.from = con->localBox;
-    outMailHdr.length = strlen(ack) + 1;
+    //outMailHdr.length = strlen(ack) + 1;
     outMailHdr.ACK = 1;
+    outMailHdr.segments = 1;
+
+    
+    
 
     //printf("Connection got: %d\n", con->remoteAddr);
     
 
     Receive(outMailHdr.from, &inPktHdr, &inMailHdr, buffer, timeout);
+    int from = inPktHdr.from;
+
+    int completeBufferSize = SIZEOFSEGMENT*inMailHdr.segments;
+    char *completeBuffer = (char*)malloc(sizeof(char)*completeBufferSize);
+    //printf("Number of segments rceinving %d\n", inMailHdr.segments);
 
     if(inMailHdr.segments == -1) {
         conLock->Release();
         //printf("Received bad message in secure post secure receive\n");
         return -1;
-    }
-    //printf("Received message secure with message %s in box %d\n", buffer, org);
-
-    if(inMailHdr.FIN == 1) {
+    } else if(inMailHdr.FIN == 1) {
         RespondCloseHandshake(con);
         conLock->Release();
         return -2;
+    } else if(inMailHdr.segments > 1){
+        bcopy(buffer, completeBuffer, SIZEOFSEGMENT);
+        completeBuffer += SIZEOFSEGMENT;
+        Send(outPktHdr, outMailHdr, ack);
+
+        //Receive the other packages
+        for(int i = 1; i < inMailHdr.segments; i++) {
+            Receive(outMailHdr.from, &inPktHdr, &inMailHdr, buffer, timeout);
+            if(inMailHdr.segNum == i && from == inPktHdr.from) {
+                Send(outPktHdr, outMailHdr, ack);
+                bcopy(buffer, completeBuffer, SIZEOFSEGMENT);
+                //printf("cBuffer in segment %d: %s\n", i, completeBuffer);
+                completeBuffer += SIZEOFSEGMENT;
+            } else if(inMailHdr.segNum < i) {
+                printf("The message received is previous in the message, try again\n");
+                //i--;
+                return false;
+            } else {
+                printf("The message received is further in the message\n");
+                conLock->Release(); //We skipped a package or not? maybe it's father on the list
+                return false;
+            }
+            
+        }
+        completeBuffer -= completeBufferSize;
+    } else {
+        if(inMailHdr.FIN == 1) {
+            RespondCloseHandshake(con);
+            conLock->Release();
+            return -2;
+        }
+
+        bcopy(buffer, completeBuffer, SIZEOFSEGMENT);
+        Send(outPktHdr, outMailHdr, ack);
+
     }
+    //printf("Received message secure with message %s in box %d\n", buffer, org);
 
+    
     conLock->Release();
-
-
-    Send(outPktHdr, outMailHdr, ack);
-
-    bcopy(buffer, buff, inMailHdr.length);
+    
+    bcopy(completeBuffer, buff, completeBufferSize);
+    buff[completeBufferSize] = '\0';
+    //printf("Received message with complete buffer: %s\n", completeBuffer);
 
     return true;
+}
+
+char**
+SecurePost::GetSegments(char *message, int *segQty) {
+    int sizeOfMessage = strlen(message);
+    //printf("Cant of segments %f\n", (float)sizeOfMessage / SIZEOFSEGMENT);
+    *segQty = (int)ceil((float)sizeOfMessage / SIZEOFSEGMENT);
+    //printf("Actual cant of segments: %d\n", *segQty);
+    fflush(stdout);
+    char** segs = (char**)malloc(sizeof(char*)*(*segQty));
+
+    for(int i = 0; i < *segQty; i++) {
+        char *segmentT = (char*)malloc(SIZEOFSEGMENT*sizeof(char));
+
+        if((i+1) != *segQty) bcopy(message, segmentT, SIZEOFSEGMENT);
+        else {
+            int rest = sizeOfMessage % SIZEOFSEGMENT;
+            fflush(stdout);
+            bcopy(message, segmentT, rest);
+
+            segmentT[rest] = '\0';
+        }
+
+        segs[i] = segmentT;
+
+        message += SIZEOFSEGMENT;
+    }
+    return segs;
 }
 
 int
@@ -685,6 +787,11 @@ SecurePost::SendSecure(char *message, int conn) {
     char buffer[MaxMailSizeSecure];
     PacketHeader outPktHdr, inPktHdr;
     MailHeaderSecure outMailHdr, inMailHdr;
+    /*int segmentQty = 0;
+    char **segments = GetSegments(message, &segmentQty);*/
+
+    //printf("Cantidad de segmentos: %d\n", segmentQty);
+
 
     conLock->Acquire();
     Connection* con = GetConnection(conn);
@@ -694,14 +801,16 @@ SecurePost::SendSecure(char *message, int conn) {
     outPktHdr.from = netAddr;
     outMailHdr.to = con->remoteBox;
     outMailHdr.from = con->localBox;
-    outMailHdr.length = strlen(message) + 1;
+    //outMailHdr.length = strlen(message) + 1;
+    conLock->Release();
+
     outMailHdr.ACK = 0;
     outMailHdr.SYN = 0;
     outMailHdr.FIN = 0;
-
-    conLock->Release();
+    //outMailHdr.segments = segmentQty;
 
     int result = SendMessageWithAck(outPktHdr, outMailHdr, &inPktHdr, &inMailHdr, message, buffer);
+
     return result;
 }
 
@@ -728,16 +837,16 @@ SecurePost::Send(PacketHeader pktHdr, MailHeaderSecure mailHdr, const char* data
     printf("Post send: ");
     PrintHeader(pktHdr, mailHdr);
     }
-    ASSERT(mailHdr.length <= MaxMailSizeSecure);
+    ASSERT(strlen(data) <= MaxMailSizeSecure);
     ASSERT(0 <= mailHdr.to && mailHdr.to < numBoxes);
     
     // fill in pktHdr, for the Network layer
     pktHdr.from = netAddr;
-    pktHdr.length = mailHdr.length + sizeof(MailHeaderSecure);
+    pktHdr.length = SIZEOFSEGMENT + sizeof(MailHeaderSecure);
 
     // concatenate MailHeaderSecure and data
     bcopy(&mailHdr, buffer, sizeof(MailHeaderSecure));
-    bcopy(data, buffer + sizeof(MailHeaderSecure), mailHdr.length);
+    bcopy(data, buffer + sizeof(MailHeaderSecure), SIZEOFSEGMENT);
 
     sendLock->Acquire();        // only one message can be sent
                     // to the network at any one time
@@ -769,13 +878,17 @@ void
 SecurePost::Receive(int box, PacketHeader *pktHdr, 
                 MailHeaderSecure *mailHdr, char* data, bool timeout)
 {
+        //printf("Started receiving!!!\n");
         ASSERT((box >= 0) && (box < numBoxes));
 
         boxes[box].Get(pktHdr, mailHdr, data, timeout);
         
         if(mailHdr->segments != -1) {
-            ASSERT(mailHdr->length <= MaxMailSizeSecure);
+            //ASSERT(mailHdr->length <= MaxMailSizeSecure);
+            ASSERT(strlen(data) <= MaxMailSizeSecure);
         }
+
+        //printf("Stopped receiving!!!\n");
 }
 
 //----------------------------------------------------------------------

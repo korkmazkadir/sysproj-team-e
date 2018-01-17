@@ -21,7 +21,7 @@ int main() {
 		i++;
 	}
 
-	result = Send("hey", con);
+	result = Send("heyapapauya", con);
 
 	if(!result) {
 		SynchPutString("Failed sending first package\n");

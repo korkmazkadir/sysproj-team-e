@@ -5,6 +5,7 @@ sem_t listSem;
 void acceptThread(void *ptr) {
     int * l = (int *)ptr;
     while(1) {
+        //SynchPutString("ACCEPTING HANDSHAKE\n");
         int con = Accept();
         if(con != -1) {
             for(int i = 0; i < 10; i++) {

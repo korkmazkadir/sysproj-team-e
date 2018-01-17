@@ -46,7 +46,8 @@ MailTest(int farAddr)
         // To: destination machine, mailbox 0
         // From: our machine, reply to: mailbox 1
         outPktHdr.to = farAddr;     
-        outMailHdr.length = strlen(data) + 1;
+        //outMailHdr.length = strlen(data) + 1;
+        outMailHdr.segments = 1;
 
 
         for(int i = 0; i < 3; i+=2) {
@@ -69,7 +70,8 @@ MailTest(int farAddr)
                outPktHdr.to = inPktHdr.from;
                outMailHdr.to = inMailHdr.from;
                outMailHdr.from = i+1;
-               outMailHdr.length = strlen(ack) + 1;
+               //outMailHdr.length = strlen(ack) + 1;
+               outMailHdr.segments = 1;
                postOffice->Send(outPktHdr, outMailHdr, ack);
            } else {
                 printf("Timeout from %d\n", i);
@@ -97,15 +99,16 @@ RingTopology(int myID, int n) {
 
     PacketHeader outPktHdr, inPktHdr;
     MailHeaderSecure outMailHdr, inMailHdr;
-    const char *data = "Tokensito";
+    char data[SIZEOFSEGMENT] = "Token";
     char buffer[MaxMailSizeSecure];
     int next = (myID + 1) % n;
     
     if(myID == 0) {
         outPktHdr.to = next;     
-        outMailHdr.length = strlen(data) + 1;
+        //outMailHdr.length = strlen(data) + 1;
         outMailHdr.to = 0;
         outMailHdr.from = 1;
+        outMailHdr.segments = 1;
 
         // Send the token
         postOffice->Send(outPktHdr, outMailHdr, data);
@@ -127,9 +130,10 @@ RingTopology(int myID, int n) {
         fflush(stdout);
 
         outPktHdr.to = next;     
-        outMailHdr.length = inMailHdr.length;
+        //outMailHdr.length = inMailHdr.length;
         outMailHdr.to = 0;
         outMailHdr.from = 1;
+        outMailHdr.segments = 1;
 
         // Send the token
         postOffice->Send(outPktHdr, outMailHdr, buffer);
@@ -145,8 +149,8 @@ MailTest0(int farAddr)
 {
     PacketHeader outPktHdr, inPktHdr;
     MailHeaderSecure outMailHdr, inMailHdr;
-    const char *data = "Hello there!";
-    const char *ack = "Got it!";
+    char data[SIZEOFSEGMENT] = "Hello";
+    char ack[SIZEOFSEGMENT] = "Gotit";
     char buffer[MaxMailSizeSecure];
 
     // construct packet, mail header for original message
@@ -155,7 +159,8 @@ MailTest0(int farAddr)
     outPktHdr.to = farAddr;     
     outMailHdr.to = 0;
     outMailHdr.from = 1;
-    outMailHdr.length = strlen(data) + 1;
+    outMailHdr.segments = 1;
+    //outMailHdr.length = strlen(data) + 1;
 
     // Send the first message
     postOffice->Send(outPktHdr, outMailHdr, data); 
@@ -169,7 +174,8 @@ MailTest0(int farAddr)
     // in the message that just arrived
     outPktHdr.to = inPktHdr.from;
     outMailHdr.to = inMailHdr.from;
-    outMailHdr.length = strlen(ack) + 1;
+    outMailHdr.segments = 1;
+    //outMailHdr.length = strlen(ack) + 1;
     postOffice->Send(outPktHdr, outMailHdr, ack); 
 
     // Wait for the ack from the other machine to the first message we sent.
