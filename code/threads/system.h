@@ -58,8 +58,13 @@ extern Machine *machine;	// user program memory and registers
 #endif
 
 #ifdef FILESYS_NEEDED		// FILESYS or FILESYS_STUB
+
+#define DEVICE_FILE_FOLDER "./dev"
+#define CONSOLE_FILE_PATH "./dev/console"
+
 #include "filesys.h"
 extern FileSystem *fileSystem;
+extern OpenFile *consoleDeviceFile;
 #endif
 
 #ifdef FILESYS

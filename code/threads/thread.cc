@@ -39,6 +39,8 @@ Thread::Thread (const char *threadName):
     stackTop = NULL;
     stack = NULL;
     status = JUST_CREATED;
+    openFileTable = new ThreadOpenFileTable();
+    
 #ifdef USER_PROGRAM
     space = NULL;
     // FBT: Need to initialize special registers of simulator to 0
@@ -160,6 +162,14 @@ void Thread::SetWorkingDirectory(OpenFile *workingDirectoryFile_){
 
 OpenFile * Thread::GetWorkingDirectory(){
     return this->workingDirectoryFile;
+}
+
+ThreadOpenFileTable * Thread::getOpenFileTable(){
+    return this->openFileTable;
+}
+
+void Thread::setOpenFileTable(ThreadOpenFileTable *table){
+    this->openFileTable = table;
 }
 
 //----------------------------------------------------------------------

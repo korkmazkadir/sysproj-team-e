@@ -105,6 +105,8 @@ void cmd_run(){
     int tid = ForkExec(_parameter);
     if(_backgroundProcess == 0){
         UserThreadJoin(tid);
+    }else{
+        _printf("Running at background. PID : %d\n",tid);
     }
 }
 
@@ -211,7 +213,7 @@ int main() {
     while (1 == 1) {
         resetValues();
         printCursor();
-        SynchGetString(command,MAX_STRING_SIZE);
+        _scanf("%s",command);
         decodeCommand(command);
         handleCommand();
     }

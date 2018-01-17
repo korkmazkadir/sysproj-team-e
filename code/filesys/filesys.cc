@@ -299,7 +299,7 @@ FileSystem::CreateDirectory(const char *name){
     std::string fileName = this->getFileName(name);
     OpenFile *currentDirectoryFile = this->handlePath(name);
     
-    printf("File name is %s\n",fileName.c_str());
+    printf("Creating File. Name is %s\n",fileName.c_str());
     
     Directory *directory;
     BitMap *freeMap;
@@ -374,8 +374,6 @@ int FileSystem::ChangeDirectory(const char *name){
     
     directory->FetchFrom(currentDirectoryFile);
     int sectorNumber  = directory->Find(fileName.c_str());
-    
-    printf("sector number of directory %d \n", sectorNumber);
     
     if(sectorNumber >= 0){
         directoryFile = new OpenFile(sectorNumber);

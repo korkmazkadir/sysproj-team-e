@@ -175,6 +175,9 @@ Initialize (int argc, char **argv)
 
 #ifdef FILESYS_NEEDED
     fileSystem = new FileSystem (format);
+    //fileSystem->CreateDirectory(DEVICE_FILE_FOLDER);
+    //fileSystem->CreateUserFile(CONSOLE_FILE_PATH);
+    //syncConsole = new SynchConsole((char*)CONSOLE_FILE_PATH, (char*)CONSOLE_FILE_PATH);
 #endif
 
 #ifdef NETWORK
@@ -248,7 +251,7 @@ int openFile(char *name){
     if(openFileTable->getNumAvailable() == 0){
         return -1;
     }
-    
+
     OpenFile *file = fileSystem->Open(name);
     if(file == NULL){
         bool result = fileSystem->CreateUserFile(name);
@@ -260,14 +263,34 @@ int openFile(char *name){
     file = fileSystem->Open(name);
     
     int fileDescriptor = openFileTable->AddEntry(file,name,currentThread->Tid(), currentThread->getName());
-    return fileDescriptor;
+    ThreadOpenFileTable *perThreadTable = currentThread->getOpenFileTable();
+    int descriptor = perThreadTable->AddEntry(fileDescriptor,NORMAL_FILE);
+    
+    return descriptor;
 }
     
 
 void writeToFile (char *buffer, int size, int fileDescriptor){
-    OpenFile *file = openFileTable->getFile(fileDescriptor);
-    Lock *lock = openFileTable->getLock(fileDescriptor);
+    
+    ThreadOpenFileTable *perThreadTable = currentThread->getOpenFileTable();
+
+    int systemFileDescriptor = perThreadTable->getFileDescriptor(fileDescriptor);
+
+    if(systemFileDescriptor == -1){
+        //printf("Write No file :( \n");
+        return;
+    }
+    
+    //If it is console than write to console
+    if(perThreadTable->getFileType(fileDescriptor) == CONSOLE){
+        syncConsole->SynchPutString(buffer,size);
+        return;
+    }
+
+    OpenFile *file = openFileTable->getFile(systemFileDescriptor);
+    Lock *lock = openFileTable->getLock(systemFileDescriptor);
     lock->Acquire();
+    
     
     file->Write(buffer,size);
     
@@ -275,11 +298,29 @@ void writeToFile (char *buffer, int size, int fileDescriptor){
 }
 
 int readFromFile (char *buffer, int size, int fileDescriptor){
-    OpenFile *file = openFileTable->getFile(fileDescriptor);
-    Lock *lock = openFileTable->getLock(fileDescriptor);
+    ThreadOpenFileTable *perThreadTable = currentThread->getOpenFileTable();
+
+    int systemFileDescriptor = perThreadTable->getFileDescriptor(fileDescriptor);
+
+    if(systemFileDescriptor == -1){
+        //printf("Read No file :( \n");
+        return -1;
+    }
+    
+    //If it is console than write to console
+    if(perThreadTable->getFileType(fileDescriptor) == CONSOLE){
+        syncConsole->SynchGetString(buffer,size);
+        return size;
+    }
+    
+    
+    OpenFile *file = openFileTable->getFile(systemFileDescriptor);
+    Lock *lock = openFileTable->getLock(systemFileDescriptor);
     lock->Acquire();
     
     int readSize = file->Read(buffer,size);
+    
+    //printf(">>> Read From file : %s\n",buffer);
     
     lock->Release();
     
@@ -287,7 +328,21 @@ int readFromFile (char *buffer, int size, int fileDescriptor){
 }
 
 void closeFile(int fileDescriptor){
-    openFileTable->RemoveEntry(fileDescriptor);
+    
+    ThreadOpenFileTable *perThreadTable = currentThread->getOpenFileTable();
+
+    int systemFileDescriptor = perThreadTable->getFileDescriptor(fileDescriptor);
+
+    if(systemFileDescriptor == -1){
+        return;
+    }
+    
+    if(perThreadTable->getFileType(fileDescriptor) == CONSOLE){
+        //Do nothing
+        return;
+    }
+    
+    openFileTable->RemoveEntry(systemFileDescriptor);
 }
 
 //----------------------------------------------------------------------

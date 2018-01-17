@@ -40,7 +40,8 @@ int openFile(){
     _printf("Enter the name of the file : ");
     
     char name[MAX_STRING_SIZE];
-    SynchGetString(name,MAX_STRING_SIZE);
+    //SynchGetString(name,MAX_STRING_SIZE);
+    _scanf("%s",name);
     
     removeNewLine(name,MAX_STRING_SIZE);
     
@@ -60,7 +61,8 @@ char line[MAX_STRING_SIZE];
 void writeToFile(int file){
     while(1 == 1){
         _printf("%d ",lineCount);
-        SynchGetString(line,MAX_STRING_SIZE);
+        //SynchGetString(line,MAX_STRING_SIZE);
+        _scanf("%s",line);
         if(compareString(":q\n",line) == 0){
             Close(file);
             return;

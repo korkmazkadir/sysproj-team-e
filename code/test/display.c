@@ -40,7 +40,7 @@ char name[MAX_STRING_SIZE];
 int openFile(){
     _printf("Enter the name of the file : ");
 
-    SynchGetString(name,MAX_STRING_SIZE);
+    _scanf("%s",name);
     
     removeNewLine(name,MAX_STRING_SIZE);
     
