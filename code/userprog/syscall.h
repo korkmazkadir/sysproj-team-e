@@ -55,7 +55,14 @@
 #define SC_NetworkSendFile 32
 #define SC_NetworkReceiveFile 33
 #define SC_NetworkCloseConnection 34
-// ==============================================
+
+// ================= FILE SYSTEM ===============
+
+#define SC_ListDirectoryContent 50
+#define SC_CreateDirectory 51
+#define SC_RemoveDirectory 52
+#define SC_ChangeDirectory 53
+
 
 #define SC_AssertionFailed     100
 
@@ -194,6 +201,28 @@ void AssertionFailed(char *fileName, int lineNumber);
  * 
  */
 int ForkExec(char *fileName);
+
+
+/* Lists content of the current directory
+ * 
+ */
+void ListDirectoryContent(char *directoryName);
+
+/* Lists content of the current directory
+ * 
+ */
+int CreateDirectory(char *directoryName);
+
+/* Changes directory
+ * 
+ */
+int ChangeDirectory(char *directoryName);
+
+/* Removes directory
+ * 
+ */
+int RemoveDirectory(char *directoryName);
+
 
 #endif // IN_USER_MODE
 

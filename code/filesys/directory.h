@@ -22,6 +22,20 @@
 #define FileNameMaxLen 		9	// for simplicity, we assume 
 					// file names are <= 9 characters long
 
+//Console color codes to print colorful content
+#define RED   "\x1B[31m"
+#define GRN   "\x1B[32m"
+#define YEL   "\x1B[33m"
+#define BLU   "\x1B[34m"
+#define MAG   "\x1B[35m"
+#define CYN   "\x1B[36m"
+#define WHT   "\x1B[37m"
+#define RESET "\x1B[0m"
+
+
+#define CURRENT_DIRECTORY "."
+#define PARENT_DIRECTORY ".."
+
 // The following class defines a "directory entry", representing a file
 // in the directory.  Each entry gives the name of the file, and where
 // the file's header is to be found on disk.
@@ -34,6 +48,7 @@ class DirectoryEntry {
     bool inUse;				// Is this directory entry in use?
     int sector;				// Location on disk to find the 
 					//   FileHeader for this file 
+    bool isDirectory;
     char name[FileNameMaxLen + 1];	// Text name for file, with +1 for 
 					// the trailing '\0'
 };
@@ -63,8 +78,16 @@ class Directory {
 
     bool Add(const char *name, int newSector);  // Add a file name into the directory
 
+    bool AddDirectory(const char *name, int newSector); // Add a directory
+    
+    void SetSpecialDirectories(int homeDirSector, Directory *parent);
+    
+    bool isDirectory(const char *name);
+    
     bool Remove(const char *name);	// Remove a file from the directory
 
+    int GetEntryCount(); // Returns the number of the entries inside the directory;
+    
     void List();			// Print the names of all the files
 					//  in the directory
     void Print();			// Verbose print of the contents
@@ -78,6 +101,8 @@ class Directory {
 
     int FindIndex(const char *name);	// Find the index into the directory 
 					//  table corresponding to "name"
+    
+    void CreateSpeciaDirectories();     // Creates special directories(. and ..)
 };
 
 #endif // DIRECTORY_H

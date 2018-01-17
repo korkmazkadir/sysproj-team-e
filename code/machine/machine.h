@@ -64,6 +64,7 @@ enum ExceptionType { NoException,           // Everything ok!
 #define THIRD_PARAM_REGISTER 6
 #define FOURTH_PARAM_REGISTER 7
 
+
 #define StackReg	29	// User's stack pointer
 #define RetAddrReg	31	// Holds return address for procedure calls
 #define NumGPRegs	32	// 32 general purpose registers on MIPS

@@ -39,6 +39,7 @@
 
 #include "copyright.h"
 #include "utility.h"
+#include "threadopenfiletable.h"
 
 #ifdef USER_PROGRAM
 #include "machine.h"
@@ -114,6 +115,12 @@ class Thread
     }
 
     void SetTID(int _tid);
+    
+    void SetWorkingDirectory(OpenFile *workingDirectoryFile);
+    OpenFile * GetWorkingDirectory();
+    ThreadOpenFileTable *getOpenFileTable();
+    void setOpenFileTable(ThreadOpenFileTable *table);
+    
     int Tid() const;
 
   private:
@@ -125,7 +132,10 @@ class Thread
     // (If NULL, don't deallocate stack)
     ThreadStatus status;	// ready, running or blocked
     const char *name;
-
+    
+    OpenFile* workingDirectoryFile;
+    ThreadOpenFileTable *openFileTable;
+    
     void StackAllocate (VoidFunctionPtr func, int arg);
     // Allocate a stack for thread.
     // Used internally by Fork()
@@ -136,12 +146,14 @@ class Thread
 // while executing kernel code.
 
     int userRegisters[NumTotalRegs];	// user-level CPU register state
-
+    
   public:
     void SaveUserState ();	// save user-level register state
     void RestoreUserState ();	// restore user-level register state
 
     AddrSpace *space;		// User code this thread is running.
+    
+    
 #endif
 };
 

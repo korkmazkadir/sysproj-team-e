@@ -8,6 +8,7 @@
 #include "copyright.h"
 #include "system.h"
 #include "userthread.h"
+#include "openfiletable.h"
 
 // This defines *all* of the global data structures used by Nachos.
 // These are all initialized and de-allocated by this file.
@@ -22,6 +23,7 @@ Timer *timer;			// the hardware timer device,
 
 SynchConsole *syncConsole;
 SemaphoreManager *semaphoreManager;
+OpenFileTable *openFileTable;
 
 #ifdef FILESYS_NEEDED
 FileSystem *fileSystem;
@@ -161,6 +163,8 @@ Initialize (int argc, char **argv)
     syncConsole = new SynchConsole(NULL, NULL);
     semaphoreManager = new SemaphoreManager();
 
+    openFileTable = new OpenFileTable();
+    
     interrupt->Enable ();
     CallOnUserAbort (Cleanup);	// if user hits ctl-C
 
@@ -174,6 +178,9 @@ Initialize (int argc, char **argv)
 
 #ifdef FILESYS_NEEDED
     fileSystem = new FileSystem (format);
+    //fileSystem->CreateDirectory(DEVICE_FILE_FOLDER);
+    //fileSystem->CreateUserFile(CONSOLE_FILE_PATH);
+    //syncConsole = new SynchConsole((char*)CONSOLE_FILE_PATH, (char*)CONSOLE_FILE_PATH);
 #endif
 
 #ifdef NETWORK
@@ -184,6 +191,9 @@ Initialize (int argc, char **argv)
 int createProcess(char *filename){
 
     OpenFile *executable = fileSystem->Open(filename);
+    OpenFile *workingDirectoryFile = fileSystem->GetDirectoryFile(filename);
+
+    
     AddrSpace *space;
 
     if (executable == NULL) {
@@ -198,7 +208,7 @@ int createProcess(char *filename){
         currentThread->space = space;
     }
 
-    int retVal = do_KernelThreadCreate(space);
+    int retVal = do_KernelThreadCreate(space,workingDirectoryFile);
 
     delete executable; // close file
 
@@ -206,7 +216,137 @@ int createProcess(char *filename){
     return retVal;
 }
 
- 
+//----------------------------------------------------------------------
+// Lists directory content ls
+//----------------------------------------------------------------------
+void listDirectoryContent(char *name){
+    fileSystem->ListDirectoryContent(name);
+}
+
+//----------------------------------------------------------------------
+// Creates new directory in the current director mkdir
+//----------------------------------------------------------------------
+int createDirectory(char *name){
+    return fileSystem->CreateDirectory(name);
+}
+
+//----------------------------------------------------------------------
+// Changes directory cd
+//----------------------------------------------------------------------
+int changeDirectory(char *name){
+    return fileSystem->ChangeDirectory(name);
+}
+
+
+//----------------------------------------------------------------------
+// Removes directory if it is empty rm
+//----------------------------------------------------------------------
+int removeDirectory(char *name){
+    //return fileSystem->RemoveDirectory(name);
+    return fileSystem->Remove(name);
+}
+
+//----------------------------------------------------------------------
+// Opens a file and returns file descriptior
+//----------------------------------------------------------------------
+int openFile(char *name){
+    
+    if(openFileTable->getNumAvailable() == 0){
+        return -1;
+    }
+
+    OpenFile *file = fileSystem->Open(name);
+    if(file == NULL){
+        bool result = fileSystem->CreateUserFile(name);
+        if(!result){
+            return -2;
+        }
+    }
+    
+    file = fileSystem->Open(name);
+    
+    int fileDescriptor = openFileTable->AddEntry(file,name,currentThread->Tid(), currentThread->getName());
+    ThreadOpenFileTable *perThreadTable = currentThread->getOpenFileTable();
+    int descriptor = perThreadTable->AddEntry(fileDescriptor,NORMAL_FILE);
+    
+    return descriptor;
+}
+    
+
+void writeToFile (char *buffer, int size, int fileDescriptor){
+    
+    ThreadOpenFileTable *perThreadTable = currentThread->getOpenFileTable();
+
+    int systemFileDescriptor = perThreadTable->getFileDescriptor(fileDescriptor);
+
+    if(systemFileDescriptor == -1){
+        //printf("Write No file :( \n");
+        return;
+    }
+    
+    //If it is console than write to console
+    if(perThreadTable->getFileType(fileDescriptor) == CONSOLE){
+        syncConsole->SynchPutString(buffer,size);
+        return;
+    }
+
+    OpenFile *file = openFileTable->getFile(systemFileDescriptor);
+    Lock *lock = openFileTable->getLock(systemFileDescriptor);
+    lock->Acquire();
+    
+    
+    file->Write(buffer,size);
+    
+    lock->Release();
+}
+
+int readFromFile (char *buffer, int size, int fileDescriptor){
+    ThreadOpenFileTable *perThreadTable = currentThread->getOpenFileTable();
+
+    int systemFileDescriptor = perThreadTable->getFileDescriptor(fileDescriptor);
+
+    if(systemFileDescriptor == -1){
+        //printf("Read No file :( \n");
+        return -1;
+    }
+    
+    //If it is console than write to console
+    if(perThreadTable->getFileType(fileDescriptor) == CONSOLE){
+        syncConsole->SynchGetString(buffer,size);
+        return size;
+    }
+    
+    
+    OpenFile *file = openFileTable->getFile(systemFileDescriptor);
+    Lock *lock = openFileTable->getLock(systemFileDescriptor);
+    lock->Acquire();
+    
+    int readSize = file->Read(buffer,size);
+    
+    //printf(">>> Read From file : %s\n",buffer);
+    
+    lock->Release();
+    
+    return readSize;
+}
+
+void closeFile(int fileDescriptor){
+    
+    ThreadOpenFileTable *perThreadTable = currentThread->getOpenFileTable();
+
+    int systemFileDescriptor = perThreadTable->getFileDescriptor(fileDescriptor);
+
+    if(systemFileDescriptor == -1){
+        return;
+    }
+    
+    if(perThreadTable->getFileType(fileDescriptor) == CONSOLE){
+        //Do nothing
+        return;
+    }
+    
+    openFileTable->RemoveEntry(systemFileDescriptor);
+}
 
 //----------------------------------------------------------------------
 // Cleanup

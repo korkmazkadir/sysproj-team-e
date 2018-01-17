@@ -16,6 +16,7 @@ public:
     void SynchPutChar(char ch);
     int SynchGetChar();
     void SynchPutString(const char *s);
+    void SynchPutString(const char *s, const int numberOfBytes);
     void SynchGetString(char *s, int n);
 private:
     Console *m_Console;
