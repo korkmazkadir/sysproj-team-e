@@ -934,6 +934,7 @@ SecurePost::GetAvailableBox() {
     conLock->Acquire();
     for(int box = 2; box < numBoxes; box++) {
         if (connections[box].remoteAddr == -1) {
+            connections[box].remoteAddr = 0;
             //printf("Available box given: %d\n", box);
             conLock->Release();
             return box;
