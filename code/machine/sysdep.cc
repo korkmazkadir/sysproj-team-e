@@ -383,13 +383,13 @@ void
 SendToSocket(int sockID, const char *buffer, int packetSize, const char *toName)
 {
     struct sockaddr_un uName;
-    int retVal;
+    //int retVal;
 
     InitSocketName(&uName, toName);
-    retVal = sendto(sockID, buffer, packetSize, 0,
+    sendto(sockID, buffer, packetSize, 0,
 			  (sockaddr *) &uName, sizeof(uName));
     //printf("Retval: %d\n", retVal);
-    ASSERT(retVal == packetSize);
+    //ASSERT(retVal == packetSize);
 }
 
 

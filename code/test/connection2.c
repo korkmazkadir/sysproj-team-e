@@ -40,7 +40,7 @@ void openCloseThread2(void *ptr) {
 	}
 	else SynchPutString("Opened connection 2\n");
 
-	result = Send("Baby no, baby no, me rehuso a darte un ultimo beso asi que guardalo, guardalo!", con);
+	result = Send("Baby no, baby no, me rehuso a darte un ultimo beso asi que guardalo, guardaluytuytyutyutyutuytututyutyutuytyuyttrtertertertertyutyutyutyutuytyututututyutuytuytytututuytyutuytyut", con);
 
 	if(!result) {
 		SynchPutString("Failed sending 2 package\n");

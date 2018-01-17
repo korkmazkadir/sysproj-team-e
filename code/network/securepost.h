@@ -35,7 +35,7 @@ class Connection {
 };
 
 #define MaxMailSizeSecure     (MaxPacketSize - sizeof(MailHeaderSecure))
-#define MAXREEMISSIONS 5
+#define MAXREEMISSIONS 20
 #define HANDSHAKEREQUESTBOX 0
 #define HANDSHAKEANSWERBOX 1
 #define SIZEOFSEGMENT 6

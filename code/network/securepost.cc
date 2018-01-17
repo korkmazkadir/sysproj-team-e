@@ -548,7 +548,8 @@ SecurePost::RespondCloseHandshake(Connection *con) {
 
     Send(outPktHdr, outMailHdr, message);
 
-    //Do something in between maybe
+    //Actually close
+    connections[con->localBox].Reset();
 
     outMailHdr.ACK = 0;
     outMailHdr.SYN = 0;
@@ -565,7 +566,7 @@ SecurePost::RespondCloseHandshake(Connection *con) {
     //Set box assigned to this dest
     
     
-    connections[con->localBox].Reset();
+    
     //Set the box 
     return true;
 
@@ -586,6 +587,7 @@ SecurePost::GetConnection(int dest) {
 
 int
 SecurePost::PerformCloseHandshake(Connection* con) {
+    printf("Started close handshake\n");
     char buffer[MaxMailSizeSecure];
     PacketHeader outPktHdr, inPktHdr;
     MailHeaderSecure outMailHdr, inMailHdr;
@@ -626,7 +628,7 @@ SecurePost::PerformCloseHandshake(Connection* con) {
     
 
     //Get the box in the answer message
-    //printf("Finished close handshake: Remote box to send to: %s\n", buffer);
+    printf("Finished close handshake\n");
 
     //Set box assigned to this dest
     connections[con->localBox].Reset();
