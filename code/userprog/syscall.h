@@ -54,6 +54,7 @@
 #define SC_NetworkReceiveFromByConnId 31
 #define SC_NetworkSendFile 32
 #define SC_NetworkReceiveFile 33
+#define SC_NetworkCloseConnection 34
 // ==============================================
 
 #define SC_AssertionFailed     100
@@ -103,6 +104,7 @@ int NetworkSendToByConnId(int connId, const char *data, int len);
 int NetworkReceiveFromByConnId(int connId, char *data);
 int SendFile(int connId, const char *fileName, int *transferSpeed);
 int ReceiveFile(int connId, const char *fileName);
+int NetworkCloseConnection(int connId);
 
 /* Address space control operations: Exit, Exec, and Join */
 

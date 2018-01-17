@@ -146,6 +146,24 @@ MailBox::Get(PacketHeader *pktHdr, MailHeader *mailHdr, char *data, int timeout)
     return 0;
 }
 
+int MailBox::Peek(PacketHeader *pktHdr, MailHeader *mailHdr)
+{
+    int retVal = 0;
+    Mail *mail = NULL;
+
+    mail = (Mail *) messages->Peek();
+
+    if (mail) {
+        *pktHdr = mail->pktHdr;
+        *mailHdr = mail->mailHdr;
+        retVal = 0;
+    } else {
+        retVal = -1;
+    }
+
+    return retVal;
+}
+
 //----------------------------------------------------------------------
 // PostalHelper, ReadAvail, WriteDone
 // 	Dummy functions because C++ can't indirectly invoke member functions
@@ -326,6 +344,20 @@ PostOffice::Receive(int box, PacketHeader *pktHdr,
     }
     ASSERT(mailHdr->length <= MaxMailSize);
     return 0;
+}
+
+int PostOffice::Peek(int box, PacketHeader *pktHdr, MailHeader *mailHdr)
+{
+    int retVal = 0;
+    if ((box < 0) || (box >= numBoxes)) {
+        retVal = -2;
+        goto early_exit;
+    }
+
+    retVal = boxes[box].Peek(pktHdr, mailHdr);
+
+    early_exit:
+    return retVal;
 }
 
 //----------------------------------------------------------------------

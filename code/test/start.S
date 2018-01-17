@@ -306,6 +306,14 @@ ReceiveFile:
     j   $31
     .end ReceiveFile
 
+    .globl NetworkCloseConnection
+    .ent NetworkCloseConnection
+NetworkCloseConnection:
+    addiu $2,$0,SC_NetworkCloseConnection
+    syscall
+    j   $31
+    .end NetworkCloseConnection
+
 /* dummy function to keep gcc happy */
         .globl  __main
         .ent    __main

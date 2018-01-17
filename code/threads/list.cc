@@ -138,6 +138,15 @@ List::Remove ()
     return SortedRemove (NULL);	// Same as SortedRemove, but ignore the key
 }
 
+void *List::Peek()
+{
+    void *retVal = NULL;
+    if (first) {
+        retVal = first->item;
+    }
+    return retVal;
+}
+
 //----------------------------------------------------------------------
 // List::Mapcar
 //      Apply a function to each item on the list, by walking through  

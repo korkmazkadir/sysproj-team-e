@@ -13,11 +13,13 @@
 #include "filesys.h"
 
 #define HEADER_WORD "HEADER"
+#define CONN_CLOSE_RETVAL (-30)
 
 SynchPost::SynchPost(NetworkAddress addr, double reliability, int nBoxes):
     selfAddress(addr)
 {
     postOffice = new PostOffice(addr, reliability, nBoxes);
+    interrupt->Schedule(&SynchPost::periodicCloseChecker, (int)this, 40000000, TimerInt);
 }
 
 SynchPost::~SynchPost()
@@ -73,6 +75,11 @@ int SynchPost::SendTo(int addr, int mailbox, const char *data, int len, unsigned
             memcpy(currentChunk, data + ii * MaxMailSize, chunkLength);
         } else { /* if this is a FIRST data packet */
             outMailHdr.index = getMasked(static_cast<unsigned>(len), HEADER_MASK);
+
+            if (SPECIAL_CLOSE_CONN == specialMask) {
+                outMailHdr.index = getMasked(outMailHdr.index, specialMask);
+            }
+
             outMailHdr.length = strlen(HEADER_WORD);
             char headerData[MaxMailSize] = HEADER_WORD;
             memcpy(currentChunk, headerData, outMailHdr.length);
@@ -183,6 +190,11 @@ int SynchPost::ReceiveFrom(int mailbox, char *data, PacketHeader *out_pktHeader)
         if (-1 == ix) { /* If we are to receive first packet - header */
             char headerData[MaxMailSize] = { 0 };
             unsigned maskedIndex = ReceiveSingleChunkFrom(mailbox, headerData, -1, out_pktHeader);
+
+            if (isClose(maskedIndex)) {
+                return CONN_CLOSE_RETVAL;
+            }
+
             len = (int)getIndex(maskedIndex, HEADER_MASK);
             retLen = len;
 
@@ -196,6 +208,10 @@ int SynchPost::ReceiveFrom(int mailbox, char *data, PacketHeader *out_pktHeader)
             numChunks = divRoundUp(len, MaxMailSize);
         } else {
             unsigned packetIndex = ReceiveSingleChunkFrom(mailbox, buffer, -1);
+
+            if (isClose(packetIndex)) {
+                return CONN_CLOSE_RETVAL;
+            }
 
             if (getMask(packetIndex) >= SPECIAL_FILE_END) {
                 return -15;
@@ -325,6 +341,11 @@ int SynchPost::ReceiveFromByConnId(int connId, char *data)
     }
     auto curConnection = connections[connId];
     retVal = ReceiveFrom(curConnection.mailbox, data);
+
+    if (retVal == CONN_CLOSE_RETVAL) {
+        performConnClose(connId);
+    }
+
     return retVal;
 }
 
@@ -425,6 +446,24 @@ int SynchPost::ReceiveFile(int connId, const char *fileName) {
     return retVal;
 }
 
+int SynchPost::CloseConnection(int connId)
+{
+    int retVal = 0;
+    const char *data = CONNECTION_CLOSE;
+
+    // Invalid ID specified
+    if ((connId < 0) || (connId >= NETWORK_MAX_CONNECTIONS) || (!availConnections.Test(connId))) {
+        retVal = -1;
+        goto early_exit;
+    }
+
+    SendToByConnId(connId, data, strlen(data), SPECIAL_CLOSE_CONN);
+    retVal = performConnClose(connId);
+
+    early_exit:
+    return retVal;
+}
+
 int SynchPost::checkConnIdValidity(int connId) const {
     if ((connId < 0) || (connId >= NETWORK_MAX_CONNECTIONS) || !availConnections.Test(connId)) {
         return INVALID_CONN_ID;
@@ -436,4 +475,63 @@ int SynchPost::checkConnIdValidity(int connId) const {
     }
 
     return 0;
+}
+
+bool SynchPost::checkConnClosed(int connId) {
+    bool retVal = false;
+    int status;
+    ConnectionID curConnection;
+
+    if ((connId < 0) || (connId >= NETWORK_MAX_CONNECTIONS) || (!availConnections.Test(connId))) {
+        retVal = false;
+        goto early_exit;
+    }
+
+    MailHeader mailHdr;
+    PacketHeader pktHdr;
+
+    curConnection = connections[connId];
+
+    status = postOffice->Peek(curConnection.mailbox, &pktHdr, &mailHdr);
+    if (status != 0) {
+        retVal = false;
+        goto early_exit;
+    }
+
+    if (isClose(mailHdr.index)) {
+        retVal = true;
+    } else {
+        retVal = false;
+    }
+
+    early_exit:
+    return retVal;
+}
+
+void SynchPost::periodicCloseChecker(int arg) {
+    SynchPost *thisPtr = (SynchPost *)arg;
+
+    for (int ii = 0; ii < NETWORK_MAX_CONNECTIONS; ++ii) {
+        if (thisPtr->checkConnClosed(ii)) {
+            thisPtr->performConnClose(ii);
+        }
+    }
+
+    interrupt->Schedule(&SynchPost::periodicCloseChecker, arg, 40000000, TimerInt);
+
+}
+
+int SynchPost::performConnClose(int connId) {
+    int retVal = 0;
+
+    if ((connId < 0) || (connId >= NETWORK_MAX_CONNECTIONS) || (!availConnections.Test(connId))) {
+        retVal = -1;
+        goto early_exit;
+    }
+
+    printf("CONNECTION ID %d CLOSED \n", connId);
+    availConnections.Clear(connId);
+
+    early_exit:
+    return retVal;
 }

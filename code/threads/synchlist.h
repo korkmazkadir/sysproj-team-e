@@ -34,6 +34,7 @@ class SynchList
     void *Remove (int timeout = -1);		// remove the first item from the front of
     // the list, waiting if the list is empty
     // apply function to every item in the list
+    void *Peek();
     void Mapcar (VoidFunctionPtr func);
     static void HandleTimeout(int);
 

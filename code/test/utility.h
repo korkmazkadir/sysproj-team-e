@@ -21,6 +21,16 @@ int strlen(const char *s) {
     return length;
 }
 
+//WARNING: This function has never been tested - use with care
+void *memset (void *ptr, int value, int num) {
+    unsigned char *cvt = (unsigned char *)ptr;
+    while (num--) {
+        *cvt = (unsigned char)value;
+        ++cvt;
+    }
+    return ptr;
+}
+
 
 #endif // UTILITY_H
 

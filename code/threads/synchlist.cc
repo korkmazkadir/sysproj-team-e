@@ -87,6 +87,15 @@ SynchList::Remove (int timeout)
     return item;
 }
 
+void *SynchList::Peek()
+{
+    void *item = NULL;
+    lock->Acquire();
+    item = list->Peek();
+    lock->Release();
+    return item;
+}
+
 //----------------------------------------------------------------------
 // SynchList::Mapcar
 //      Apply function to every item on the list.  Obey mutual exclusion

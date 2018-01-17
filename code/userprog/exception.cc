@@ -328,6 +328,13 @@ void ExceptionHandler (ExceptionType which)
                     machine->WriteRegister(RET_VALUE_REGISTER, retVal);
                 } break;
 
+                case SC_NetworkCloseConnection:
+                {
+                    int connId = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                    int retVal = synchPost->CloseConnection(connId);
+                    machine->WriteRegister(RET_VALUE_REGISTER, retVal);
+                } break;
+
                 default:
                 {
                     printf ("Unexpected SYSCALL %d %d\n", which, type);

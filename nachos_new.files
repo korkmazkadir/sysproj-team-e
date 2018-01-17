@@ -117,3 +117,5 @@ code/test/userprog1join.c
 code/test/userThreadExit.c
 code/test/manyThreads1.c
 code/test/manyThreads2.c
+code/test/network_test_3_snd.c
+code/test/network_test_3_rcv.c

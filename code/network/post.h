@@ -87,6 +87,8 @@ class MailBox {
    				// Atomically get a message out of the 
 				// mailbox (and wait if there is no message 
 				// to get!)
+    int Peek(PacketHeader *pktHdr, MailHeader *mailHdr);
+
   private:
     SynchList *messages;	// A mailbox is just a list of arrived messages
 };
@@ -117,6 +119,8 @@ class PostOffice {
         MailHeader *mailHdr, char *data, int timeout = -1);
     				// Retrieve a message from "box".  Wait if
 				// there is no message in the box.
+
+    int Peek(int box, PacketHeader *pktHdr, MailHeader *mailHdr);
 
     void PostalDelivery();	// Wait for incoming messages, 
 				// and then put them in the correct mailbox

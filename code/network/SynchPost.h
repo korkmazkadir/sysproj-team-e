@@ -31,6 +31,7 @@ public:
 
     int SendFile(int connId, const char *fileName, int *transferSpeed = nullptr);
     int ReceiveFile(int connId, const char *fileName);
+    int CloseConnection(int connId);
 
     typedef struct ConnectionID {
         int connectionID;
@@ -45,23 +46,29 @@ private:
 
     int checkConnIdValidity(int connId) const;
 
+    bool checkConnClosed(int connId);
+    static void periodicCloseChecker(int arg);
+    int performConnClose(int connId);
+
     static const int MAX_ACK_TIMEOUT = 4000000;
     static const int MAX_ATTEMPTS = 65;
     static const int MAX_FILE_CHUNK = 512;
     static constexpr const char *const TERMINATION_INDICATOR = "FILE TRANSFER FINISHED";
+    static constexpr const char *const CONNECTION_CLOSE = "CONNECTION_CLOSED";
 
+    static const unsigned HEADER_MASK        = 0x08000000u;
+    static const unsigned ACK_MASK           = 0x04000000u;
+    static const unsigned HEADER_ACK_MASK    = 0x02000000u;
+    static const unsigned SPECIAL_FILE_END   = 0x10000000u;
+    static const unsigned SPECIAL_CLOSE_CONN = 0x20000000u;
 
-    static const unsigned HEADER_MASK        = 0xaa000000u;
-    static const unsigned ACK_MASK           = 0xbb000000u;
-    static const unsigned HEADER_ACK_MASK    = 0xcc000000u;
-    static const unsigned SPECIAL_FILE_END   = 0xdd000000u;
-
-    static inline unsigned getMasked(unsigned index, unsigned mask) { return (index | mask); }
-    static inline unsigned getIndex(unsigned masked, unsigned mask) { return (masked & (~mask)); }
-    static inline unsigned getMask(unsigned masked) { return (masked & 0xff000000); }
-    static inline bool isHeader(unsigned value) { return (value & HEADER_MASK); }
-    static inline bool isAck(unsigned value) { return (value & ACK_MASK); }
-    static inline bool isHeaderAck(unsigned value) { return (value & HEADER_ACK_MASK); }
+    static inline unsigned getMasked(unsigned index, unsigned mask) { return (index | mask);                }
+    static inline unsigned getIndex(unsigned masked, unsigned mask) { return (masked & (~mask));            }
+    static inline unsigned getMask(unsigned masked)                 { return (masked & 0xff000000);         }
+    static inline bool isHeader(unsigned value)                     { return (value & HEADER_MASK);         }
+    static inline bool isAck(unsigned value)                        { return (value & ACK_MASK);            }
+    static inline bool isHeaderAck(unsigned value)                  { return (value & HEADER_ACK_MASK);     }
+    static inline bool isClose(unsigned value)                      { return (value & SPECIAL_CLOSE_CONN);  }
 
 
 
