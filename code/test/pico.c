@@ -69,7 +69,5 @@ int main() {
     _printf("\nNano Text Editor\n");
     int file = openFile();
     writeToFile(file);
-  
-    _printf("End of nano\n");
 }
 

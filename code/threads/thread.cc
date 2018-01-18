@@ -39,7 +39,6 @@ Thread::Thread (const char *threadName):
     stackTop = NULL;
     stack = NULL;
     status = JUST_CREATED;
-    openFileTable = new ThreadOpenFileTable();
     
 #ifdef USER_PROGRAM
     space = NULL;

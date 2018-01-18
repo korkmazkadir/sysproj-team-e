@@ -271,22 +271,24 @@ int openFile(char *name){
     return descriptor;
 }
     
-
-void writeToFile (char *buffer, int size, int fileDescriptor){
+// writes to file
+// if there is no file than returns -1
+// if it is console returns size
+// if write successful, returns number of bytes written to disk
+int writeToFile (char *buffer, int size, int fileDescriptor){
     
     ThreadOpenFileTable *perThreadTable = currentThread->getOpenFileTable();
 
     int systemFileDescriptor = perThreadTable->getFileDescriptor(fileDescriptor);
 
     if(systemFileDescriptor == -1){
-        //printf("Write No file :( \n");
-        return;
+        return -1;
     }
     
     //If it is console than write to console
     if(perThreadTable->getFileType(fileDescriptor) == CONSOLE){
         syncConsole->SynchPutString(buffer,size);
-        return;
+        return size;
     }
 
     OpenFile *file = openFileTable->getFile(systemFileDescriptor);
@@ -294,9 +296,10 @@ void writeToFile (char *buffer, int size, int fileDescriptor){
     lock->Acquire();
     
     
-    file->Write(buffer,size);
+    int result = file->Write(buffer,size);
     
     lock->Release();
+    return result;
 }
 
 int readFromFile (char *buffer, int size, int fileDescriptor){

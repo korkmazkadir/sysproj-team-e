@@ -428,8 +428,9 @@ void ExceptionHandler(ExceptionType which) {
 
                     int size = machine->ReadRegister(SECOND_PARAM_REGISTER);
                     int fileDescriptor = machine->ReadRegister(THIRD_PARAM_REGISTER);
-                    writeToFile(buffer, size, fileDescriptor);
-
+                    int result = writeToFile(buffer, size, fileDescriptor);
+                    copyStringToMachine(buffer, bufferAddress, result);
+                    
                     break;
                 }
 
