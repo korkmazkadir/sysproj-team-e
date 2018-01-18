@@ -56,9 +56,9 @@ void writer2(void *ptr) {
 
 
 int main() {
-    int numBytes;
-    char buf[BUF_SIZE];
-    
+
+    _printf("this test is outdated\n");
+    /*
     //create file, write to it
     if (Create(fileName) == -1) {
         _printf("userprogram: Create failed\n");
@@ -95,7 +95,7 @@ int main() {
     _printf("userprogram: buf contains %s\n", buf);
     Print();
     Close(ofid);
-    
+    */
 
     return 0;
 }

@@ -6,12 +6,12 @@
  * Excpect: doesn't delete first time (is still shown by List(). Is deleted second time.
  */
 sem_t mtx;
-OpenFileId ofid;
 void func(void *ptr) {
     //SemWait(&mtx);
+    OpenFileId ofid;
     _printf("opener opening file.\n");
     ofid = Open("bla");
-    if (ofid == 0) Exit(4);
+    if (ofid == -1) Exit(4);
     _printf("opener closing file.\n");
     if (Close(ofid) == -1) Exit(5);
     _printf("opener removing file.\n");
@@ -21,8 +21,8 @@ void func(void *ptr) {
 int main() {
     char buf[BUF_SIZE];
     (void) buf;
-    //trying mkdir and rmdir
-   /* if (Mkdir("newDir") == -1) {
+    /*//trying mkdir and rmdir
+    if (Mkdir("newDir") == -1) {
         _printf("user: Mkdir failed\n");
     }
     List();
@@ -46,12 +46,12 @@ int main() {
     if (Rmdir("newDir") == -1) {
         _printf("user: rmdir failed\n");
     }
-    List(); //here the Rmdir should have succeeded*/
-    _printf("\n\n do open on marked for removal");
+    List(); //here the Rmdir should have succeeded
+    _printf("\n\n do open on marked for removal");*/
     
     if (Create("bla") == -1) Exit(1);
-    ofid = Open("bla");
-    if (ofid == 0) Exit(2);
+    OpenFileId ofid = Open("bla");
+    if (ofid == -1) Exit(2);
     Write("hello!", 6, ofid);
     _printf("should fail:");
     int tid = UserThreadCreate(func, 0);

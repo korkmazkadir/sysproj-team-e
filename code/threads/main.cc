@@ -176,9 +176,8 @@ main (int argc, char **argv)
 #endif // NETWORK
     }
     
-    //filesys
+    //filesys, have to close main's directory file since it won't run userThreadExit
     fileSystem->fsLock->Acquire();
-    printf("!!            do UserThreadExit from %s closing %s index %d\n", currentThread->getName(), currentThread->workingDirName->c_str(), currentThread->directoryFile); 
     fileSystem->Close(currentThread->directoryFile);
     fileSystem->fsLock->Release();
 

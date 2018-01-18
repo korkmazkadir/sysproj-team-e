@@ -54,6 +54,7 @@ Thread::Thread (const char *threadName, std::string *initialWP, std::string *ini
     for (int i = 0; i < 10; i++) {
         openFiles[i] = (ThreadFileInfo *) malloc(sizeof(struct S_threadFileInfo));
         openFiles[i]->file = NULL;
+        openFiles[i]->systemInfo = NULL;
     }
     
     workingPath = new std::string(*initialWP);
@@ -477,7 +478,7 @@ Thread::saveFilesysState() {
     }
     *workingPath = *(fileSystem->workingPath);
     *workingDirName = *(fileSystem->workingDirName);
-    directoryFile = fileSystem->directoryFile;
+    //directoryFile = fileSystem->directoryFile;
     //printf("FS WP = %s FS WDN = %s FS DF = %d\n", workingPath->c_str(), workingDirName->c_str(), directoryFile);
     //dbgChecks();
     
@@ -504,7 +505,7 @@ Thread::restoreFilesysState() {
     
     (*fileSystem->workingPath) = *workingPath;
     (*fileSystem->workingDirName) = *workingDirName;
-    fileSystem->directoryFile = directoryFile;
+    //fileSystem->directoryFile = directoryFile;
     //printf("Filesys has run thread restore state         from: %s\n",currentThread->getName());
     //printf("FS WP ptr = %x FS WDN ptr = %x FS DF = %d\n", (unsigned int)workingPath, (unsigned int)workingDirName, directoryFile);
     //printf("FS WP = %s", workingPath->c_str());

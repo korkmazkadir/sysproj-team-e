@@ -47,6 +47,16 @@ void t2(void *ptr) {
 int main() {
     SemInit(&mtx, 1);
     SemInit(&created, 0);
+    if (Mkdir("step") == -1) Exit(19);
+    Chdir("step");
+    List();
+    Chdir("..");
+    List();
+    Chdir("step");
+    List();
+    _printf("\n\n\n");
+
+    
     
     if (Mkdir("subDir1") == -1) Exit(20);
     if (Mkdir("subDir2") == -1) Exit(21);

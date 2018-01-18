@@ -81,7 +81,7 @@ Copy(const char *from, const char *to)
     fileSystem->Close(index);
     fileSystem->fsLock->Release();
     fclose(fp);
-    printf("\n*  *   *    *    * END COPY *  *   *   *   *\n\n\n");
+    //printf("\n*  *   *    *    * END COPY *  *   *   *   *\n\n\n");
 
 }
 

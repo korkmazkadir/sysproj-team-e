@@ -117,8 +117,8 @@ class FileSystem {
 
     int Read(char *buffer, int numBytes, int index);
     int Write(char *buffer, int numBytes, int index);     
-    int ReadAt(char *buffer, int numBytes, int pos, int index);
-    int WriteAt(char *buffer, int numBytes, int pos, int index);  
+    int ReadAt(char *buffer, int numBytes, int index, int pos);
+    int WriteAt(char *buffer, int numBytes, int index, int pos);  
     
     OpenFile *getOpenFile(int index);
     int InitializeThreadWorkingDir(Thread *newThread);

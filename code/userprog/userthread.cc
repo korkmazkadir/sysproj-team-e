@@ -104,7 +104,7 @@ static void StartUserThread(int f) {
  *         -4 ran out of memory
  */
 int do_UserThreadCreate(int funPtr, int arg, int retAddress, AddrSpace *space, bool kernelRequest) {
-printf("èèèèèèè DOING USER THREAD CREATE            OOOOO\n\n\n");
+    //printf("èèèèèèè DOING USER THREAD CREATE            OOOOO\n\n\n");
     int retVal = -1;
     static bool firstTime = true;
 
@@ -165,8 +165,8 @@ printf("èèèèèèè DOING USER THREAD CREATE            OOOOO\n\n\n");
         }
         
         std::string *dbgName = new std::string(std::to_string(threadNum));
-        //printf("            making thread with name %s wdn %s wp %s\n", dbgName->c_str(), currentThread->workingPath->c_str(), 
-                                                         // currentThread->workingDirName->c_str() );
+        printf("            making thread with name %s wdn %s wp %s\n", dbgName->c_str(), currentThread->workingPath->c_str(), 
+                                                          currentThread->workingDirName->c_str() );
                                                           
         Thread *newThread = new (std::nothrow) Thread(dbgName->c_str(), 
                                                       currentThread->workingPath, 
@@ -243,7 +243,7 @@ void do_UserThreadExit() {
 
     //filesys
     fileSystem->fsLock->Acquire();
-    printf("!!            do UserThreadExit from %s closing %s index %d\n", currentThread->getName(), currentThread->workingDirName->c_str(), currentThread->directoryFile); 
+    //printf("!!            do UserThreadExit from %s closing %s index %d\n", currentThread->getName(), currentThread->workingDirName->c_str(), currentThread->directoryFile); 
     fileSystem->Close(currentThread->directoryFile);
     fileSystem->fsLock->Release();
     
