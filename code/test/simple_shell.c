@@ -14,7 +14,8 @@ int _userSelection = 0;
 int _backgroundProcess = 0;
 
 int compareString(char *str1, char *str2){
-    for (int i = 0; i < MAX_STRING_SIZE; i++) {
+    int i = 0;
+    for (i = 0; i < MAX_STRING_SIZE; i++) {
         char ch1 = str1[i];
         char ch2 = str2[i];
         
@@ -29,13 +30,15 @@ int compareString(char *str1, char *str2){
 }
 
 void clearString(char *string, int size){
-    for (int i = 0; i < size; i++) {
+    int i = 0;
+    for (i = 0; i < size; i++) {
         string[i] = '\0';
     }   
 }
 
 void removeNewLine(char *string, int size){
-    for (int i = 0; i < size; i++) {
+    int i = 0;
+    for (i = 0; i < size; i++) {
         if(string[i] == '\n'){
             string[i] = '\0';
             break;
@@ -104,7 +107,8 @@ void decodeCommand(char *command){
     int parameterCursor = 0;
     
     int readIndex = 1;
-    for (int i = 0; i < MAX_STRING_SIZE && command[i] != '\n'; i++) {
+    int i = 0;
+    for (i = 0; i < MAX_STRING_SIZE && command[i] != '\n'; i++) {
         char c = command[i];
         
         if(c == ' '){
@@ -112,13 +116,13 @@ void decodeCommand(char *command){
             continue;
         }
         
-        if(readIndex == 1){
+        if(readIndex == 1) {
            _command[commandCursor] = c;
            commandCursor++;
-        }else if(readIndex == 2){
+        } else if(readIndex == 2){
            _parameter[parameterCursor] = c;
            parameterCursor++;
-        }else if(readIndex == 3){
+        } else if(readIndex == 3){
             if(c == '&')
                 _backgroundProcess = 1;
         }
@@ -127,19 +131,19 @@ void decodeCommand(char *command){
     
     removeNewLine(_parameter,MAX_STRING_SIZE);
     
-    if(compareString("ls",_command) == 0){
+    if(compareString("ls",_command) == 0) {
         _userSelection = 1;
-    }else if(compareString("cd",_command) == 0){
+    } else if(compareString("cd",_command) == 0) {
         _userSelection = 2;
-    }else if(compareString("mkdir",_command) == 0){
+    } else if(compareString("mkdir",_command) == 0) {
         _userSelection = 3;
-    }else if(compareString("rm",_command) == 0){
+    } else if(compareString("rm",_command) == 0) {
         _userSelection = 4;
-    }else if(compareString("run",_command) == 0){
+    } else if(compareString("run",_command) == 0) {
         _userSelection = 5;
-    }else if(compareString("clear",_command) == 0){
+    } else if(compareString("clear",_command) == 0) {
         _userSelection = 6;
-    }else if(compareString("exit",_command) == 0){
+    } else if(compareString("exit",_command) == 0) {
         Exit(0);
     }
 
@@ -206,5 +210,6 @@ int main() {
     }
 
     Exit(0);
+    return 0;
 }
 

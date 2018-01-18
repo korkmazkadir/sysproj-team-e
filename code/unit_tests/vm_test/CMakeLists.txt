@@ -4,8 +4,6 @@ project(vm_test)
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/../common/CMakeLists.txt)
 
-list(REMOVE_ITEM src "${CMAKE_CURRENT_SOURCE_DIR}/../../userprog/frameprovider.cc")
-
 set(SOURCES ${src} ${CMAKE_CURRENT_SOURCE_DIR}/vm_test.cc)
 
 

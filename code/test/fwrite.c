@@ -22,6 +22,6 @@ int main() {
     Close(file);
 
     _printf("\nEnd of write file\n");
-
+    return 0;
 }
 

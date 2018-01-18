@@ -16,4 +16,6 @@ int main() {
     NetworkSendToByConnId(connId, data, strlen(data));
     status = NetworkCloseConnection(connId);
     SynchPutString("Conn closed with status: "); SynchPutInt(status); PutChar('\n');
+
+    return 0;
 }

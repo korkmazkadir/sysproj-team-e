@@ -1,8 +1,9 @@
 
 #include "nachos_stdio.h"
 
-int compareString(char *str1, char *str2){
-    for (int i = 0; i < MAX_STRING_SIZE; i++) {
+int compareString(char *str1, char *str2) {
+    int i = 0;
+    for (i = 0; i < MAX_STRING_SIZE; i++) {
         char ch1 = str1[i];
         char ch2 = str2[i];
         
@@ -16,8 +17,9 @@ int compareString(char *str1, char *str2){
     return 0;
 }
 
-void removeNewLine(char *string, int size){
-    for (int i = 0; i < size; i++) {
+void removeNewLine(char *string, int size) {
+    int i = 0;
+    for (i = 0; i < size; i++) {
         if(string[i] == '\n'){
             string[i] = '\0';
             break;
@@ -62,5 +64,6 @@ int main() {
     _printf("\n_______________%s_______________\n",name);
     readFromFile(file);
     _printf("\n______________________________________\n",name);
+    return 0;
 }
 

@@ -69,6 +69,50 @@ Copy(const char *from, const char *to)
     fclose(fp);
 }
 
+
+//----------------------------------------------------------------------
+// CopyBack
+// 	Copy the contents of the Nachos file "from" to the UNIX file "to"
+//----------------------------------------------------------------------
+
+void
+CopyBack(const char *from, const char *to)
+{
+    FILE *fp;
+    OpenFile* openFile;
+    int amountRead, fileLength;
+    char *buffer;
+
+// Create UNIX file
+    if ((fp = fopen(to, "w")) == NULL) {	 
+        printf("CopyBack: couldn't open output file %s\n", from);
+        return;
+    }
+    
+// open nachos file
+    
+
+// Figure out length of Nachos file
+    openFile = fileSystem->Open(from);
+    ASSERT(openFile != NULL);
+    fileLength = openFile->Length();
+
+    DEBUG('f', "Copying Back file %s, size %d, to file %s\n", from, fileLength, to);
+
+    
+    
+// Copy the data in TransferSize chunks
+    buffer = new char[TransferSize];
+    while ((amountRead = openFile->Read(buffer, TransferSize)) > 0)
+        fwrite(buffer, sizeof(char), amountRead, fp);	
+    delete [] buffer;
+
+// Close the UNIX and the Nachos files
+    delete openFile;
+    fclose(fp);
+    printf("CopyBack DONE\n");
+}
+
 //----------------------------------------------------------------------
 // Print
 // 	Print the contents of the Nachos file "name".

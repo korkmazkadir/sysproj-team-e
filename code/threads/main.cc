@@ -57,7 +57,7 @@
 
 // External functions used by this file
 
-extern void ThreadTest (void), Copy (const char *unixFile, const char *nachosFile);
+extern void ThreadTest (void), Copy (const char *unixFile, const char *nachosFile), CopyBack(const char *unixFile, const char *nachosFile);
 extern void Print (char *file), PerformanceTest (void);
 extern void StartProcess (char *file);
 extern void ConsoleTest (char *in, char *out);
@@ -137,6 +137,12 @@ main (int argc, char **argv)
             Copy (*(argv + 1), *(argv + 2));
             argCount = 3;
         }
+        else if (!strcmp (*argv, "-cpb"))
+        {           //copy from nahcos to unix
+            ASSERT (argc > 2);
+            CopyBack (*(argv + 1), *(argv + 2));
+            argCount = 3;
+        }
         else if (!strcmp (*argv, "-p"))
         {			// print a Nachos file
             ASSERT (argc > 1);
@@ -149,7 +155,7 @@ main (int argc, char **argv)
             fileSystem->Remove (*(argv + 1));
             argCount = 2;
         }
-        else if (!strcmp (*argv, "-l"))
+        else if (!strcmp (*argv, "-ls"))
         {			// list Nachos directory
             fileSystem->List ();
         }
