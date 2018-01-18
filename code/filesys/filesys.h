@@ -81,11 +81,11 @@ class FileSystem {
 
     bool Create(const char *name, int initialSize);  	// Create a file (UNIX creat)
 
-    bool CreateUserFile(const char *name);
+    int CreateUserFile(const char *name);
     
     void ListDirectoryContent(const char *name);
     
-    bool CreateDirectory(const char *name); //Creates a directory
+    int CreateDirectory(const char *name); //Creates a directory
     
     int ChangeDirectory(const char *name); //Changes current directory
     

@@ -251,19 +251,20 @@ int removeDirectory(char *name){
 int openFile(char *name){
     
     if(openFileTable->getNumAvailable() == 0){
-        return -1;
+        return -6;
     }
 
     OpenFile *file = fileSystem->Open(name);
     if(file == NULL){
         bool result = fileSystem->CreateUserFile(name);
-        if(!result){
-            return -2;
+        if(result != 0){
+            return result;
         }
     }
     
     file = fileSystem->Open(name);
     
+        
     int fileDescriptor = openFileTable->AddEntry(file,name,currentThread->Tid(), currentThread->getName());
     ThreadOpenFileTable *perThreadTable = currentThread->getOpenFileTable();
     int descriptor = perThreadTable->AddEntry(fileDescriptor,NORMAL_FILE);

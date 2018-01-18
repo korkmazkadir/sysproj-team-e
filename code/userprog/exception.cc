@@ -404,7 +404,7 @@ void ExceptionHandler(ExceptionType which) {
                     copyStringFromMachine(directoryNameAddress, directoryName, MAX_WRITE_BUF_SIZE);
                     removeNewLine(directoryName);
                     int result = removeDirectory(directoryName);
-                    machine->WriteRegister(RET_VALUE_REGISTER, result);
+                    machine->WriteRegister(RET_VALUE_REGISTER, (result == 1 ? 0 : -1 ) );
                     break;
                 }
 
@@ -450,7 +450,6 @@ void ExceptionHandler(ExceptionType which) {
 
                 case SC_Close:
                 {
-                    printf("closing file...");
                     int fileDescriptor = machine->ReadRegister(FIRST_PARAM_REGISTER);
                     closeFile(fileDescriptor);
                     break;
