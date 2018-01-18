@@ -51,8 +51,8 @@ private:
     int performConnClose(int connId);
 //    void clearMailBox
 
-    static const int MAX_ACK_TIMEOUT = 4000000;
-    static const int MAX_ATTEMPTS = 65;
+    static const int MAX_ACK_TIMEOUT = 400000;
+    static const int MAX_ATTEMPTS = 500;
     static const int MAX_FILE_CHUNK = 512;
     static constexpr const char *const TERMINATION_INDICATOR = "FILE TRANSFER FINISHED";
     static constexpr const char *const CONNECTION_CLOSE = "CONNECTION_CLOSED";

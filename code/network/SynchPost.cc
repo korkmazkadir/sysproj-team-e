@@ -416,7 +416,7 @@ int SynchPost::ReceiveFile(int connId, const char *fileName) {
         fileSystem->Remove(fileName);
     }
 
-    creationSucc = fileSystem->Create(fileName, 0);
+    creationSucc = fileSystem->CreateUserFile(fileName);
     file = fileSystem->Open(fileName);
 
     if (!creationSucc || !file) {
@@ -524,7 +524,7 @@ void SynchPost::periodicCloseChecker(int arg) {
         }
     }
 
-    interrupt->Schedule(&SynchPost::periodicCloseChecker, arg, 40000000, TimerInt);
+    interrupt->Schedule(&SynchPost::periodicCloseChecker, arg, 400000, TimerInt);
 
 }
 

@@ -11,8 +11,8 @@ int main() {
     SynchPutString("Bytes received: "); SynchPutInt(bytesReceived); PutChar('\n');
     SynchPutString("Data received: "); SynchPutString(data); PutChar('\n');
 
-
-    for (int ii = 0; ii < 5000000; ++ii) { ; }
+    int ii = 0;
+    for (ii = 0; ii < 5000000; ++ii) { ; }
 
     return 0;
 }
