@@ -1,7 +1,7 @@
-abcdMachine halting!
+bacdMachine halting!
 
-Ticks: total 884, idle 243, system 410, user 231
-Disk I/O: reads 0, writes 0
+Ticks: total 5682501, idle 5639290, system 42980, user 231
+Disk I/O: reads 977, writes 305
 Console I/O: reads 0, writes 4
 Paging: faults 0
 Network I/O: packets received 0, sent 0
