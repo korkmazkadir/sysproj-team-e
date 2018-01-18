@@ -398,9 +398,11 @@ int SynchPost::SendFile(int connId, const char *fileName, int *transferSpeed) {
                 );
     }
 
-    SendToByConnId(connId, TERMINATION_INDICATOR, strlen(TERMINATION_INDICATOR), SPECIAL_FILE_END);
+    int sendStatus = SendToByConnId(connId, TERMINATION_INDICATOR, strlen(TERMINATION_INDICATOR), SPECIAL_FILE_END);
+    if (sendStatus != 0) {
+        retVal = -2;
+    }
 
-    //TODO: Integrate with Phil
     delete file;
     return retVal;
 }
@@ -441,7 +443,12 @@ int SynchPost::ReceiveFile(int connId, const char *fileName) {
             return retVal;
         }
 
-        file->Write(buffer, bytesRead);
+
+        int fileWriteStatus = file->Write(buffer, bytesRead);
+        if (fileWriteStatus < 0) {
+            retVal = -3;
+            return retVal;
+        }
     }
 
     //Receive terminator
@@ -459,7 +466,7 @@ int SynchPost::CloseConnection(int connId)
     const char *data = CONNECTION_CLOSE;
 
     // Invalid ID specified
-    if ((connId < 0) || (connId >= NETWORK_MAX_CONNECTIONS) || (!availConnections.Test(connId))) {
+    if (!checkConnIdValidity(connId)) {
         retVal = -1;
         goto early_exit;
     }

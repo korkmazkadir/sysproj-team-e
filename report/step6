@@ -1,0 +1,168 @@
+Specification
+
+========================================================================================
+
+Signature: int NetworkConnectAsServer(int mailbox);
+
+Parameters:
+    path   <-  mailbox  < mailbox to wait on
+
+Return value
+ *         connection identifier which is greater or equal to 0 if connection was successful
+ *         a value less than zero if connection failed
+
+Description:
+
+Awaits for incoming connection to the specified mailbox
+As soon as there is one sends an anknowledgement and returns a connection
+identifier
+
+This is guaranteed that connection identifier is unique for the process but
+different processes can have different connection identifiers for the same connection
+
+========================================================================================
+
+Signature: int NetworkConnectAsClient(int address, int mailbox);
+
+Parameters:
+    address <    network address of the server
+    mailbox <    mailbox for the connection
+
+Return value:
+ *          connection identifier which is greater or equal to 0 if connection was successful
+ *          a value less than zero if connection failed
+
+Description:
+
+Attempts to connect to a server at specified address using a specified mailbox
+If there is a server with the respective address listening on a respective mailbox
+the function will return a connection identifier. If no server responds within
+machine-dependent timeframe, the function will return.
+
+========================================================================================
+
+Signature: int NetworkSendToByConnId(int connId, const char *data, int len);
+
+Parameters:
+    connId <    connection identifier
+    data   <    pointer to the byte array
+    len    <    number of bytes that shall be sent over the network
+
+Return value:
+    -10    <    if invalid connection identifier is specified
+    -20    <    if the calling thread does not match the thread that established the
+                connection
+    -1     <    if receipt was not properly acknowledged by the recepient of the data
+                (this usually means that not all data has been transferred)
+
+Description:
+Attempts to send a byte array of a specified network using the specified connection identifier
+Connection ID must match the value returned by one of the NetworkConnect functions
+
+A thread that calls this function MUST match the thread that acquired the connection identifier
+
+This function can only send byte arrays whose size is less or equal than 2047 bytes
+The byte array MUST contain at least the number of bytes specified by len parameter.
+If this is not the case this function call results in an UNDEFINED BEHAVIOUR
+
+If len is greater than 2047, only first 2047 bytes will be transferred over the network
+
+========================================================================================
+
+Signature: int NetworkReceiveFromByConnId(int connId, char *data);
+
+
+Parameters:
+    connId   <    connection identifier
+    data     <    a byte array that will be used for storing the received data
+
+Return value:
+              -10    <    if invalid connection identifier is specified
+              -20    <    if the calling thread does not match the thread
+                          connection
+              -30    <    if the connection was closed by the other side
+  number of bytes    <    if the receipt was successful
+         received
+
+Description:
+
+Receives the data over the network connection described by the specified connection identifier
+and saves it to the specified byte array
+
+A thread that calls this function MUST match the thread that acquired the connection identifier
+
+It is guaranteed that the function will not receive more than 2047 bytes of data.
+It is responsibility of a user to ensure that the data fits the specified byte array.
+If this is not the case, the call to this function causes UNDEFINED BEHAVIOUR
+
+========================================================================================
+
+Signature: int SendFile(int connId, const char *fileName, int *transferSpeed);
+
+Parameters:
+    connId          <    connection identifier
+    fileName        <    relative path to the file that need to be transferred
+    transferSpeed   <    pointer to the integer where transfer speed will be saved
+                         if this pointer is NULL transfer speed will not be saved
+
+Return value:
+         0          <    if file transfer was successful
+        -1          <    if the specified file cannot be opened
+        -2          <    if file transfer over the network failed
+
+Description:
+Sends a file specified by fileName over the network described by the connection identifier
+Users may provide a pointer to the ingeger where transfer speed will be saved
+
+A thread that calls this function MUST match the thread that acquired the connection identifier
+
+========================================================================================
+
+Signature: int ReceiveFile(int connId, const char *fileName);
+
+Parameters:
+    connId     <    connection identifier
+    fileName   <    relative path to the file
+
+Return value:
+         0     <    if the file has been received and saved successfully
+        -1     <    if the file cannot be created
+        -2     <    if the error occured during network transfer
+        -3     <    if the error occured when writing the file
+
+Description:
+Receives a file over the network connection described by the connection identifier
+and saves it as fileName
+
+A thread that calls this function MUST match the thread that acquired the connection identifier
+
+If the file with the given fileName already exists in the filesystem its content will be overwritten
+
+A thread that calls this function MUST match the thread that acquired the connection identifier
+
+========================================================================================
+
+Signature: int NetworkCloseConnection(int connId);
+
+Parameters:
+    connId      < Connection Identifier
+
+Return value:
+         0      < if connection has been closed
+        -1      < if invalid connection identifier is specified
+
+Description:
+Closes a network connection described by the connection identifier
+Connection identifier is considered invalid as soon as this function is called
+Attempt to use the connection identifier after call to this function results in
+an UNDEFINED BEHAVIOUR
+
+If other side of the connection attempts to receive anything after this function
+is called, it will close its connection immediately
+
+If other sides does not attempt to receive anything, it will close its connection
+after machine-dependent period of time
+
+A thread that calls this function MUST match the thread that acquired the connection identifier
+
+========================================================================================
