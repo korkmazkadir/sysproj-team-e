@@ -18,7 +18,8 @@ static void first_thread(void  *arg) {
     _ASSERT(connId >= 0);
 
     char buffer[BUF_SIZE];
-    for (int ii = 0; ii < BUF_SIZE; ++ii) {
+    int ii = 0;
+    for (ii = 0; ii < BUF_SIZE; ++ii) {
         buffer[ii] = 0;
     }
     int bytesRead = NetworkReceiveFromByConnId(connId, buffer);

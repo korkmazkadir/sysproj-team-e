@@ -23,7 +23,8 @@ void fun2(void *_) {
 
     UserThreadJoin((int)_);
     SynchPutString("2Hello\n");
-    for (int ii = 0; ii < 1000; ++ii) {
+    int ii = 0;
+    for (ii = 0; ii < 1000; ++ii) {
         globalInt += (int)_;
     }
 

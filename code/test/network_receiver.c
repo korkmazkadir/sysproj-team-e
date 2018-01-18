@@ -13,7 +13,8 @@ int main() {
     SynchPutInt(bytesReceived);
     PutChar('\n');
 
-    for (int ii = 0; ii < bytesReceived; ++ii) {
+    int ii = 0;
+    for (ii = 0; ii < bytesReceived; ++ii) {
         PutChar(data[ii]);
     }
 
@@ -23,7 +24,7 @@ int main() {
     NetworkSendToByConnId(connId, smallData, strlen(smallData));
 #endif
 
-    int fileStatus = ReceiveFile(connId, "OMG_THIS_IS_HALT.O");
+    int fileStatus = ReceiveFile(connId, "OMG.O");
     SynchPutInt(fileStatus);
     PutChar('\n');
     //NOTE: This assert CAN happen and is NORMAL
