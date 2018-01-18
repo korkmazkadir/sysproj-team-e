@@ -22,7 +22,7 @@ int main() {
     _printf("\n# Canculating Triangular Numbers #\n");
     
     OpenFileId out = Open("out.txt");
-    outputFile = out;
+    OUTPUT_FILE = out;
     
     calculateTrinangulars(100);
     

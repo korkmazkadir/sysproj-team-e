@@ -189,6 +189,11 @@ FileSystem::Create(const char *name, int initialSize)
     std::string fileName = this->getFileName(name);
     OpenFile *currentDirectoryFile = this->handlePath(name);
     
+    if(currentDirectoryFile == NULL){
+        lock->Release();
+        return false;
+    }
+    
     //printf("creating file %s\n",fileName.c_str());
     
     Directory *directory;
@@ -245,6 +250,12 @@ FileSystem::CreateUserFile(const char *name)
     std::string fileName = this->getFileName(name);
     OpenFile *currentDirectoryFile = this->handlePath(name);
     
+    
+    if(currentDirectoryFile == NULL){
+        lock->Release();
+        return false;
+    }
+    
     //printf("creating file %s\n",fileName.c_str());
     
     Directory *directory;
@@ -298,6 +309,11 @@ FileSystem::CreateDirectory(const char *name){
     
     std::string fileName = this->getFileName(name);
     OpenFile *currentDirectoryFile = this->handlePath(name);
+    
+    if(currentDirectoryFile == NULL){
+        lock->Release();
+        return false;
+    }
     
     printf("Creating File. Name is %s\n",fileName.c_str());
     
@@ -367,6 +383,11 @@ int FileSystem::ChangeDirectory(const char *name){
     
     std::string fileName = this->getFileName(name);
     OpenFile *currentDirectoryFile = this->handlePath(name);
+    
+    if(currentDirectoryFile == NULL){
+        lock->Release();
+        return -1;
+    }
     
     Directory *directory;
     directory = new Directory(NumDirEntries);
@@ -472,6 +493,11 @@ FileSystem::Open(const char *name)
     std::string fileName = this->getFileName(name);
     OpenFile *currentDirectoryFile = this->handlePath(name);
     
+    if(currentDirectoryFile == NULL){
+        lock->Release();
+        return NULL;
+    }
+    
     Directory *directory = new Directory(NumDirEntries);
     OpenFile *openFile = NULL;
     int sector;
@@ -569,6 +595,12 @@ void FileSystem::ListDirectoryContent(const char *name){
     lock->Acquire();
     
     OpenFile *currentDirectoryFile = this->handlePath(name);
+    
+    if(currentDirectoryFile == NULL){
+        lock->Release();
+        return;
+    }
+    
     Directory *directory = new Directory(NumDirEntries);
     directory->FetchFrom(currentDirectoryFile);
     directory->List();

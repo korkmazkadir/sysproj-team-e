@@ -35,10 +35,10 @@ int openFile(){
     _scanf("%s",name);
     
     removeNewLine(name,MAX_STRING_SIZE);
-    
+
     OpenFileId fileDescriptor = Open(name);
 
-    if (fileDescriptor < 0) {
+    if (fileDescriptor < 0 || fileDescriptor > 10) {
         _printf("Can not open file. Error code %d\n", fileDescriptor);
         Exit(-1);
     }

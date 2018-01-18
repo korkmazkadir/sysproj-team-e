@@ -212,7 +212,6 @@ int createProcess(char *filename){
 
     delete executable; // close file
 
-
     return retVal;
 }
 
