@@ -65,7 +65,6 @@ DECLARE_TEST_BEGIN(ExceptionHalt)
 
     //Assert
     EXPECT_EQ(true, interrupt->halted);
-    VerifyPCCounter;
 DECLARE_TEST_END(ExceptionHalt)
 
 DECLARE_TEST_BEGIN(ExceptionGetChar)
