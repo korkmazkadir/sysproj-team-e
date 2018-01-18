@@ -68,10 +68,12 @@ void writeToFile(int file){
 
 int main() {
     
-    _printf("\nNano Text Editor\n");
+    _printf("\n\nPico Text Editor\n\n");
     int file = openFile();
     writeToFile(file);
 
+    _printf("\n-----------------------\n");
+    
     return 0;
 }
 
