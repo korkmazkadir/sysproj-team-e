@@ -1,12 +1,2 @@
 .
 .
-Unable to open file ./network_sender
-[35mD 	.[0m
-[35mD 	..[0m
-[32mF 	pico[0m
-[32mF 	display[0m
-[32mF 	shell[0m
-[32mF 	net_rec[0m
-[32mF 	net_sen[0m
-
-Cleaning up...
