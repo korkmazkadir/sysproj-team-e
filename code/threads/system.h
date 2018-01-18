@@ -57,7 +57,7 @@ int removeDirectory(char *name); // remove directory (rm)
 
 
 int openFile(char *name);
-void writeToFile (char *buffer, int size, int fileDescriptor);
+int writeToFile (char *buffer, int size, int fileDescriptor);
 int readFromFile (char *buffer, int size, int fileDescriptor);
 void closeFile(int fileDescriptor);
 

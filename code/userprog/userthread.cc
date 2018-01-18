@@ -9,7 +9,7 @@
 
 #define MAX_NUM_USERTHREADS 128
 
-static const int THREAD_STACK_SIZE = 5 * PageSize;
+static const int THREAD_STACK_SIZE = 20 * PageSize;
 
 static int numThreads = 0;
 static int numProcesses = 0;
@@ -182,8 +182,10 @@ int do_UserThreadCreate(int funPtr, int arg, int retAddress, AddrSpace *space, O
         newThread->Fork(StartUserThread, (int)serializedThreadParam);
         newThread->SetWorkingDirectory(workingDirectoryFile);
         if(parent != NULL){
-            //printf("Setting current thread table \n");
             newThread->setOpenFileTable(parent->getOpenFileTable());
+        }else{
+            ThreadOpenFileTable *fileTable = new ThreadOpenFileTable();
+            newThread->setOpenFileTable(fileTable);
         }
         
                 

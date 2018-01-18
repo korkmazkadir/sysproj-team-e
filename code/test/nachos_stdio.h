@@ -29,8 +29,8 @@ typedef unsigned char *va_list;
 #define va_start(list, param) (list = (((va_list)&param) + sizeof(param)))
 #define va_arg(list, type)    (*(type *)((list += 4) - 4))
 
-OpenFileId inputFile = ConsoleInput;
-OpenFileId outputFile = ConsoleOutput;
+OpenFileId INPUT_FILE = ConsoleInput;
+OpenFileId OUTPUT_FILE = ConsoleOutput;
 
 int copyString(char *src, char *dest) {
 
@@ -156,14 +156,14 @@ void _printf(char *format, ...) {
 
     }
 
-    Write(buffer,writeIndex++,outputFile);
+    Write(buffer,writeIndex++,OUTPUT_FILE);
 }
 
 
 void _scanf(char *format, ...) {
-
+    
     char buffer[MAX_STRING_SIZE];
-    Read(buffer,MAX_STRING_SIZE, inputFile);
+    Read(buffer,MAX_STRING_SIZE, 0);
 
     va_list args;
     va_start(args, format);

@@ -1,0 +1,31 @@
+Shell
+
+Nacos Shell is a user level program.
+It can handle 5 types of commands
+
+cd :  takes a path as parameter and 
+changes the current working directory of the shell.
+
+ls : without parameter it prints the content of the
+current working directory. With path parameter
+it lists the content of the path
+
+mkdir : takes a path as parameter and creates a directory.
+
+rm  : takes a file name or path and removes it.
+
+run  : takes an executable path as parameter and runs user level program. with ampersand(&)
+parameter user level programs can run in the background
+
+exit : close the NachOS
+
+
+Programs
+
+Our version of NachOS is shipped with 2 utility program.
+These are
+
+Pico : a text filecreator program. It creates text files and fills with user
+input data. 
+
+Display : a text viewer. It opens any text file to see the content.

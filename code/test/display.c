@@ -38,7 +38,7 @@ int openFile(){
     
     OpenFileId fileDescriptor = Open(name);
 
-    if (fileDescriptor < 0) {
+    if (fileDescriptor < 0 || fileDescriptor > 10) {
         _printf("Can not open file. Error code %d\n", fileDescriptor);
         Exit(-1);
     }
@@ -60,6 +60,7 @@ void readFromFile(int file){
 }
 
 int main() {
+    _printf("\n\nDisplay Text Viewer\n\n");
     int file = openFile();
     _printf("\n_______________%s_______________\n",name);
     readFromFile(file);

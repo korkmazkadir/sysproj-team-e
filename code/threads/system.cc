@@ -212,7 +212,6 @@ int createProcess(char *filename){
 
     delete executable; // close file
 
-
     return retVal;
 }
 
@@ -252,19 +251,20 @@ int removeDirectory(char *name){
 int openFile(char *name){
     
     if(openFileTable->getNumAvailable() == 0){
-        return -1;
+        return -6;
     }
 
     OpenFile *file = fileSystem->Open(name);
     if(file == NULL){
         bool result = fileSystem->CreateUserFile(name);
-        if(!result){
-            return -2;
+        if(result != 0){
+            return result;
         }
     }
     
     file = fileSystem->Open(name);
     
+        
     int fileDescriptor = openFileTable->AddEntry(file,name,currentThread->Tid(), currentThread->getName());
     ThreadOpenFileTable *perThreadTable = currentThread->getOpenFileTable();
     int descriptor = perThreadTable->AddEntry(fileDescriptor,NORMAL_FILE);
@@ -272,22 +272,24 @@ int openFile(char *name){
     return descriptor;
 }
     
-
-void writeToFile (char *buffer, int size, int fileDescriptor){
+// writes to file
+// if there is no file than returns -1
+// if it is console returns size
+// if write successful, returns number of bytes written to disk
+int writeToFile (char *buffer, int size, int fileDescriptor){
     
     ThreadOpenFileTable *perThreadTable = currentThread->getOpenFileTable();
 
     int systemFileDescriptor = perThreadTable->getFileDescriptor(fileDescriptor);
 
     if(systemFileDescriptor == -1){
-        //printf("Write No file :( \n");
-        return;
+        return -1;
     }
     
     //If it is console than write to console
     if(perThreadTable->getFileType(fileDescriptor) == CONSOLE){
         syncConsole->SynchPutString(buffer,size);
-        return;
+        return size;
     }
 
     OpenFile *file = openFileTable->getFile(systemFileDescriptor);
@@ -295,9 +297,10 @@ void writeToFile (char *buffer, int size, int fileDescriptor){
     lock->Acquire();
     
     
-    file->Write(buffer,size);
+    int result = file->Write(buffer,size);
     
     lock->Release();
+    return result;
 }
 
 int readFromFile (char *buffer, int size, int fileDescriptor){

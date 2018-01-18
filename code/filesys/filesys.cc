@@ -189,6 +189,11 @@ FileSystem::Create(const char *name, int initialSize)
     std::string fileName = this->getFileName(name);
     OpenFile *currentDirectoryFile = this->handlePath(name);
     
+    if(currentDirectoryFile == NULL){
+        lock->Release();
+        return false;
+    }
+    
     //printf("creating file %s\n",fileName.c_str());
     
     Directory *directory;
@@ -236,7 +241,7 @@ FileSystem::Create(const char *name, int initialSize)
 }
 
 
-bool
+int
 FileSystem::CreateUserFile(const char *name)
 {
 
@@ -245,13 +250,19 @@ FileSystem::CreateUserFile(const char *name)
     std::string fileName = this->getFileName(name);
     OpenFile *currentDirectoryFile = this->handlePath(name);
     
+    
+    if(currentDirectoryFile == NULL){
+        lock->Release();
+        return -1;
+    }
+    
     //printf("creating file %s\n",fileName.c_str());
     
     Directory *directory;
     BitMap *freeMap;
     FileHeader *hdr;
     int sector;
-    bool success;
+    int result;
 
     DEBUG('f', "Creating file %s, size %d\n", fileName.c_str());
 
@@ -260,21 +271,21 @@ FileSystem::CreateUserFile(const char *name)
 
     
     if (directory->Find(fileName.c_str()) != -1)
-      success = FALSE;			// file is already in directory
+      result = -2;			// file is already in directory
     else {	
         freeMap = new BitMap(NumSectors);
         freeMap->FetchFrom(freeMapFile);
         sector = freeMap->Find();	// find a sector to hold the file header
     	if (sector == -1) 		
-            success = FALSE;		// no free block for file header 
+            result = -3;		// no free block for file header 
         else if (!directory->Add(fileName.c_str(), sector))
-            success = FALSE;	// no space in directory
+            result = -4;	// no space in directory
 	else {
     	    hdr = new FileHeader;
 	    if (!hdr->FixSizeFile(freeMap))
-            	success = FALSE;	// no space on disk for data
+            	result = -5;	// no space on disk for data
 	    else {	
-	    	success = TRUE;
+	    	result = 0;
 		// everthing worked, flush all changes back to disk
     	    	hdr->WriteBack(sector); 		
     	    	directory->WriteBack(currentDirectoryFile);
@@ -288,10 +299,10 @@ FileSystem::CreateUserFile(const char *name)
     
     lock->Release();
     
-    return success;
+    return result;
 }
 
-bool
+int
 FileSystem::CreateDirectory(const char *name){
 
     lock->Acquire();
@@ -299,13 +310,17 @@ FileSystem::CreateDirectory(const char *name){
     std::string fileName = this->getFileName(name);
     OpenFile *currentDirectoryFile = this->handlePath(name);
     
-    printf("Creating File. Name is %s\n",fileName.c_str());
+    if(currentDirectoryFile == NULL){
+        lock->Release();
+        return -1;
+    }
     
+
     Directory *directory;
     BitMap *freeMap;
     FileHeader *hdr;
     int sector;
-    bool success;
+    int result;
 
     int initialSize = DirectoryFileSize;
 
@@ -315,22 +330,22 @@ FileSystem::CreateDirectory(const char *name){
     directory->FetchFrom(currentDirectoryFile);
 
     if (directory->Find(fileName.c_str()) != -1)
-      success = FALSE;			// file is already in directory
+      result = -2;			// file is already in directory
     else {	
         freeMap = new BitMap(NumSectors);
         freeMap->FetchFrom(freeMapFile);
         sector = freeMap->Find();	// find a sector to hold the file header
 
     	if (sector == -1) 		
-            success = FALSE;		// no free block for file header 
+            result = -3;		// no free block for file header 
         else if (!directory->AddDirectory(fileName.c_str(), sector))
-            success = FALSE;	// no space in directory
+            result = -4;	// no space in directory
 	else {
     	    hdr = new FileHeader;
 	    if (!hdr->Allocate(freeMap, initialSize))
-            	success = FALSE;	// no space on disk for data
+            	result = -5;	// no space on disk for data
 	    else {	
-	    	success = TRUE;
+	    	result = 0;
 		// everthing worked, flush all changes back to disk
                 
                 hdr->WriteBack(sector); 
@@ -357,7 +372,7 @@ FileSystem::CreateDirectory(const char *name){
     
     lock->Release();
     
-    return success;   
+    return result;   
 }
 
 
@@ -367,6 +382,11 @@ int FileSystem::ChangeDirectory(const char *name){
     
     std::string fileName = this->getFileName(name);
     OpenFile *currentDirectoryFile = this->handlePath(name);
+    
+    if(currentDirectoryFile == NULL){
+        lock->Release();
+        return -1;
+    }
     
     Directory *directory;
     directory = new Directory(NumDirEntries);
@@ -472,6 +492,11 @@ FileSystem::Open(const char *name)
     std::string fileName = this->getFileName(name);
     OpenFile *currentDirectoryFile = this->handlePath(name);
     
+    if(currentDirectoryFile == NULL){
+        lock->Release();
+        return NULL;
+    }
+    
     Directory *directory = new Directory(NumDirEntries);
     OpenFile *openFile = NULL;
     int sector;
@@ -569,6 +594,12 @@ void FileSystem::ListDirectoryContent(const char *name){
     lock->Acquire();
     
     OpenFile *currentDirectoryFile = this->handlePath(name);
+    
+    if(currentDirectoryFile == NULL){
+        lock->Release();
+        return;
+    }
+    
     Directory *directory = new Directory(NumDirEntries);
     directory->FetchFrom(currentDirectoryFile);
     directory->List();
