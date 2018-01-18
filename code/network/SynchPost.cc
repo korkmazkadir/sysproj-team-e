@@ -68,7 +68,7 @@ int SynchPost::SendTo(int addr, int mailbox, const char *data, int len, unsigned
 
         if (ii >= 0) { /* if this is a regular data packet */
             memset(buffer, 0x00, sizeof(buffer));
-            int chunkLength = std::min(MaxMailSize, static_cast<unsigned>(len));
+            int chunkLength = std::min<unsigned int>(MaxMailSize, static_cast<unsigned int>(len));
             outMailHdr.length = chunkLength;
             outMailHdr.index = getMasked(ii, specialMask);
             len -= chunkLength;
@@ -220,7 +220,7 @@ int SynchPost::ReceiveFrom(int mailbox, char *data, PacketHeader *out_pktHeader)
             if ((int)packetIndex != ix) {
                 continue;
             }
-            int curLength = std::min(MaxMailSize, static_cast<unsigned>(len));
+            int curLength = std::min<unsigned int>(MaxMailSize, static_cast<unsigned int>(len));
             len -= curLength;
 
             memcpy(data + ix * MaxMailSize, buffer, curLength);

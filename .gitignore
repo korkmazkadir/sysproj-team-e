@@ -8,4 +8,6 @@ code/unit_tests/*.txt.user
 code/test/integration_test/io/*
 **/CMakeFiles
 nbproject/
-
+code/unit_tests/build-*
+*.pro.user
+*.txt.user
