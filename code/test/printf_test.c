@@ -2,8 +2,7 @@
 #include "nachos_stdio.h"
 
 
-int
-main() {
+int main() {
 
     const char c1 = 'Q';
     const char c2 = 'W';
@@ -20,5 +19,6 @@ main() {
     _printf("%d\n", testInt);
 
     _ASSERT(3 > 5);
-    
+
+    return 0;
 }

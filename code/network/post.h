@@ -88,6 +88,7 @@ class MailBox {
 				// mailbox (and wait if there is no message 
 				// to get!)
     int Peek(PacketHeader *pktHdr, MailHeader *mailHdr);
+    int Discard();
 
   private:
     SynchList *messages;	// A mailbox is just a list of arrived messages
@@ -121,6 +122,7 @@ class PostOffice {
 				// there is no message in the box.
 
     int Peek(int box, PacketHeader *pktHdr, MailHeader *mailHdr);
+    int Remove(int box);
 
     void PostalDelivery();	// Wait for incoming messages, 
 				// and then put them in the correct mailbox

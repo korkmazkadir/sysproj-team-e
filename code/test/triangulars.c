@@ -3,10 +3,11 @@
 
 
 void calculateTrinangulars(int count){
-    
-    for(int i = 0; i < count ; i++){
+    int i = 0;
+    for(i = 0; i < count ; i++){
         int nthNumber = 0;
-        for(int j = 0; j <= i; j++){
+        int j = 0;
+        for(j = 0; j <= i; j++){
             nthNumber += j;
         }
         

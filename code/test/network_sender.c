@@ -24,12 +24,16 @@ int main() {
     PutChar('\n');
 #endif
 
-    int speed;
-    SendFile(connId, "step6-usersemaphore.o", &speed);
+    int speed = -1;
+    int sendFileSystes = SendFile(connId, "step6-use", &speed);
 
-#if 0
+#if 1
     SynchPutString("TRANSFER SPEED WAS : ");
     SynchPutInt(speed);
+    PutChar('\n');
+
+    SynchPutString("File send status : ");
+    SynchPutInt(sendFileSystes);
     PutChar('\n');
 #endif
 

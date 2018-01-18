@@ -21,5 +21,6 @@ int main() {
     Close(file);
 
     _printf("End of read\n");
+    return 0;
 }
 

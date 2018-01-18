@@ -182,7 +182,7 @@ int do_UserThreadCreate(int funPtr, int arg, int retAddress, AddrSpace *space, O
         newThread->Fork(StartUserThread, (int)serializedThreadParam);
         newThread->SetWorkingDirectory(workingDirectoryFile);
         if(parent != NULL){
-            printf("Setting current thread table \n");
+            //printf("Setting current thread table \n");
             newThread->setOpenFileTable(parent->getOpenFileTable());
         }
         

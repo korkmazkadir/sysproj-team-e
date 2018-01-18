@@ -199,7 +199,6 @@ int SynchPost::ReceiveFrom(int mailbox, char *data, PacketHeader *out_pktHeader)
             retLen = len;
 
             // Check we have a valid header
-            // TODO: Move header property to mail header
             int cmpRes = strncmp(headerData, HEADER_WORD, strlen(HEADER_WORD));
             if ((cmpRes != 0) || (len <= 0) || (!isHeader(maskedIndex))) {
                 continue;
@@ -278,12 +277,20 @@ int SynchPost::ConnectAsClient(int address, int mailbox)
 {
     int retVal = -1;
     int status = 0;
+    int peekStatus = 0;
 
     int connectionIx = availConnections.Find();
     if (connectionIx == -1) {
         retVal = -2;
         goto early_exit;
     }
+
+    do {
+        peekStatus = postOffice->Peek(mailbox, nullptr, nullptr);
+        if (peekStatus == 0) {
+            postOffice->Remove(mailbox);
+        }
+    } while(peekStatus == 0);
 
     status = SendTo(address, mailbox, INIT_CONN, strlen(INIT_CONN));
     (void)status;
@@ -409,7 +416,7 @@ int SynchPost::ReceiveFile(int connId, const char *fileName) {
         fileSystem->Remove(fileName);
     }
 
-    creationSucc = fileSystem->Create(fileName, 0);
+    creationSucc = fileSystem->CreateUserFile(fileName);
     file = fileSystem->Open(fileName);
 
     if (!creationSucc || !file) {
@@ -517,7 +524,7 @@ void SynchPost::periodicCloseChecker(int arg) {
         }
     }
 
-    interrupt->Schedule(&SynchPost::periodicCloseChecker, arg, 40000000, TimerInt);
+    interrupt->Schedule(&SynchPost::periodicCloseChecker, arg, 400000, TimerInt);
 
 }
 

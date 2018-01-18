@@ -2,7 +2,8 @@
 #include "nachos_stdio.h"
 
 int compareString(char *str1, char *str2){
-    for (int i = 0; i < MAX_STRING_SIZE; i++) {
+    int i = 0;
+    for (i = 0; i < MAX_STRING_SIZE; i++) {
         char ch1 = str1[i];
         char ch2 = str2[i];
         
@@ -23,7 +24,8 @@ OpenFileId inFile;
 void writerThread(void *_){
     _printf("Writer is working :)\n");
     char ch = '1';
-    for(int i = 0; i < 1000; i++ ){
+    int i = 0;
+    for(i = 0; i < 1000; i++ ){
         Write(&ch,1,outFile);
     }
 }
@@ -32,7 +34,8 @@ void writerThread(void *_){
 void readerThread(void *_){
     _printf("Writer is working :)\n");
     char ch = 1;
-    for(int i = 0; i < 1000; i++ ){
+    int i = 0;
+    for(i = 0; i < 1000; i++ ){
         Read(&ch,1,inFile);
         _printf("%c",ch);
     }
@@ -65,6 +68,6 @@ int main() {
     Close(inFile);
     
     _printf("End of File System Test 1\n");
-    
+    return 0;
 }
 
