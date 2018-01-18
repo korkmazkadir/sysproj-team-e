@@ -11,3 +11,11 @@ nbproject/
 code/unit_tests/build-*
 *.pro.user
 *.txt.user
+*.cmake
+code/unit_tests/Makefile
+code/unit_tests/synchconsole_test/Makefile
+code/unit_tests/network_test/Makefile
+code/unit_tests/filesys_test/Makefile
+code/unit_tests/vm_test/Makefile
+code/unit_tests/exception_test/Makefile
+CMakeCache.txt

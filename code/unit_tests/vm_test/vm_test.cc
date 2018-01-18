@@ -6,7 +6,7 @@
 #define MACHINE_H
 #include "system.h"
 
-#include "frameprovider.cc"
+#include "frameprovider.h"
 static FrameProvider *testfp = NULL;
 
 void TestUtils_SetUp() {
@@ -33,13 +33,13 @@ DECLARE_TEST_BEGIN(VMGetEmptyFrameTest)
     testfp->ReleaseFrame(page);
     num = testfp->NumAvailFrame(); //check numbers after releasing the page
     EXPECT_EQ(num, NumPhysPages);
-
-
 DECLARE_TEST_END(VMGetEmptyFrameTest)
 
 TEST_LIST_END
 
 int main () {
+    std::cout << "STARTING TEST VM:\n"<< std::endl;
     INITIALIZE_TESTS;
     RUN_ALL_TESTS;
+    std::cout << "\n\n"<< std::endl;
 }

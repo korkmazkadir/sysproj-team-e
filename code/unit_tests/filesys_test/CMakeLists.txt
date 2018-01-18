@@ -4,11 +4,9 @@ project(filesys_test)
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/../common/CMakeLists.txt)
 
-list(REMOVE_ITEM src "${CMAKE_CURRENT_SOURCE_DIR}/../../userprog/SynchPost.cc")
-
 set(SOURCES ${src} ${CMAKE_CURRENT_SOURCE_DIR}/filesys_test.cc)
 
 
-add_executable(network_test ${SOURCES}) 
+add_executable(filesys_test ${SOURCES}) 
 
 
