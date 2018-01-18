@@ -24,6 +24,7 @@ SOURCES += $$PWD/*.cc \
            $$files($$PWD/../../threads/*.cc) \
            $$PWD/../../threads/*.S \
            $$PWD/../../userprog/*.cc \
+    network_test.cc
 
 SOURCES -= $$PWD/../../threads/main.cc
 SOURCES -= $$PWD/../../userprog/exception.cc

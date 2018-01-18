@@ -155,6 +155,8 @@ DECLARE_TEST_END(ExceptionGetInt)
 TEST_LIST_END
 
 int main() {
+    std::cout << "STARTING EXCEP VM:\n\n"<< std::endl;
     INITIALIZE_TESTS;
     RUN_ALL_TESTS;
+    std::cout << "\n\n"<< std::endl;
 }

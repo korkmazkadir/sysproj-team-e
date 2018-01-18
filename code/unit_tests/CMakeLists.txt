@@ -7,6 +7,12 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/exception_test)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/vm_test)
 
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/filesys_test)
+
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/network_test)
+
 add_custom_target(validate COMMAND synchconsole_test
                            COMMAND exception_test
-                            COMMAND vm_test)
+                           COMMAND vm_test
+                           COMMAND filesys_test
+                           COMMAND network_test)

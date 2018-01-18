@@ -84,6 +84,8 @@ DECLARE_TEST_END(SynchGetString_3)
 TEST_LIST_END
 
 int main () {
+    std::cout << "STARTING TEST SYNCHCONSOLE:\n\n"<< std::endl;
     INITIALIZE_TESTS;
     RUN_ALL_TESTS;
+    std::cout << "\n\n"<< std::endl;
 }

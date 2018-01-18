@@ -116,7 +116,7 @@ void ExceptionHandler(ExceptionType which) {
             switch (type) {
                 case SC_Halt:
                 {
-                    printf("SHUTDONW %d \n", currentThread->Tid());
+                    //printf("SHUTDONW %d \n", currentThread->Tid());
                     interrupt->Halt();
                 }
                 break;
