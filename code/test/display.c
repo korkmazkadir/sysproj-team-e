@@ -64,5 +64,6 @@ int main() {
     _printf("\n_______________%s_______________\n",name);
     readFromFile(file);
     _printf("\n______________________________________\n",name);
+    return 0;
 }
 

@@ -65,6 +65,6 @@ int main() {
     Close(inFile);
     
     _printf("End of File System Test 1\n");
-    
+    return 0;
 }
 

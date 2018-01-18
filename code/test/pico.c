@@ -2,7 +2,8 @@
 #include "nachos_stdio.h"
 
 int compareString(char *str1, char *str2){
-    for (int i = 0; i < MAX_STRING_SIZE; i++) {
+    int i = 0;
+    for (i = 0; i < MAX_STRING_SIZE; i++) {
         char ch1 = str1[i];
         char ch2 = str2[i];
         
@@ -18,7 +19,8 @@ int compareString(char *str1, char *str2){
 
 
 void removeNewLine(char *string, int size){
-    for (int i = 0; i < size; i++) {
+    int i = 0;
+    for (i = 0; i < size; i++) {
         if(string[i] == '\n'){
             string[i] = '\0';
             break;
@@ -71,5 +73,6 @@ int main() {
     writeToFile(file);
   
     _printf("End of nano\n");
+    return 0;
 }
 
