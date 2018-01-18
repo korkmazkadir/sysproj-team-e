@@ -1,16 +1,22 @@
 #include <stdlib.h>
 #include "test_utils.h"
 
-#include "frameprovider.h"
-#include "machine.h"
-#define FRAMEPROVIDER_H
+#include "machine_mock.h"
+#define Machine MachineMock
+#define MACHINE_H
+#include "system.h"
+
+#include "frameprovider.cc"
 static FrameProvider *testfp = NULL;
 
 void TestUtils_SetUp() {
+    machine = new MachineMock(false);
+
     testfp = new FrameProvider();
 }
 
 void TestUtils_TearDown() {
+    delete machine;
     delete testfp;
 }
 
@@ -28,7 +34,7 @@ DECLARE_TEST_BEGIN(VMGetEmptyFrameTest)
     num = testfp->NumAvailFrame(); //check numbers after releasing the page
     EXPECT_EQ(num, NumPhysPages);
 
-    
+
 DECLARE_TEST_END(VMGetEmptyFrameTest)
 
 TEST_LIST_END
