@@ -155,7 +155,7 @@ main (int argc, char **argv)
             fileSystem->Remove (*(argv + 1));
             argCount = 2;
         }
-        else if (!strcmp (*argv, "-l"))
+        else if (!strcmp (*argv, "-ls"))
         {			// list Nachos directory
             fileSystem->List ();
         }

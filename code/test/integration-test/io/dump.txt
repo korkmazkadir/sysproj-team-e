@@ -1,2 +1,260 @@
-.
-.
+00
+
+TRBAyNtSeFsE Rr eFcIeNiIvSeHdE:D  
+125
+This is a long message that I am going to transfer in this test. It should belonger than the typical size of the package ... 
+T0RAN
+SFER SPEED WAS : 106
+File send status : Machine halting!
+
+Ticks: total 1172763, idle 1156786, system 13110, user 2867
+Disk I/O: reads 65, writes 13
+Console I/O: reads 0, writes 150
+Paging: faults 0
+Network I/O: packets received 54, sent 48
+
+Cleaning up...
+0
+Machine halting!
+
+Ticks: total 191640310, idle 191629587, system 9080, user 1643
+Disk I/O: reads 56, writes 0
+Console I/O: reads 0, writes 67
+Paging: faults 0
+Network I/O: packets received 48, sent 61
+
+Cleaning up...
+0
+0
+Bytes received: 125
+This is a long message that I am going to transfer in thTiRANsSFE R FtINIeSHEDs 
+t. It should belonger than the typical size of the package ... 
+0
+Machine halting!
+
+Ticks: total 100988773, idle 100772446, system 213460, user 2867
+Disk I/O: reads 65, writes 13
+Console I/O: reads 0, writes 150
+Paging: faults 0
+Network I/O: packets received 1675, sent 2168
+
+Cleaning up...
+TRANSFER SPEED WAS : 57
+File send status : 0
+Machine halting!
+
+Ticks: total 288402769, idle 288203466, system 197660, user 1643
+Disk I/O: reads 56, writes 0
+Console I/O: reads 0, writes 66
+Paging: faults 0
+Network I/O: packets received 1982, sent 1874
+
+Cleaning up...
+00
+
+TBRytAeNs SrFeEcRe iFvIeNdI:S HE1D2 5
+
+This is a long message that I am going to transfer in this test. It should belonger than the typical size of the package ... 
+T0RAN
+SFER SPEED WAS : 186
+File send staMachine halting!
+
+Ticks: total 1169433, idle 1154306, system 12260, user 2867
+Disk I/O: reads 65, writes 13
+Console I/O: reads 0, writes 150
+Paging: faults 0
+Network I/O: packets received 41, sent 40
+
+Cleaning up...
+tus : 0
+Machine halting!
+
+Ticks: total 192372689, idle 192363456, system 7590, user 1643
+Disk I/O: reads 56, writes 0
+Console I/O: reads 0, writes 67
+Paging: faults 0
+Network I/O: packets received 38, sent 46
+
+Cleaning up...
+00
+
+TRBAyNtSeFsE Rr eFcIeNiIvSeHdE:D  
+125
+This is a long message that I am going to transfer in this test. It should belonger than the typical size of the package ... 
+0T
+RANSFER SPEED WAS : 93
+FMachine halting!
+
+Ticks: total 709733, idle 693406, system 13460, user 2867
+Disk I/O: reads 65, writes 13
+Console I/O: reads 0, writes 150
+Paging: faults 0
+Network I/O: packets received 58, sent 54
+
+Cleaning up...
+ile send status : 0
+Machine halting!
+
+Ticks: total 189774991, idle 189764058, system 9290, user 1643
+Disk I/O: reads 56, writes 0
+Console I/O: reads 0, writes 66
+Paging: faults 0
+Network I/O: packets received 48, sent 64
+
+Cleaning up...
+00
+
+TRABNyStFeEsR  rFeIcNeIiSvHeEdD:  
+125
+This is a long message that I am going to transfer in this test. It should belonger than the typical size of the package ... 
+0T
+RANSFER SPEED WAS : 82
+FMachine halting!
+
+Ticks: total 1011983, idle 996486, system 12630, user 2867
+Disk I/O: reads 65, writes 13
+Console I/O: reads 0, writes 150
+Paging: faults 0
+Network I/O: packets received 47, sent 47
+
+Cleaning up...
+ile send status : 0
+Machine halting!
+
+Ticks: total 189771371, idle 189761228, system 8500, user 1643
+Disk I/O: reads 56, writes 0
+Console I/O: reads 0, writes 66
+Paging: faults 0
+Network I/O: packets received 45, sent 55
+
+Cleaning up...
+00
+
+TBRyAtNeSsF ErRe cFeIiNvIeSdH:E D 1
+25
+This is a long message that I am going to transfer in this test. It should belonger than the typical size of the package ... 
+0T
+RANSFER SPEED WAS : 62
+FileMachine halting!
+
+Ticks: total 1765395, idle 1747728, system 14800, user 2867
+Disk I/O: reads 65, writes 13
+Console I/O: reads 0, writes 150
+Paging: faults 0
+Network I/O: packets received 73, sent 63
+
+Cleaning up...
+ send status : 0
+Machine halting!
+
+Ticks: total 182355031, idle 182342668, system 10720, user 1643
+Disk I/O: reads 56, writes 0
+Console I/O: reads 0, writes 66
+Paging: faults 0
+Network I/O: packets received 55, sent 82
+
+Cleaning up...
+00
+
+TBRAyNtSeFsE Rr eFcIeNiIvSeHdE:D  
+125
+This is a long message that I am going to transfer in this test. It should belonger than the typical size of the package ... 
+0
+Machine halting!
+
+Ticks: total 1124493, idle 1108546, system 13080, user 2867
+Disk I/O: reads 65, writes 13
+Console I/O: reads 0, writes 150
+Paging: faults 0
+Network I/O: packets received 52, sent 51
+
+Cleaning up...
+TRANSFER SPEED WAS : 106
+File send status : 0
+Machine halting!
+
+Ticks: total 197779361, idle 197736058, system 41660, user 1643
+Disk I/O: reads 56, writes 0
+Console I/O: reads 0, writes 67
+Paging: faults 0
+Network I/O: packets received 47, sent 557
+
+Cleaning up...
+00
+
+TRBAyNtSeFsE Rr eFcIeNiIvSeHdE:D  
+125
+This is a long message that I am going to transfer in this test. It should belonger than the typical size of the package ... 
+0
+TRANSFER SPEED WMachine halting!
+
+Ticks: total 1287975, idle 1270968, system 14140, user 2867
+Disk I/O: reads 65, writes 13
+Console I/O: reads 0, writes 150
+Paging: faults 0
+Network I/O: packets received 62, sent 60
+
+Cleaning up...
+AS : 43
+File send status : 0
+Machine halting!
+
+Ticks: total 189138811, idle 189127398, system 9770, user 1643
+Disk I/O: reads 56, writes 0
+Console I/O: reads 0, writes 66
+Paging: faults 0
+Network I/O: packets received 54, sent 69
+
+Cleaning up...
+00
+
+TRBAyNtSeFsE Rr eFcIeNiIvSeHdE:D  
+125
+This is a long message that I am going to transfer in this test. It should belonger than the typical size of the package ... 
+0
+TRANSFER SPEED WAS : 74
+Machine halting!
+
+Ticks: total 869175, idle 852588, system 13720, user 2867
+Disk I/O: reads 65, writes 13
+Console I/O: reads 0, writes 150
+Paging: faults 0
+Network I/O: packets received 61, sent 54
+
+Cleaning up...
+File send status : 0
+Machine halting!
+
+Ticks: total 190537971, idle 190526468, system 9860, user 1643
+Disk I/O: reads 56, writes 0
+Console I/O: reads 0, writes 66
+Paging: faults 0
+Network I/O: packets received 51, sent 72
+
+Cleaning up...
+00
+
+TRBAyNtSeFsE Rr eFcIeNiIvSeHdE:D  
+125
+This is a long message that I am going to transfer in this test. It should belonger than the typical size of the package ... 
+0
+TRANSFER SPEED WAS : 67Machine halting!
+
+Ticks: total 996553, idle 980796, system 12890, user 2867
+Disk I/O: reads 65, writes 13
+Console I/O: reads 0, writes 150
+Paging: faults 0
+Network I/O: packets received 51, sent 48
+
+Cleaning up...
+
+File send status : 0
+Machine halting!
+
+Ticks: total 191503591, idle 191493058, system 8890, user 1643
+Disk I/O: reads 56, writes 0
+Console I/O: reads 0, writes 66
+Paging: faults 0
+Network I/O: packets received 45, sent 59
+
+Cleaning up...

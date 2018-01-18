@@ -36,6 +36,5 @@ int main() {
     SynchPutInt(sendFileSystes);
     PutChar('\n');
 #endif
-
     return 0;
 }
