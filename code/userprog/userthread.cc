@@ -9,7 +9,7 @@
 
 #define MAX_NUM_USERTHREADS 128
 
-static const int THREAD_STACK_SIZE = 20 * PageSize;
+static const int THREAD_STACK_SIZE = 5 * PageSize;
 
 static int numThreads = 0;
 static int numProcesses = 0;
