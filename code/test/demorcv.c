@@ -13,6 +13,7 @@ int main() {
     char buffer[BUF_SIZE] = { 0 };
     int numBytes = 0;
     do {
+        memset(buffer, 0, sizeof(buffer));
         numBytes = Read(buffer, BUF_SIZE - 1, fd);
         if (numBytes > 0) {
             SynchPutString(buffer);

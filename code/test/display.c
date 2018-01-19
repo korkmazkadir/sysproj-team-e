@@ -50,9 +50,11 @@ int openFile(){
 int lineCount = 1;
 char line[MAX_STRING_SIZE];
 void readFromFile(int file){
+    memset(line, 0, sizeof(line));
     int size = Read(line,MAX_STRING_SIZE, file);
     _printf("%s\n",line);
     while(size == MAX_STRING_SIZE){
+        memset(line, 0, sizeof(line));
         size = Read(line,MAX_STRING_SIZE, file);
         _printf("%s",line);
        lineCount++;

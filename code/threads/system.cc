@@ -178,9 +178,11 @@ Initialize (int argc, char **argv)
 
 #ifdef FILESYS_NEEDED
     fileSystem = new FileSystem (format);
-    //fileSystem->CreateDirectory(DEVICE_FILE_FOLDER);
-    //fileSystem->CreateUserFile(CONSOLE_FILE_PATH);
+    //fileSystem->CreateDirectory("bin");
+    //fileSystem->CreateDirectory("home");
     //syncConsole = new SynchConsole((char*)CONSOLE_FILE_PATH, (char*)CONSOLE_FILE_PATH);
+    
+    
 #endif
 
 #ifdef NETWORK
