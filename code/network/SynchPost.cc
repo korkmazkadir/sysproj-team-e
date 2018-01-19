@@ -411,7 +411,7 @@ int SynchPost::ReceiveFile(int connId, const char *fileName) {
     int retVal = 0;
 
     OpenFile *file = fileSystem->Open(fileName);
-    bool creationSucc = true;
+    int creationSucc = -1;
 
     if (file) {
         delete file;
@@ -420,8 +420,7 @@ int SynchPost::ReceiveFile(int connId, const char *fileName) {
 
     creationSucc = fileSystem->CreateUserFile(fileName);
     file = fileSystem->Open(fileName);
-
-    if (!creationSucc || !file) {
+    if ((creationSucc != 0) || !file) {
         retVal = -1;
         return retVal;
     }

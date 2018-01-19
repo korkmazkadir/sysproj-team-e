@@ -17,7 +17,7 @@ static int readIx = 0;
 
 char producerExited = 0;
 
-OpenFileId msgFd;
+static OpenFileId msgFd;
 
 /*!
  * \fn producer
@@ -29,9 +29,10 @@ void producer(void *_) {
     int data;
     int ii = 0;
     for (ii = 0; ii < 20; ++ii) {
-        data = ii;
-        int jj;
-        for (jj = 0; jj < 10000; ++jj) { ; }
+        data = ii;        
+
+        SynchPutString("\nEnter integer: ");
+        SynchGetInt(&data);
 
         SemWait(&emptSem);
         {
@@ -62,21 +63,23 @@ void consumer(void *_) {
     while (1) {
 
         int ii = 0;
-        for (ii = 0; ii < 100000; ++ii) { ; }
+        for (ii = 0; ii < 300000; ++ii) { ; }
+
+        if (producerExited && readIx == writeIx) {
+            SemPost(&mutex);
+            return;
+        }
 
         SemWait(&fillSem);
 
         SemWait(&mutex);
         {
-            if (producerExited && readIx == writeIx) {
-                SemPost(&mutex);
-                UserThreadExit();
-            }
             data = buffer[readIx];
             ++readIx;
             if (readIx >= N) {
                 readIx = 0;
             }
+
         }
         SemPost(&mutex);
 
@@ -84,13 +87,38 @@ void consumer(void *_) {
 
         SemWait(&outputMutex);
         {
-            int d = data;
-            int numBytes = 5;
-            //numBytes = Write((char*)&d, 1, msgFd);
+            char threadNumCvt[13] = { 0 };
+            char *delim = " : ";
+            char dataCvt[13] = { 0 };
+
+            int tid = UserThreadSelfId();
+
+            itoa(tid, threadNumCvt, 10);
+            itoa(data, dataCvt, 10);
+
+            int numBytes = 0;
+            numBytes = Write(threadNumCvt, strlen(threadNumCvt), msgFd);
             if (numBytes <= 0) {
-                _printf("demo: Write failed\n");
+                _printf("demo: Write failed 1\n");
             }
-            _printf("cons wrote %d to msg file\n", d);
+
+            numBytes = Write(delim, strlen(delim), msgFd);
+            if (numBytes <= 0) {
+                _printf("demo: Write failed 2\n");
+            }
+
+            numBytes = Write(dataCvt, strlen(dataCvt), msgFd);
+            if (numBytes <= 0) {
+                _printf("demo: Write failed 3\n");
+            }
+
+            char nwline = '\n';
+            numBytes = Write(&nwline, 1, msgFd);
+            if (numBytes <= 0) {
+                _printf("demo: Write failed 4\n");
+            }
+
+            _printf("cons wrote %d to msg file %d %d %d \n", data, readIx, writeIx, (int)producerExited);
         }
         SemPost(&outputMutex);
 
@@ -151,14 +179,6 @@ int main() {
     semInitStatus = SemInit(&outputMutex, 1);
     _ASSERT(0 == semInitStatus);
 
-    // Expect -3 error code
-    semInitStatus = SemInit(&outputMutex, 1);
-    _ASSERT(-3 == semInitStatus);
-
-    // Check that passing a negative value to SemInit results in a correct return code
-    sem_t oneMoreSemaphore;
-    semInitStatus = SemInit(&oneMoreSemaphore, -1);
-    _ASSERT(-2 == semInitStatus);
 
     int prodId = UserThreadCreate(&producer, 0);
 
@@ -167,12 +187,15 @@ int main() {
     int c3 = UserThreadCreate(&consumer, 0);
 
     int joinSuccess = UserThreadJoin(prodId);
+    SynchPutString("----------- 1\n");
     _ASSERT(0 == joinSuccess);
     
     joinSuccess = UserThreadJoin(c1);
+    SynchPutString("----------- 2\n");
     _ASSERT(0 == joinSuccess);
     
     joinSuccess = UserThreadJoin(c2);
+    SynchPutString("----------- 3\n");
     _ASSERT(0 == joinSuccess);
     
     joinSuccess = UserThreadJoin(c3);
@@ -191,9 +214,13 @@ int main() {
     destroySuccess = SemDestroy(&fillSem);
     _ASSERT(-1 == destroySuccess);
     
-    
-    
-    
+    Close(msgFd);
+
+    ForkExec("./../demorcv");
+
+    int connId = NetworkConnectAsServer(0);
+    int transferSpeed = -1;
+    SendFile(connId, "message", &transferSpeed);
 
     SemDestroy(&emptSem);
     SemDestroy(&fillSem);

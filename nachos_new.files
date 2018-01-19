@@ -137,3 +137,6 @@ code/test/simple_shell.c
 code/test/testthreads.c
 code/test/triangulars.c
 code/test/utility.h
+code/test/demo.c
+code/test/network_self_test.c
+code/test/demorcv.c

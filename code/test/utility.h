@@ -1,6 +1,8 @@
 #ifndef UTILITY_H
 #define UTILITY_H
 
+#include "syscall.h"
+
 #define _ASSERT(expr) if (!(expr)) aFailed(__FILE__, __LINE__)
 
 void aFailed(char *fileName, int line) {
@@ -31,6 +33,68 @@ void *memset (void *ptr, int value, int num) {
     return ptr;
 }
 
+
+
+
+
+// The following utility function is taken from https://www.geeksforgeeks.org/implement-itoa/
+
+/* A utility function to reverse a string  */
+void reverse(char str[], int length)
+{
+    int start = 0;
+    int end = length -1;
+    while (start < end)
+    {
+        char temp = *(str + start);
+        *(str + start) = *(str + end);
+        *(str + end) = temp;
+        start++;
+        end--;
+    }
+}
+
+// Implementation of itoa()
+char* itoa(int num, char* str, int base)
+{
+    int i = 0;
+    char isNegative = 0;
+
+    /* Handle 0 explicitely, otherwise empty string is printed for 0 */
+    if (num == 0)
+    {
+        str[i++] = '0';
+        str[i] = '\0';
+        return str;
+    }
+
+    // In standard itoa(), negative numbers are handled only with
+    // base 10. Otherwise numbers are considered unsigned.
+    if (num < 0 && base == 10)
+    {
+        isNegative = 1;
+        num = -num;
+    }
+
+    // Process individual digits
+    while (num != 0)
+    {
+        int rem = num % base;
+        str[i++] = (rem > 9)? (rem-10) + 'a' : rem + '0';
+        num = num/base;
+    }
+
+    // If number is negative, append '-'
+    if (isNegative)
+        str[i++] = '-';
+
+    str[i] = '\0'; // Append string terminator
+
+    // Reverse the string
+    reverse(str, i);
+
+    return str;
+}
 
 #endif // UTILITY_H
 
