@@ -23,6 +23,16 @@ Check_Result(){
 printf "\n\n---- Testing ----"
 
 
+printf "${NC}\n\n### STEP 2 ###\n"
+ 
+ 
+ #----------------------------------------------------------------------------
+ printf "${NC}>> stdio input test\n"
+ ${EXECUTABLE} ../../build/test_stdio_input prog -x prog < ./io/input_test_stdio
+ Check_Result
+ 
+
+
 printf "${NC}\n\n### STEP 3 ###\n"
 
 #----------------------------------------------------------------------------
@@ -116,8 +126,6 @@ printf "${NC}>> File System test is working${RED}\n"
 ${EXECUTABLE} ../../build/filesys prog -x prog -rs 15
 Check_Result
 
-
-printf "${NC}\n\n### STEP 6 ###\n"
 
 #----------------------------------------------------------------------------
 printf "${NC}\n\n### STEP 6 ###\n"
