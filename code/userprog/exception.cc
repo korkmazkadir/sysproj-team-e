@@ -422,14 +422,15 @@ void ExceptionHandler(ExceptionType which) {
                 case SC_Write:
                 {
                     int bufferAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                    int size = machine->ReadRegister(SECOND_PARAM_REGISTER);
+                    int fileDescriptor = machine->ReadRegister(THIRD_PARAM_REGISTER);
+
                     char buffer [MAX_WRITE_BUF_SIZE];
                     copyStringFromMachine(bufferAddress, buffer, MAX_WRITE_BUF_SIZE);
 
-                    int size = machine->ReadRegister(SECOND_PARAM_REGISTER);
-                    int fileDescriptor = machine->ReadRegister(THIRD_PARAM_REGISTER);
                     int result = writeToFile(buffer, size, fileDescriptor);
-                    copyStringToMachine(buffer, bufferAddress, result);
-                    
+                    machine->WriteRegister(RET_VALUE_REGISTER, result);
+
                     break;
                 }
 

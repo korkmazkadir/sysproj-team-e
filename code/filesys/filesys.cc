@@ -436,7 +436,6 @@ int FileSystem::RemoveDirectory(const char *name){
     
     if(directory->isDirectory(name) == false && sectorNumber > 0){
         //It is normal file remove it
-        printf("Deleting normal file\n");
         if(this->Remove(name)){
             result = 0;
         }
@@ -629,11 +628,9 @@ FileSystem::Print()
     BitMap *freeMap = new BitMap(NumSectors);
     Directory *directory = new Directory(NumDirEntries);
 
-    printf("Bit map file header:\n");
     bitHdr->FetchFrom(FreeMapSector);
     bitHdr->Print();
 
-    printf("Directory file header:\n");
     dirHdr->FetchFrom(DirectorySector);
     dirHdr->Print();
 
