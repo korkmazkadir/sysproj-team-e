@@ -15,6 +15,8 @@
 #include "copyright.h"
 #include "synchlist.h"
 
+#include "system.h"
+
 //----------------------------------------------------------------------
 // SynchList::SynchList
 //      Allocate and initialize the data structures needed for a 
@@ -53,9 +55,9 @@ SynchList::~SynchList ()
 void
 SynchList::Append (void *item)
 {
-    lock->Acquire ();		// enforce mutual exclusive access to the list 
+    lock->Acquire ();		// enforce mutual exclusive access to the list
     list->Append (item);
-    listEmpty->Signal (lock);	// wake up a waiter, if any
+    listEmpty->Signal(lock);	// wake up a waiter, if any
     lock->Release ();
 }
 
@@ -68,16 +70,29 @@ SynchList::Append (void *item)
 //----------------------------------------------------------------------
 
 void *
-SynchList::Remove ()
+SynchList::Remove (int timeout)
 {
     void *item;
-
+    m_timeout = timeout;
+    if (timeout != -1) {
+        interrupt->Schedule(&SynchList::HandleTimeout, (int) this, timeout, TimerInt);
+    }
     lock->Acquire ();		// enforce mutual exclusion
-    while (list->IsEmpty ())
-	listEmpty->Wait (lock);	// wait until list isn't empty
+    if (list->IsEmpty ()) {
+        listEmpty->Wait(lock);
+    }
+
     item = list->Remove ();
-    ASSERT (item != NULL);
     lock->Release ();
+    return item;
+}
+
+void *SynchList::Peek()
+{
+    void *item = NULL;
+    lock->Acquire();
+    item = list->Peek();
+    lock->Release();
     return item;
 }
 
@@ -95,4 +110,20 @@ SynchList::Mapcar (VoidFunctionPtr func)
     lock->Acquire ();
     list->Mapcar (func);
     lock->Release ();
+}
+
+void SynchList::HandleTimeout(int arg)
+{
+    auto oldLevel = interrupt->SetLevel(IntOff);
+    SynchList *th = (SynchList *)arg;
+    if (0 == th->lock->Acquire(true)) {
+
+        th->listEmpty->Signal(th->lock);
+        th->lock->Release();
+
+    } else {
+        //TODO: Fix this bullshit -- pass timeout to this function somehow
+        interrupt->Schedule(&SynchList::HandleTimeout, arg, th->m_timeout, TimerInt);
+    }
+    interrupt->SetLevel(oldLevel);
 }

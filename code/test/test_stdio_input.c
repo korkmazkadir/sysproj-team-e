@@ -1,24 +1,7 @@
 #include "syscall.h"
-
-#define _ASSERT(expr) if (!(expr)) aFailed(__FILE__, __LINE__)
+#include "utility.h"
 
 #define MAX_STRING_SIZE 99
-
-void aFailed(char *fileName, int line) {
-    AssertionFailed(fileName, line);
-}
-
-
-int stringCompare(char *str1, char *str2){
-    for(int i = 0; i < MAX_STRING_SIZE ; i++){
-        if(str1[i] == str2[i] ){
-            if(str1[i] == '\0'){
-                return 0;
-            }
-        }
-    }
-    return -1;
-}
 
 int
 main() {

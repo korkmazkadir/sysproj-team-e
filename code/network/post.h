@@ -45,6 +45,7 @@ class MailHeader {
     MailBoxAddress from;	// Mail box to reply to
     unsigned length;		// Bytes of message data (excluding the 
 				// mail header)
+    unsigned index;
 };
 
 // Maximum "payload" -- real data -- that can included in a single message
@@ -82,10 +83,13 @@ class MailBox {
 
     void Put(PacketHeader pktHdr, MailHeader mailHdr, char *data);
    				// Atomically put a message into the mailbox
-    void Get(PacketHeader *pktHdr, MailHeader *mailHdr, char *data); 
+    int Get(PacketHeader *pktHdr, MailHeader *mailHdr, char *data, int timeout = -1);
    				// Atomically get a message out of the 
 				// mailbox (and wait if there is no message 
 				// to get!)
+    int Peek(PacketHeader *pktHdr, MailHeader *mailHdr);
+    int Discard();
+
   private:
     SynchList *messages;	// A mailbox is just a list of arrived messages
 };
@@ -112,10 +116,13 @@ class PostOffice {
 				// machine.  The fromBox in the MailHeader is 
 				// the return box for ack's.
     
-    void Receive(int box, PacketHeader *pktHdr, 
-		MailHeader *mailHdr, char *data);
+    int Receive(int box, PacketHeader *pktHdr,
+        MailHeader *mailHdr, char *data, int timeout = -1);
     				// Retrieve a message from "box".  Wait if
 				// there is no message in the box.
+
+    int Peek(int box, PacketHeader *pktHdr, MailHeader *mailHdr);
+    int Remove(int box);
 
     void PostalDelivery();	// Wait for incoming messages, 
 				// and then put them in the correct mailbox
@@ -128,10 +135,10 @@ class PostOffice {
 				// off of network (i.e., time to call 
 				// PostalDelivery)
 
+    MailBox *boxes;		// Table of mail boxes to hold incoming mail
   private:
     Network *network;		// Physical network connection
     NetworkAddress netAddr;	// Network address of this machine
-    MailBox *boxes;		// Table of mail boxes to hold incoming mail
     int numBoxes;		// Number of mail boxes
     Semaphore *messageAvailable;// V'ed when message has arrived from network
     Semaphore *messageSent;	// V'ed when next message can be sent to network

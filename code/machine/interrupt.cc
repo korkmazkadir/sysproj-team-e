@@ -119,9 +119,9 @@ Interrupt::SetLevel(IntStatus now)
 {
     IntStatus old = level;
     
-    ASSERT((now == IntOff) || (inHandler == FALSE));// interrupt handlers are 
-						// prohibited from enabling 
-						// interrupts
+    ASSERT((now == IntOff) || (inHandler == FALSE));// interrupt handlers are
+                        // prohibited from enabling
+                        // interrupts
 
     ChangeLevel(old, now);			// change to new state
     if ((now == IntOn) && (old == IntOff))
@@ -243,19 +243,11 @@ Interrupt::Idle()
 void
 Interrupt::Halt()
 {
+#if 1
     printf("Machine halting!\n\n");
     stats->Print();
+#endif
     Cleanup();     // Never returns.
-}
-
-//----------------------------------------------------------------------
-// Interrupt::AssertionFailed
-// 	Stops the program assertion failed.
-//----------------------------------------------------------------------
-void
-Interrupt::AssertionFailed(char *fileName, int lineNumber){
-    fprintf(stderr,"\nERORR : Assertion failed. FILE : %s LINE : %d\n\n",fileName,lineNumber);
-    Exit (123);
 }
 
 //----------------------------------------------------------------------

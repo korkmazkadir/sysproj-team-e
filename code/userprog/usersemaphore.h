@@ -2,6 +2,7 @@
 #define USERSEMAPHORE_H
 
 #include <array>
+#include  <set>
 
 #include "semaphore.h"
 #include "synch.h"
@@ -31,6 +32,7 @@ private:
     int getSemaphoreIxByVirtMem(sem_t *semPtr);
 
     std::array<Semaphore *, SEM_VALUE_MAX> m_semaphores;
+    std::set<sem_t *> m_initializedSemaphores;
 };
 
 

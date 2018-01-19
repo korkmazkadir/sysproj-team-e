@@ -29,7 +29,7 @@
 //    -f causes the physical disk to be formatted
 //    -cp copies a file from UNIX to Nachos
 //    -p prints a Nachos file to stdout
-//    -r removes a Nachos file from the file system
+//    -r removes a Nachos file from the file system-l lists the contents of the Nachos
 //    -l lists the contents of the Nachos directory
 //    -D prints the contents of the entire file system 
 //    -t tests the performance of the Nachos file system
@@ -53,16 +53,22 @@
 
 #include "utility.h"
 #include "system.h"
-
+#include "synchtests.h"
 
 // External functions used by this file
 
-extern void ThreadTest (void), Copy (const char *unixFile, const char *nachosFile);
+extern void ThreadTest (void), Copy (const char *unixFile, const char *nachosFile), CopyBack(const char *unixFile, const char *nachosFile);
 extern void Print (char *file), PerformanceTest (void);
 extern void StartProcess (char *file);
 extern void ConsoleTest (char *in, char *out);
 extern void SynchConsoleTest(char *, char *);
 extern void MailTest (int networkID);
+extern void Mail10Test (int networkID);
+extern void MailTimeoutTest(int networkID);
+extern void MailSynchTest1(int farAddr);
+extern void MailSynchTest2(int farAddr);
+
+
 
 //----------------------------------------------------------------------
 // main
@@ -92,77 +98,99 @@ main (int argc, char **argv)
 #endif
 
     for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount)
-      {
-	  argCount = 1;
-	  if (!strcmp (*argv, "-z"))	// print copyright
-	      printf ("%s", copyright);
+    {
+        argCount = 1;
+        if (!strcmp (*argv, "-z")) {	// print copyright
+            printf ("%s", copyright);
+        }
+
+        if (!strcmp(*argv, "-tsynch")) {
+            RunSyncTests();
+        }
+
 #ifdef USER_PROGRAM
-      if (!strcmp (*argv, "-x")) {			// run a user program
-          ASSERT (argc > 1);
-          StartProcess (*(argv + 1));
-          argCount = 2;
-      } else if (!strcmp (*argv, "-c")) {			// test the console
-          if (argc == 1)
-              ConsoleTest (NULL, NULL);
-          else
-          {
-              ASSERT (argc > 2);
-              ConsoleTest (*(argv + 1), *(argv + 2));
-              argCount = 3;
-          }
-          interrupt->Halt ();	// once we start the console, then
-          // Nachos will loop forever waiting
-          // for console input
-      } else if (!strcmp(*argv, "-sc")) {
-          SynchConsoleTest(NULL, NULL);
-      }
+        if (!strcmp (*argv, "-x")) {			// run a user program
+            ASSERT (argc > 1);
+            createProcess (*(argv + 1));
+            argCount = 2;
+        } else if (!strcmp (*argv, "-c")) {			// test the console
+            if (argc == 1)
+                ConsoleTest (NULL, NULL);
+            else
+            {
+                ASSERT (argc > 2);
+                ConsoleTest (*(argv + 1), *(argv + 2));
+                argCount = 3;
+            }
+            interrupt->Halt ();	// once we start the console, then
+            // Nachos will loop forever waiting
+            // for console input
+        } else if (!strcmp(*argv, "-sc")) {
+            SynchConsoleTest(NULL, NULL);
+        }
 
 #endif // USER_PROGRAM
 #ifdef FILESYS
-	  if (!strcmp (*argv, "-cp"))
-	    {			// copy from UNIX to Nachos
-		ASSERT (argc > 2);
-		Copy (*(argv + 1), *(argv + 2));
-		argCount = 3;
-	    }
-	  else if (!strcmp (*argv, "-p"))
-	    {			// print a Nachos file
-		ASSERT (argc > 1);
-		Print (*(argv + 1));
-		argCount = 2;
-	    }
-	  else if (!strcmp (*argv, "-r"))
-	    {			// remove Nachos file
-		ASSERT (argc > 1);
-		fileSystem->Remove (*(argv + 1));
-		argCount = 2;
-	    }
-	  else if (!strcmp (*argv, "-l"))
-	    {			// list Nachos directory
-		fileSystem->List ();
-	    }
-	  else if (!strcmp (*argv, "-D"))
-	    {			// print entire filesystem
-		fileSystem->Print ();
-	    }
-	  else if (!strcmp (*argv, "-t"))
-	    {			// performance test
-		PerformanceTest ();
-	    }
+        if (!strcmp (*argv, "-cp"))
+        {			// copy from UNIX to Nachos
+            ASSERT (argc > 2);
+            Copy (*(argv + 1), *(argv + 2));
+            argCount = 3;
+        }
+        else if (!strcmp (*argv, "-cpb"))
+        {           //copy from nahcos to unix
+            ASSERT (argc > 2);
+            CopyBack (*(argv + 1), *(argv + 2));
+            argCount = 3;
+        }
+        else if (!strcmp (*argv, "-p"))
+        {			// print a Nachos file
+            ASSERT (argc > 1);
+            Print (*(argv + 1));
+            argCount = 2;
+        }
+        else if (!strcmp (*argv, "-r"))
+        {			// remove Nachos file
+            ASSERT (argc > 1);
+            fileSystem->Remove (*(argv + 1));
+            argCount = 2;
+        }
+        else if (!strcmp (*argv, "-ls"))
+        {			// list Nachos directory
+            fileSystem->List ();
+        }
+        else if (!strcmp (*argv, "-D"))
+        {			// print entire filesystem
+            fileSystem->Print ();
+        }
+        else if (!strcmp (*argv, "-t"))
+        {			// performance test
+            PerformanceTest ();
+        }
 #endif // FILESYS
 #ifdef NETWORK
-	  if (!strcmp (*argv, "-o"))
-	    {
-		ASSERT (argc > 1);
-		Delay (2);	// delay for 2 seconds
-		// to give the user time to 
-		// start up another nachos
-		MailTest (atoi (*(argv + 1)));
-		argCount = 2;
-	    }
-#endif // NETWORK
-      }
+        if (!strcmp (*argv, "-o"))
+        {
+            ASSERT (argc > 1);
+            Delay (5);	// delay for 5 seconds
+            // to give the user time to
+            // start up another nachos
+            //MailTest (atoi (*(argv + 1)));
 
+            int t = atoi (*(argv + 1));
+            if (1 == t) {
+                printf("EXECUTING TEST 1 \n");
+                MailSynchTest1 (t);
+            } else {
+                printf("EXECUTING TEST 2 \n");
+                MailSynchTest2(t);
+            }
+            argCount = 2;
+        }
+#endif // NETWORK
+    }
+
+    
     currentThread->Finish ();	// NOTE: if the procedure "main" 
     // returns, then the program "nachos"
     // will exit (as any other normal program

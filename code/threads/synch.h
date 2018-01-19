@@ -1,4 +1,4 @@
-// synch.h 
+// synch.h
 //      Data structures for synchronizing threads.
 //
 //      Three kinds of synchronization are defined here: semaphores,
@@ -43,11 +43,11 @@ class Semaphore
      ~Semaphore ();		// de-allocate semaphore
     const char *getName ()
     {
-	return name;
+    return name;
     }				// debugging assist
 
     void P ();			// these are the only operations on a semaphore
-    void V ();			// they are both *atomic*
+    int V ();			// they are both *atomic*
 
   private:
     friend class SemaphoreManager;
@@ -71,23 +71,26 @@ class Semaphore
 class Lock
 {
   public:
-    Lock (const char *debugName);	// initialize lock to be FREE
+    Lock (const char *debugName = "");	// initialize lock to be FREE
      ~Lock ();			// deallocate lock
-    const char *getName ()
+    const char *getName () const
     {
-	return name;
+        return m_name;
     }				// debugging assist
 
-    void Acquire ();		// these are the only operations on a lock
+    int Acquire(bool nblock = false);		// these are the only operations on a lock
     void Release ();		// they are both *atomic*
 
-    bool isHeldByCurrentThread ();	// true if the current thread
+    bool isHeldByCurrentThread () const;	// true if the current thread
     // holds this lock.  Useful for
     // checking in Release, and in
     // Condition variable ops below.
 
   private:
-    const char *name;		// for debugging
+    const char *m_name;		// for debugging
+
+    List m_queue;
+    Thread *m_currentThread;
     // plus some other stuff you'll need to define
 };
 
@@ -126,24 +129,26 @@ class Lock
 class Condition
 {
   public:
-    Condition (const char *debugName);	// initialize condition to 
+    Condition (const char *debugName = "");	// initialize condition to
     // "no one waiting"
      ~Condition ();		// deallocate the condition
-    const char *getName ()
+    const char *getName () const
     {
-	return (name);
+        return m_name;
     }
 
     void Wait (Lock * conditionLock);	// these are the 3 operations on 
     // condition variables; releasing the 
     // lock and going to sleep are 
     // *atomic* in Wait()
-    void Signal (Lock * conditionLock);	// conditionLock must be held by
+    int Signal(Lock * conditionLock);	// conditionLock must be held by
     void Broadcast (Lock * conditionLock);	// the currentThread for all of 
     // these operations
 
   private:
-    const char *name;
+    const char *m_name;
+    List m_queueBlocked;
+    Thread *m_threadToUnlock;
     // plus some other stuff you'll need to define
 };
 #endif // SYNCH_H

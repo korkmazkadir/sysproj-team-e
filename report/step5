@@ -1,0 +1,143 @@
+Specification
+========================================================================================
+Signature: OpenFileId Open(char *name);
+Parameters:
+    name   <-  name of the file. This name can be path like ./dir1/dir2/filename
+
+Return value
+ *         OpenFileId  If it is successful (a positive integer)
+ *         -1        if there sub directory is not available
+ *         -3 	     if there is no inode(disk sector) to hold file header
+ *         -4 	     if there is no space in directory(maximum file allowed in a directory 10)
+ *         -5 	     if there is no space in the disk
+
+
+Description:
+
+
+Opens a file and returns an OpenFileId related to file.
+Name parameter can be name or can be path. If it is path, it opens file at the path.
+If file does not exists, it creates file than opens files.
+If any subdirectory does not exists in the system it gives error.
+This syscall always opens variable size files. Maximum size of the variable size file 
+is 1024 bytes.
+
+========================================================================================
+Signature: int Write(char *buffer, int size, OpenFileId id);
+Parameters:
+    buffer   <-  character array holds data to write to file
+    size     <-  number of characters to write to file from character array
+     id      <-  id of the opened file
+
+Return value
+ *         -1        if there is no file related to OpenFileId
+ *          0        if maximum file size reached
+
+Description:
+
+Writes data from character buffer to open file identified with open file id.
+If operation is successful it returns the number of bytes which are written to disk successfuly.
+
+========================================================================================
+
+Signature: int Read(char *buffer, int size, OpenFileId id);
+Parameters:
+    buffer   <-  character array holds data read from the file
+    size     <-  number of characters to read from file
+     id      <-  id of the opened file
+
+Return value
+ *         -1        if there no file related to OpenFileId
+
+
+Description:
+
+Reades data from open file, dentified with OpenFileId, to  character array
+If operation is successful it returns the number of bytes which is read successfuly otherwise
+it returns -1
+
+
+========================================================================================
+Signature: void Close(OpenFileId id);
+Parameters:
+     id      <-  id of the opened file
+
+
+Description:
+
+Tries to close open file indentified with OpenFileId.
+If there is a file it removes from thread open file table and system open file table.
+If there is no file related to id, it fails silently.
+
+========================================================================================
+Signature: void ListDirectoryContent(char *name);
+Parameters:
+    name   <-  name of the directory to list the content. This name can be path like ./dir1/dir2/directory/
+
+
+Description:
+
+
+If givin directory is available prints the content of the directory otherwise it fails silently.
+
+
+========================================================================================
+
+Signature: int CreateDirectory(char *name);
+Parameters:
+    name   <-  name of the directory to list the content. This name can be path like ./dir1/dir2/directoryname
+
+Return value
+ *          0  	     If it is successful
+ *         -1        If the sub directory is not available
+ *         -2        If there is a file with same name      
+ *         -3 	     if there is no inode(disk sector) to hold file header
+ *         -4 	     if there is no space in directory(maximum file allowed in a directory 10)
+ *         -5 	     if there is no space in the disk
+
+Description:
+
+
+Creates a directory in a givin path or in the current directory.
+
+
+========================================================================================
+
+Signature: int ChangeDirectory(char *name);
+Parameters:
+    name   <-  name of the directory to enter inside. This name can be path like ./dir1/dir2/directoryname
+
+Return value
+ *          0  	     If it is successful
+ *         -1        If the directory does not exists
+
+Description:
+
+
+Changes the current working directory of the calling process.
+After this operations all the paths resolved according to new director.
+
+Every process has a current working directory.
+Initially, current working directory initilizad with the directory of
+the executable file.
+
+========================================================================================
+Signature: int RemoveDirectory(char *name);
+Parameters:
+    name   <-  name of the directory to remove. This name can be path like ./dir1/dir2/directoryname
+
+Return value
+ *          0  	     If it is successful
+ *         -1        If the directory does not exists
+
+Description:
+
+
+Removes directory idendified with name or the path.
+Currently it removes directory without any restriction.
+
+========================================================================================
+
+
+
+

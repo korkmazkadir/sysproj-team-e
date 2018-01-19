@@ -65,7 +65,6 @@ DECLARE_TEST_BEGIN(ExceptionHalt)
 
     //Assert
     EXPECT_EQ(true, interrupt->halted);
-    VerifyPCCounter;
 DECLARE_TEST_END(ExceptionHalt)
 
 DECLARE_TEST_BEGIN(ExceptionGetChar)
@@ -155,6 +154,8 @@ DECLARE_TEST_END(ExceptionGetInt)
 TEST_LIST_END
 
 int main() {
+    std::cout << "STARTING EXCEP VM:\n\n"<< std::endl;
     INITIALIZE_TESTS;
     RUN_ALL_TESTS;
+    std::cout << "\n\n"<< std::endl;
 }

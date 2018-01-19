@@ -14,8 +14,6 @@
 //      Interrupts (which can also cause control to transfer from user
 //      code into the Nachos kernel) are handled elsewhere.
 //
-// For now, this only handles the Halt() system call.
-// Everything else core dumps.
 //
 // Copyright (c) 1992-1993 The Regents of the University of California.
 // All rights reserved.  See copyright.h for copyright notice and limitation 
@@ -27,26 +25,25 @@
 #include "userthread.h"
 #include "addrspace.h"
 #include "usersemaphore.h"
+#include "SynchPost.h"
 
 Semaphore haltSync("HaltSync", 1);
+
 
 //----------------------------------------------------------------------
 // UpdatePC : Increments the Program Counter register in order to resume
 // the user program immediately after the "syscall" instruction.
 //----------------------------------------------------------------------
+
 static void
-UpdatePC ()
-{
-    int pc = machine->ReadRegister (PCReg);
-    machine->WriteRegister (PrevPCReg, pc);
-    pc = machine->ReadRegister (NextPCReg);
-    machine->WriteRegister (PCReg, pc);
+UpdatePC() {
+    int pc = machine->ReadRegister(PCReg);
+    machine->WriteRegister(PrevPCReg, pc);
+    pc = machine->ReadRegister(NextPCReg);
+    machine->WriteRegister(PCReg, pc);
     pc += 4;
-    machine->WriteRegister (NextPCReg, pc);
+    machine->WriteRegister(NextPCReg, pc);
 }
-
-
-
 
 /*!
  * \fn copyStringFromMachine
@@ -60,7 +57,7 @@ UpdatePC ()
 static void copyStringFromMachine(int from, char *to, unsigned size) {
     --size;
     while (size--) {
-        machine->ReadMem(from, 1, (int *)to);
+        machine->ReadMem(from, 1, (int *) to);
         if (*to == 0) {
             break;
         }
@@ -72,9 +69,18 @@ static void copyStringFromMachine(int from, char *to, unsigned size) {
 
 static void copyStringToMachine(char *from, int to, unsigned size) {
     while (size--) {
-        machine->WriteMem(to, 1, (int)(*from));
+        machine->WriteMem(to, 1, (int) (*from));
         ++to;
         ++from;
+    }
+}
+
+static void removeNewLine(char *str) {
+    for (int i = 0; i < MAX_WRITE_BUF_SIZE && str[i] != '\0'; i++) {
+        if (str[i] == '\n') {
+            str[i] = '\0';
+            break;
+        }
     }
 }
 
@@ -100,167 +106,385 @@ static void copyStringToMachine(char *from, int to, unsigned size) {
 //      "which" is the kind of exception.  The list of possible exceptions
 //      are in machine.h.
 //----------------------------------------------------------------------
-void ExceptionHandler (ExceptionType which)
-{
-    int type = machine->ReadRegister (SYSCALL_ID_REGISTER);
 
-    if (SyscallException == which) {
-        switch (type) {
-            case SC_Halt:
-            {
-                DEBUG ('a', "Shutdown, initiated by user program.\n");
-                haltSync.P();
-                interrupt->Halt ();
-            } break;
+void ExceptionHandler(ExceptionType which) {
+    int type = machine->ReadRegister(SYSCALL_ID_REGISTER);
 
-            case SC_PutChar:
-            {
-                int requestedCharacter = machine->ReadRegister(FIRST_PARAM_REGISTER);
-                char convertedCharacter = (char)requestedCharacter;
-                syncConsole->SynchPutChar(convertedCharacter);
-            } break;
+    switch (which) {
+        case SyscallException:
+        {
+            switch (type) {
+                case SC_Halt:
+                {
+                    interrupt->Halt();
+                }
+                break;
 
-            case SC_SynchPutString:
-            {
-                int fromAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
-                char local_buf[MAX_WRITE_BUF_SIZE];
-                copyStringFromMachine(fromAddress, local_buf, MAX_WRITE_BUF_SIZE);
-                syncConsole->SynchPutString(local_buf);
-            } break;
+                case SC_PutChar:
+                {
+                    int requestedCharacter = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                    char convertedCharacter = (char) requestedCharacter;
+                    syncConsole->SynchPutChar(convertedCharacter);
+                }
+                break;
 
-            case SC_SynchGetChar:
-            {
-                int retChar = syncConsole->SynchGetChar();
-                machine->WriteRegister(RET_VALUE_REGISTER, retChar);
-            } break;
+                case SC_SynchPutString:
+                {
+                    int fromAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                    char local_buf[MAX_WRITE_BUF_SIZE];
+                    copyStringFromMachine(fromAddress, local_buf, MAX_WRITE_BUF_SIZE);
+                    syncConsole->SynchPutString(local_buf);
+                }
+                break;
 
-            //TODO: Check for correctness
-            case SC_SynchGetString:
-            {
-                int toVirtualAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
-                int numBytes = machine->ReadRegister(SECOND_PARAM_REGISTER);
+                case SC_SynchGetChar:
+                {
+                    int retChar = syncConsole->SynchGetChar();
+                    machine->WriteRegister(RET_VALUE_REGISTER, retChar);
+                }
+                break;
 
-                if (numBytes > MAX_WRITE_BUF_SIZE) {
-                    numBytes = MAX_WRITE_BUF_SIZE;
+                    //TODO: Check for correctness
+                case SC_SynchGetString:
+                {
+                    int toVirtualAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                    int numBytes = machine->ReadRegister(SECOND_PARAM_REGISTER);
+
+                    if (numBytes > MAX_WRITE_BUF_SIZE) {
+                        numBytes = MAX_WRITE_BUF_SIZE;
+                    }
+
+                    char local_buf[MAX_WRITE_BUF_SIZE];
+                    syncConsole->SynchGetString(local_buf, numBytes);
+                    copyStringToMachine(local_buf, toVirtualAddress, numBytes);
+
+                }
+                break;
+
+                case SC_SynchPutInt:
+                {
+                    int valToPut = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                    char local_buf[MAX_INT_LEN];
+                    (void) snprintf(local_buf, MAX_INT_LEN, "%d", valToPut);
+                    syncConsole->SynchPutString(local_buf);
+                }
+                break;
+
+                case SC_SynchGetInt:
+                {
+                    int resAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                    char local_buf[MAX_INT_LEN];
+                    syncConsole->SynchGetString(local_buf, MAX_INT_LEN);
+                    int val;
+                    sscanf(local_buf, "%d", &val);
+                    machine->WriteMem(resAddress, 4, val);
+                }
+                break;
+
+                case SC_Exit:
+                {
+                    machine->ReadRegister(FIRST_PARAM_REGISTER);
+                    //printf("EXIT %d %d \n", currentThread->Tid(), retValue);
+                    do_ExitCurrentProcess();
+                }
+                break;
+
+                case SC_UserThreadCreate:
+                {
+                    //TODO: When creation can fail -- invalid parameter (e.g. NULL pointer to function)?
+                    int funPtr = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                    int arg = machine->ReadRegister(SECOND_PARAM_REGISTER);
+
+                    int retAddress = machine->ReadRegister(8);
+                    
+                    int threadRetVal = do_UserThreadCreate(funPtr, arg, retAddress, currentThread->space, currentThread->GetWorkingDirectory(),currentThread,false);
+                    machine->WriteRegister(RET_VALUE_REGISTER, threadRetVal);
+                }
+                break;
+
+                case SC_UserThreadExit:
+                {
+                    do_UserThreadExit();
+                }
+                break;
+
+                case SC_UserThreadJoin:
+                {
+                    int threadToJoin = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                    int retVal = do_UserThreadJoin(threadToJoin);
+                    machine->WriteRegister(RET_VALUE_REGISTER, retVal);
+                }
+                break;
+
+                case SC_Yield:
+                {
+                    currentThread->Yield();
+                }
+                break;
+
+                case SC_SemInit:
+                {
+                    int semPtr = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                    int semVal = machine->ReadRegister(SECOND_PARAM_REGISTER);
+                    int retVal = semaphoreManager->DoSemInit((sem_t *) semPtr, semVal);
+                    machine->WriteRegister(RET_VALUE_REGISTER, retVal);
+                }
+                break;
+
+                case SC_SemPost:
+                {
+                    int semPtr = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                    int retVal = semaphoreManager->DoSemPost((sem_t *) semPtr);
+                    machine->WriteRegister(RET_VALUE_REGISTER, retVal);
+                }
+                break;
+
+                case SC_SemWait:
+                {
+                    int semPtr = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                    int retVal = semaphoreManager->DoSemWait((sem_t *) semPtr);
+                    machine->WriteRegister(RET_VALUE_REGISTER, retVal);
+                }
+                break;
+
+                case SC_SemDestroy:
+                {
+                    int semPtr = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                    int retVal = semaphoreManager->DoSemDestroy((sem_t *) semPtr);
+                    machine->WriteRegister(RET_VALUE_REGISTER, retVal);
+                }
+                break;
+
+                case SC_UserThreadSelfId:
+                {
+                    int tid = currentThread->Tid();
+                    machine->WriteRegister(RET_VALUE_REGISTER, tid);
+                }
+                break;
+
+                case SC_ForkExec:
+                {
+                    int fileNameAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                    char fileName [MAX_WRITE_BUF_SIZE];
+                    copyStringFromMachine(fileNameAddress, fileName, MAX_WRITE_BUF_SIZE);
+                    int result = createProcess(fileName);
+                    machine->WriteRegister(RET_VALUE_REGISTER, result);
+                    break;
                 }
 
-                char local_buf[MAX_WRITE_BUF_SIZE];
-                syncConsole->SynchGetString(local_buf, numBytes);
-                copyStringToMachine(local_buf, toVirtualAddress, numBytes);
+                case SC_AssertionFailed:
+                {
+                    int fileNameAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                    int lineNumber = machine->ReadRegister(SECOND_PARAM_REGISTER);
+                    char fileName [MAX_WRITE_BUF_SIZE];
+                    copyStringFromMachine(fileNameAddress, fileName, MAX_WRITE_BUF_SIZE);
+                    fprintf(stderr, "\nERROR : Assertion failed. FILE : %s LINE : %d\n\n", fileName, lineNumber);
+                    Exit(123);
+                }
+                break;
 
-            } break;
+                case SC_NetworkConnectAsServer:
+                {
+                    int mailbox = machine->ReadRegister(FIRST_PARAM_REGISTER);
 
-            case SC_SynchPutInt:
-            {
-                int valToPut = machine->ReadRegister(FIRST_PARAM_REGISTER);
-                char local_buf[MAX_INT_LEN];
-                (void)snprintf(local_buf, MAX_INT_LEN, "%d", valToPut);
-                syncConsole->SynchPutString(local_buf);
-            } break;
+                    int retVal = synchPost->ConnectAsServer(mailbox);
+                    machine->WriteRegister(RET_VALUE_REGISTER, retVal);
+                }
+                break;
 
-            case SC_SynchGetInt:
-            {
-                int resAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
-                char local_buf[MAX_INT_LEN];
-                syncConsole->SynchGetString(local_buf, MAX_INT_LEN);
-                int val;
-                sscanf(local_buf, "%d", &val);
-                machine->WriteMem(resAddress, 4, val);
-            } break;
+                case SC_NetworkConnectAsClient:
+                {
+                    int addr = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                    int mailbox = machine->ReadRegister(SECOND_PARAM_REGISTER);
+                    int retVal = synchPost->ConnectAsClient(addr, mailbox);
+                    machine->WriteRegister(RET_VALUE_REGISTER, retVal);
+                }
+                break;
 
-            case SC_Exit:
-            {
-                int retValue = machine->ReadRegister(FIRST_PARAM_REGISTER);
-                haltSync.P();
-                exit(retValue);
-            } break;
+                case SC_NetworkSendToByConnId:
+                {
+                    int connId = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                    int dataAddr = machine->ReadRegister(SECOND_PARAM_REGISTER);
+                    int len = machine->ReadRegister(THIRD_PARAM_REGISTER);
 
-            case SC_UserThreadCreate:
-            {
-                //TODO: When creation can fail -- invalid parameter (e.g. NULL pointer to function)?
-                int funPtr = machine->ReadRegister(FIRST_PARAM_REGISTER);
-                int arg = machine->ReadRegister(SECOND_PARAM_REGISTER);
+                    if (len >= NETWORK_MAX_TRANSFER_BYTES - 1) {
+                        len = NETWORK_MAX_TRANSFER_BYTES - 1;
+                    }
+                    char buffer[NETWORK_MAX_TRANSFER_BYTES] = {0};
+                    copyStringFromMachine(dataAddr, buffer, len + 1);
+                    int retVal = synchPost->SendToByConnId(connId, buffer, len);
+                    machine->WriteRegister(RET_VALUE_REGISTER, retVal);
+                }
+                break;
 
-                int retAddress = machine->ReadRegister(8);
+                case SC_NetworkReceiveFromByConnId:
+                {
+                    int connId = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                    int dataAddr = machine->ReadRegister(SECOND_PARAM_REGISTER);
+                    char dataBuffer[NETWORK_MAX_TRANSFER_BYTES];
+                    //TODO: Check for length
+                    int bytesReceived = synchPost->ReceiveFromByConnId(connId, dataBuffer);
+                    copyStringToMachine(dataBuffer, dataAddr, (unsigned) bytesReceived);
+                    machine->WriteRegister(RET_VALUE_REGISTER, bytesReceived);
 
-                int threadRetVal = do_UserThreadCreate(funPtr, arg, retAddress);
-                machine->WriteRegister(RET_VALUE_REGISTER, threadRetVal);
-            } break;
+                }
+                break;
 
-            case SC_UserThreadExit:
-            {
-                do_UserThreadExit();
-            } break;
+                case SC_NetworkSendFile:
+                {
+                    int connId = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                    int dataAddr = machine->ReadRegister(SECOND_PARAM_REGISTER);
+                    int transferSpeedAddress = machine->ReadRegister(THIRD_PARAM_REGISTER);
+                    char dataBuffer[NETWORK_MAX_FILE_LENGTH] = {0};
+                    copyStringFromMachine(dataAddr, dataBuffer, NETWORK_MAX_FILE_LENGTH);
+                    int transferSpeed;
+                    int retVal = synchPost->SendFile(connId, dataBuffer, &transferSpeed);
+                    if (transferSpeedAddress) {
+                        machine->WriteMem(transferSpeedAddress, sizeof (int), transferSpeed);
+                    }
+                    machine->WriteRegister(RET_VALUE_REGISTER, retVal);
+                }
+                break;
 
-            case SC_UserThreadJoin:
-            {
-                int threadToJoin = machine->ReadRegister(FIRST_PARAM_REGISTER);
-                int retVal = do_UserThreadJoin(threadToJoin);
-                machine->WriteRegister(RET_VALUE_REGISTER, retVal);
-            } break;
+                case SC_NetworkReceiveFile:
+                {
+                    int connId = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                    int dataAddr = machine->ReadRegister(SECOND_PARAM_REGISTER);
+                    char dataBuffer[NETWORK_MAX_FILE_LENGTH] = {0};
+                    copyStringFromMachine(dataAddr, dataBuffer, NETWORK_MAX_FILE_LENGTH);
+                    int retVal = synchPost->ReceiveFile(connId, dataBuffer);
+                    machine->WriteRegister(RET_VALUE_REGISTER, retVal);
+                }
+                break;
 
-            case SC_Yield:
-            {
-                currentThread->Yield();
-            } break;
+                case SC_NetworkCloseConnection:
+                {
+                    int connId = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                    int retVal = synchPost->CloseConnection(connId);
+                    machine->WriteRegister(RET_VALUE_REGISTER, retVal);
+                }
+                break;
 
-            case SC_SemInit:
-            {
-                int semPtr = machine->ReadRegister(FIRST_PARAM_REGISTER);
-                int semVal = machine->ReadRegister(SECOND_PARAM_REGISTER);
-                int retVal = semaphoreManager->DoSemInit((sem_t *)semPtr, semVal);
-                machine->WriteRegister(RET_VALUE_REGISTER, retVal);
-            } break;
+                case SC_ListDirectoryContent:
+                {
+                    int directoryNameAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                    char directoryName [MAX_WRITE_BUF_SIZE];
+                    copyStringFromMachine(directoryNameAddress, directoryName, MAX_WRITE_BUF_SIZE);
+                    removeNewLine(directoryName);
+                    listDirectoryContent(directoryName);
+                    break;
+                }
 
-            case SC_SemPost:
-            {
-                int semPtr = machine->ReadRegister(FIRST_PARAM_REGISTER);
-                int retVal = semaphoreManager->DoSemPost((sem_t *)semPtr);
-                machine->WriteRegister(RET_VALUE_REGISTER, retVal);
-            } break;
+                case SC_CreateDirectory:
+                {
+                    int directoryNameAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                    char directoryName [MAX_WRITE_BUF_SIZE];
+                    copyStringFromMachine(directoryNameAddress, directoryName, MAX_WRITE_BUF_SIZE);
+                    removeNewLine(directoryName);
+                    int result = createDirectory(directoryName);
+                    machine->WriteRegister(RET_VALUE_REGISTER, result);
+                    break;
+                }
 
-            case SC_SemWait:
-            {
-                int semPtr = machine->ReadRegister(FIRST_PARAM_REGISTER);
-                int retVal = semaphoreManager->DoSemWait((sem_t *)semPtr);
-                machine->WriteRegister(RET_VALUE_REGISTER, retVal);
-            } break;
+                case SC_ChangeDirectory:
+                {
+                    int directoryNameAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                    char directoryName [MAX_WRITE_BUF_SIZE];
+                    copyStringFromMachine(directoryNameAddress, directoryName, MAX_WRITE_BUF_SIZE);
+                    removeNewLine(directoryName);
+                    int result = changeDirectory(directoryName);
+                    machine->WriteRegister(RET_VALUE_REGISTER, result);
+                    break;
+                }
 
-            case SC_SemDestroy:
-            {
-                int semPtr = machine->ReadRegister(FIRST_PARAM_REGISTER);
-                int retVal = semaphoreManager->DoSemDestroy((sem_t *)semPtr);
-                machine->WriteRegister(RET_VALUE_REGISTER, retVal);
-            } break;
+                case SC_RemoveDirectory:
+                {
+                    int directoryNameAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                    char directoryName [MAX_WRITE_BUF_SIZE];
+                    copyStringFromMachine(directoryNameAddress, directoryName, MAX_WRITE_BUF_SIZE);
+                    removeNewLine(directoryName);
+                    int result = removeDirectory(directoryName);
+                    machine->WriteRegister(RET_VALUE_REGISTER, (result == 1 ? 0 : -1 ) );
+                    break;
+                }
 
-            case SC_UserThreadSelfId:
-            {
-                int tid = currentThread->Tid();
-                machine->WriteRegister(RET_VALUE_REGISTER, tid);
-            } break;
 
-            case SC_AssertionFailed:
-            {
-                int fileNameAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
-                int lineNumber = machine->ReadRegister(SECOND_PARAM_REGISTER);
-                char fileName [MAX_WRITE_BUF_SIZE];
-                copyStringFromMachine(fileNameAddress, fileName, MAX_WRITE_BUF_SIZE);
-                interrupt->AssertionFailed(fileName,lineNumber);
+                case SC_Open:
+                {
+                    int fileNameAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                    char fileName [MAX_WRITE_BUF_SIZE];
+                    copyStringFromMachine(fileNameAddress, fileName, MAX_WRITE_BUF_SIZE);
+                    int result = openFile(fileName);
+                    machine->WriteRegister(RET_VALUE_REGISTER, result);
+                    break;
+                }
+
+                case SC_Write:
+                {
+                    int bufferAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                    int size = machine->ReadRegister(SECOND_PARAM_REGISTER);
+                    int fileDescriptor = machine->ReadRegister(THIRD_PARAM_REGISTER);
+
+                    char buffer [MAX_WRITE_BUF_SIZE];
+                    copyStringFromMachine(bufferAddress, buffer, MAX_WRITE_BUF_SIZE);
+
+                    int result = writeToFile(buffer, size, fileDescriptor);
+                    machine->WriteRegister(RET_VALUE_REGISTER, result);
+
+                    break;
+                }
+
+                case SC_Read:
+                {
+
+                    int bufferAddress = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                    int size = machine->ReadRegister(SECOND_PARAM_REGISTER);
+                    int fileDescriptor = machine->ReadRegister(THIRD_PARAM_REGISTER);
+
+                    char buffer [MAX_WRITE_BUF_SIZE];
+                    int numberOfBytes = readFromFile(buffer, size, fileDescriptor);
+                    machine->WriteRegister(RET_VALUE_REGISTER, numberOfBytes);
+                    copyStringToMachine(buffer, bufferAddress, numberOfBytes);
+
+                    break;
+                }
+
+                case SC_Close:
+                {
+                    int fileDescriptor = machine->ReadRegister(FIRST_PARAM_REGISTER);
+                    closeFile(fileDescriptor);
+                    break;
+                }
+
+                default:
+                {
+                    printf("Unexpected SYSCALL %d %d\n", which, type);
+                    ASSERT(FALSE);
+                }
                 break;
             }
-            
-            default:
-            {
-                printf ("Unexpected SYSCALL %d %d\n", which, type);
-                ASSERT (FALSE);
-            } break;
         }
-    } else {
-        printf ("Unexpected user mode exception %d %d\n", which, type);
-        ASSERT (FALSE);
+        break;
+
+        case BusErrorException: /* NO BREAK - FALL THROUGH */
+        case ReadOnlyException: /* NO BREAK - FALL THROUGH */
+        case PageFaultException: /* NO BREAK - FALL THROUGH */
+        case AddressErrorException: /* NO BREAK - FALL THROUGH */
+        case IllegalInstrException: /* NO BREAK - FALL THROUGH */
+        {
+            // Terminate the process
+            do_ExitCurrentProcess();
+        }
+        break;
+
+        default:
+        {
+            printf("Unexpected user mode exception %d %d\n", which, type);
+            ASSERT(FALSE);
+        }
     }
 
     // LB: Do not forget to increment the pc before returning!
-    UpdatePC ();
+    UpdatePC();
     // End of addition
 }

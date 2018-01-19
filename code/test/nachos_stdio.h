@@ -15,6 +15,7 @@
 #define NACHOS_STDIO_H
 
 #include "syscall.h"
+#include "utility.h"
 
 #define MAX_STRING_SIZE 99
 
@@ -22,18 +23,14 @@
 #define BASE_2 2
 
 #define END_OF_LINE '\0'
-
-#define _ASSERT(expr) if (!(expr)) aFailed(__FILE__, __LINE__)
-
+#define NEW_LINE '\n'
 
 typedef unsigned char *va_list;
 #define va_start(list, param) (list = (((va_list)&param) + sizeof(param)))
 #define va_arg(list, type)    (*(type *)((list += 4) - 4))
 
-
-void aFailed(char *fileName, int line) {
-    AssertionFailed(fileName, line);
-}
+OpenFileId INPUT_FILE = ConsoleInput;
+OpenFileId OUTPUT_FILE = ConsoleOutput;
 
 int copyString(char *src, char *dest) {
 
@@ -42,6 +39,17 @@ int copyString(char *src, char *dest) {
     while (dest[index] != END_OF_LINE) {
         index++;
         dest[index] = src[index];
+    }
+
+    return index;
+}
+
+int copyStringScanf(char *src, char *dest, char sperator) {
+
+    int index = 0;
+    while (src[index] != sperator && src[index] != NEW_LINE) {
+        dest[index] = src[index];
+        index++;
     }
 
     return index;
@@ -74,10 +82,15 @@ void numberToString( int number, int base, char *stringBuffer){
         stringBuffer[index + 1] = END_OF_LINE;
     }
     
-    while(number > 0){
+    while(number >= 0){
        int remainder = number % base;
        number = number / base;
        stringBuffer[index] = '0' + remainder;
+
+       if (0 == number) {
+           break;
+       }
+
        index--;
     }
     
@@ -87,8 +100,6 @@ void numberToString( int number, int base, char *stringBuffer){
 //Implemented for %c, %s, %d %b
 void _printf(char *format, ...) {
 
-    //DummyFunction("kadirkorkmaz",'c','w',1,2);
-    
     char buffer[MAX_STRING_SIZE];
 
     va_list args;
@@ -144,8 +155,44 @@ void _printf(char *format, ...) {
         writeIndex++;
 
     }
-     
-    SynchPutString(buffer);
+
+    Write(buffer,writeIndex++,OUTPUT_FILE);
+}
+
+
+void _scanf(char *format, ...) {
+    
+    char buffer[MAX_STRING_SIZE];
+    Read(buffer,MAX_STRING_SIZE, 0);
+
+    va_list args;
+    va_start(args, format);
+
+    int index = 0;
+    int writeIndex = 0;
+    while (1) {
+
+        char ch = format[index];
+        
+        if (ch == '%' && format[index + 1] == 's') {
+
+            char *c = va_arg(args, char*);
+            copyString(buffer, c);
+            return;
+            
+        }else {
+
+            //buffer[writeIndex] = ch;
+            if (ch == END_OF_LINE) {
+                break;
+            }
+        }
+
+        index++;
+        writeIndex++;
+
+    }
+
 }
 
 #endif /* NACHOS_STDIO_H */

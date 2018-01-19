@@ -35,6 +35,8 @@
 #ifndef FS_H
 #define FS_H
 
+#include <string>
+
 #include "copyright.h"
 #include "openfile.h"
 
@@ -45,26 +47,29 @@ class FileSystem {
   public:
     FileSystem(bool format) {}
 
-    bool Create(const char *name, int initialSize) { 
-	int fileDescriptor = OpenForWrite(name);
+    bool Create(const char *name, int initialSize) {
+        int fileDescriptor = OpenForWrite(name);
 
-	if (fileDescriptor == -1) return FALSE;
-	Close(fileDescriptor); 
-	return TRUE; 
-	}
+        if (fileDescriptor == -1) return FALSE;
+        Close(fileDescriptor);
+        return TRUE;
+    }
 
-    OpenFile* Open(char *name) {
+    OpenFile* Open(const char *name) {
 	  int fileDescriptor = OpenForReadWrite(name, FALSE);
 
 	  if (fileDescriptor == -1) return NULL;
 	  return new OpenFile(fileDescriptor);
       }
 
-    bool Remove(char *name) { return Unlink(name) == 0; }
+    bool Remove(const char *name) { return Unlink(name) == 0; }
 
 };
 
 #else // FILESYS
+
+class Lock;
+
 class FileSystem {
   public:
     FileSystem(bool format);		// Initialize the file system.
@@ -74,9 +79,18 @@ class FileSystem {
 					// the disk, so initialize the directory
     					// and the bitmap of free blocks.
 
-    bool Create(const char *name, int initialSize);  	
-					// Create a file (UNIX creat)
+    bool Create(const char *name, int initialSize);  	// Create a file (UNIX creat)
 
+    int CreateUserFile(const char *name);
+    
+    void ListDirectoryContent(const char *name);
+    
+    int CreateDirectory(const char *name); //Creates a directory
+    
+    int ChangeDirectory(const char *name); //Changes current directory
+    
+    int RemoveDirectory(const char *name); //Removes current directory
+    
     OpenFile* Open(const char *name); 	// Open a file (UNIX open)
 
     bool Remove(const char *name); 	// Delete a file (UNIX unlink)
@@ -85,11 +99,24 @@ class FileSystem {
 
     void Print();			// List all the files and their contents
 
+    OpenFile* GetDirectoryFile(const char *path);
+    
+    void SetWorkingDirectory(OpenFile* workingDirectoryFile);
+    OpenFile* GetWorkingDirectory();
+    
   private:
    OpenFile* freeMapFile;		// Bit map of free disk blocks,
 					// represented as a file
    OpenFile* directoryFile;		// "Root" directory -- list of 
 					// file names, represented as a file
+
+   Lock *lock;
+   
+   
+   OpenFile* open(const char *name, OpenFile *dirFile);
+   OpenFile* handlePath(const char *path);
+   std::string getFileName(const char *pathStr);
+   
 };
 
 #endif // FILESYS

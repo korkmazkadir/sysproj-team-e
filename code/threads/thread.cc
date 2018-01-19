@@ -39,6 +39,7 @@ Thread::Thread (const char *threadName):
     stackTop = NULL;
     stack = NULL;
     status = JUST_CREATED;
+    
 #ifdef USER_PROGRAM
     space = NULL;
     // FBT: Need to initialize special registers of simulator to 0
@@ -106,7 +107,7 @@ Thread::Fork (VoidFunctionPtr func, int arg)
     // an already running program, as in the "fork" Unix system call. 
     
     // LB: Observe that currentThread->space may be NULL at that time.
-    this->space = currentThread->space;
+    // this->space = currentThread->space;
 
 #endif // USER_PROGRAM
 
@@ -150,6 +151,24 @@ void Thread::SetTID(int _tid)
 int Thread::Tid() const
 {
     return tid;
+}
+
+
+void Thread::SetWorkingDirectory(OpenFile *workingDirectoryFile_){
+    this->workingDirectoryFile = workingDirectoryFile_;
+}
+
+
+OpenFile * Thread::GetWorkingDirectory(){
+    return this->workingDirectoryFile;
+}
+
+ThreadOpenFileTable * Thread::getOpenFileTable(){
+    return this->openFileTable;
+}
+
+void Thread::setOpenFileTable(ThreadOpenFileTable *table){
+    this->openFileTable = table;
 }
 
 //----------------------------------------------------------------------
@@ -387,6 +406,7 @@ Thread::StackAllocate (VoidFunctionPtr func, int arg)
 
 #ifdef USER_PROGRAM
 #include "machine.h"
+#include "coff.h"
 
 //----------------------------------------------------------------------
 // Thread::SaveUserState
@@ -402,6 +422,8 @@ Thread::SaveUserState ()
 {
     for (int i = 0; i < NumTotalRegs; i++)
 	userRegisters[i] = machine->ReadRegister (i);
+    
+    this->workingDirectoryFile = fileSystem->GetWorkingDirectory();
 }
 
 //----------------------------------------------------------------------
@@ -418,6 +440,8 @@ Thread::RestoreUserState ()
 {
     for (int i = 0; i < NumTotalRegs; i++)
 	machine->WriteRegister (i, userRegisters[i]);
+
+    fileSystem->SetWorkingDirectory(this->workingDirectoryFile);
 }
 #endif
 

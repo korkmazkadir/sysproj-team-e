@@ -8,7 +8,8 @@ static int t2 = -1;
 void fun1(void *_) {
     (void)_;
 //    SynchPutString("Hello1\n");
-    for (int ii = 0; ii < 10000; ++ii) {
+    int ii = 0;
+    for (ii = 0; ii < 10000; ++ii) {
         ++globalInt;
     }
     PutChar('\n');
@@ -23,7 +24,8 @@ void fun2(void *_) {
 
     UserThreadJoin((int)_);
     SynchPutString("2Hello\n");
-    for (int ii = 0; ii < 1000; ++ii) {
+    int ii = 0;
+    for (ii = 0; ii < 1000; ++ii) {
         globalInt += (int)_;
     }
 

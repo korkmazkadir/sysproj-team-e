@@ -44,6 +44,24 @@
 #define SC_SemWait 22
 #define SC_SemDestroy 23
 #define SC_UserThreadSelfId 24
+#define SC_ForkExec 25
+
+// ================= NETWORK ====================
+
+#define SC_NetworkConnectAsServer 28
+#define SC_NetworkConnectAsClient 29
+#define SC_NetworkSendToByConnId 30
+#define SC_NetworkReceiveFromByConnId 31
+#define SC_NetworkSendFile 32
+#define SC_NetworkReceiveFile 33
+#define SC_NetworkCloseConnection 34
+
+// ================= FILE SYSTEM ===============
+
+#define SC_ListDirectoryContent 50
+#define SC_CreateDirectory 51
+#define SC_RemoveDirectory 52
+#define SC_ChangeDirectory 53
 
 
 #define SC_AssertionFailed     100
@@ -86,6 +104,139 @@ int SemInit(sem_t *semPtr, int val);
 int SemPost(sem_t *semPtr);
 int SemWait(sem_t *semPtr);
 int SemDestroy(sem_t *semPtr);
+
+/*!
+ * Awaits for incoming connection to the specified mailbox
+ * As soon as there is one sends an anknowledgement and returns a connection
+ * identifier
+ *
+ * This is guaranteed that connection identifier is unique for the process but
+ * different processes can have different connection identifiers for the same connection
+ *
+ * \param      mailbox  < mailbox to wait on
+ * \return     connection identifier which is greater or equal to 0 if connection was successful
+ *             a value less than zero if connection failed
+ */
+int NetworkConnectAsServer(int mailbox);
+
+/*!
+ * Attempts to connect to a server at specified address using a specified mailbox
+ * If there is a server with the respective address listening on a respective mailbox
+ * the function will return a connection identifier. If no server responds within
+ * machine-dependent timeframe, the function will return.
+ *
+ * \param      address <    network address of the server
+ *             mailbox <    mailbox for the connection
+ *
+ * \return     connection identifier which is greater or equal to 0 if connection was successful
+ *             a value less than zero if connection failed
+ */
+int NetworkConnectAsClient(int address, int mailbox);
+
+/*!
+ * Attempts to send a byte array of a specified network using the specified connection identifier
+ * Connection ID must match the value returned by one of the NetworkConnect functions
+ *
+ * A thread that calls this function MUST match the thread that acquired the connection identifier
+ *
+ * This function can only send byte arrays whose size is less or equal than 2047 bytes
+ * The byte array MUST contain at least the number of bytes specified by len parameter.
+ * If this is not the case this function call results in an UNDEFINED BEHAVIOUR
+ *
+ * If len is greater than 2047, only first 2047 bytes will be transferred over the network
+ *
+ * \param       connId <    connection identifier
+ * \param       data   <    pointer to the byte array
+ * \param       len    <    number of bytes that shall be sent over the network
+ *
+ * \return      -10    <    if invalid connection identifier is specified
+ *              -20    <    if the calling thread does not match the thread that established the
+ *                          connection
+ *              -1     <    if receipt was not properly acknowledged by the recepient of the data
+ *                          (this usually means that not all data has been transferred)
+ *               0     <    if data transfer was successful
+ */
+int NetworkSendToByConnId(int connId, const char *data, int len);
+
+/*!
+ * Receives the data over the network connection described by the specified connection identifier
+ * and saves it to the specified byte array
+ *
+ * A thread that calls this function MUST match the thread that acquired the connection identifier
+ *
+ * It is guaranteed that the function will not receive more than 2047 bytes of data.
+ * It is responsibility of a user to ensure that the data fits the specified byte array.
+ * If this is not the case, the call to this function causes UNDEFINED BEHAVIOUR
+ *
+ * \param     connId   <    connection identifier
+ * \param     data     <    a byte array that will be used for storing the received data
+ *
+ * \return      -10    <    if invalid connection identifier is specified
+ *              -20    <    if the calling thread does not match the thread that established the
+ *                          connection
+ *              -30    <    if the connection was closed by the other side
+ *  number of bytes    <    if the receipt was successful
+ *         received
+ */
+int NetworkReceiveFromByConnId(int connId, char *data);
+
+/*!
+ * Sends a file specified by \a fileName over the network described by the connection identifier
+ * Users may provide a pointer to the ingeger where transfer speed will be saved
+ *
+ * A thread that calls this function MUST match the thread that acquired the connection identifier
+ *
+ * \param      connId  <    connection identifier
+ *            fileName <    relative path to the file that need to be transferred
+ *       transferSpeed <    pointer to the integer where transfer speed will be saved
+ *                          if this pointer is NULL transfer speed will not be saved
+ *
+ * \return       0     <    if file transfer was successful
+ *              -1     <    if the specified file cannot be opened
+ *              -2     <    if file transfer over the network failed
+ */
+int SendFile(int connId, const char *fileName, int *transferSpeed);
+
+/*!
+ * Receives a file over the network connection described by the connection identifier
+ * and saves it as \a fileName
+ *
+ * A thread that calls this function MUST match the thread that acquired the connection identifier
+ *
+ * If the file with the given fileName already exists in the filesystem its content will be overwritten
+ *
+ * A thread that calls this function MUST match the thread that acquired the connection identifier
+ *
+ * \param   connId     <    connection identifier
+ *        fileName     <    relative path to the file
+ *
+ * \return       0     <    if the file has been received and saved successfully
+ *              -1     <    if the file cannot be created
+ *              -2     <    if the error occured during network transfer
+ *              -3     <    if the error occured when writing the file
+ */
+int ReceiveFile(int connId, const char *fileName);
+
+/*!
+ * Closes a network connection described by the connection identifier
+ * Connection identifier is considered invalid as soon as this function is called
+ * Attempt to use the connection identifier after call to this function results in
+ * an UNDEFINED BEHAVIOUR
+ *
+ * If other side of the connection attempts to receive anything after this function
+ * is called, it will close its connection immediately
+ *
+ * If other sides does not attempt to receive anything, it will close its connection
+ * after machine-dependent period of time
+ *
+ * A thread that calls this function MUST match the thread that acquired the connection identifier
+ *
+ * \param   connId      < Connection Identifier
+ *
+ * \return   0          < if connection has been closed
+ *          -1          < if invalid connection identifier is specified
+ */
+int NetworkCloseConnection(int connId);
 
 /* Address space control operations: Exit, Exec, and Join */
 
@@ -136,7 +287,7 @@ void Create (char *name);
 OpenFileId Open (char *name);
 
 /* Write "size" bytes from "buffer" to the open file. */
-void Write (char *buffer, int size, OpenFileId id);
+int Write (char *buffer, int size, OpenFileId id);
 
 /* Read "size" bytes from the open file into "buffer".  
  * Return the number of bytes actually read -- if the open file isn't
@@ -169,6 +320,33 @@ void Yield ();
  * 
  */
 void AssertionFailed(char *fileName, int lineNumber);
+
+
+/* Fork Exec syscal
+ * 
+ */
+int ForkExec(char *fileName);
+
+
+/* Lists content of the current directory
+ * 
+ */
+void ListDirectoryContent(char *directoryName);
+
+/* Lists content of the current directory
+ * 
+ */
+int CreateDirectory(char *directoryName);
+
+/* Changes directory
+ * 
+ */
+int ChangeDirectory(char *directoryName);
+
+/* Removes directory
+ * 
+ */
+int RemoveDirectory(char *directoryName);
 
 
 #endif // IN_USER_MODE

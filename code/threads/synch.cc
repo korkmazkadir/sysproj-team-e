@@ -24,6 +24,7 @@
 #include "copyright.h"
 #include "synch.h"
 #include "system.h"
+#include <limits.h>
 
 //----------------------------------------------------------------------
 // Semaphore::Semaphore
@@ -61,17 +62,16 @@ Semaphore::~Semaphore ()
 //      when it is called.
 //----------------------------------------------------------------------
 
-void
-Semaphore::P ()
+void Semaphore::P()
 {
     IntStatus oldLevel = interrupt->SetLevel (IntOff);	// disable interrupts
 
     while (value == 0)
-      {				// semaphore not available
-	  queue->Append ((void *) currentThread);	// so go to sleep
-	  currentThread->Sleep ();
-      }
-    value--;			// semaphore available, 
+    {				// semaphore not available
+        queue->Append ((void *) currentThread);	// so go to sleep
+        currentThread->Sleep ();
+    }
+    value--;			// semaphore available,
     // consume its value
 
     (void) interrupt->SetLevel (oldLevel);	// re-enable interrupts
@@ -85,56 +85,158 @@ Semaphore::P ()
 //      are disabled when it is called.
 //----------------------------------------------------------------------
 
-void
-Semaphore::V ()
+int Semaphore::V ()
 {
+    int retVal = 0;
     Thread *thread;
     IntStatus oldLevel = interrupt->SetLevel (IntOff);
 
     thread = (Thread *) queue->Remove ();
-    if (thread != NULL)		// make thread ready, consuming the V immediately
-	scheduler->ReadyToRun (thread);
+    if (likely(thread != NULL))	{	// make thread ready, consuming the V immediately
+        scheduler->ReadyToRun (thread);
+    }
+
+    if (unlikely(value == INT_MAX)) {
+        retVal = -1;
+        goto early_exit;
+    }
+
     value++;
+early_exit:
     (void) interrupt->SetLevel (oldLevel);
+    return retVal;
 }
 
-// Dummy functions -- so we can compile our later assignments 
-// Note -- without a correct implementation of Condition::Wait(), 
-// the test case in the network assignment won't work!
-Lock::Lock (const char *debugName)
+
+Lock::Lock (const char *debugName):
+    m_name(debugName)
+  , m_currentThread(nullptr)
 {
 }
 
 Lock::~Lock ()
 {
 }
-void
-Lock::Acquire ()
+
+int Lock::Acquire (bool nblock)
 {
-}
-void
-Lock::Release ()
-{
+    int retVal = 0;
+    IntStatus oldLevel = interrupt->SetLevel (IntOff);	// disable interrupts
+    while (m_currentThread)
+    {
+        if (nblock) {
+            retVal = -2;
+            goto early_exit;
+        }
+        if (m_currentThread == currentThread) {
+            retVal = -1;
+            goto early_exit;
+        }
+        m_queue.Append ((void *) currentThread);	// so go to sleep
+        currentThread->Sleep ();
+
+    }
+    m_currentThread = currentThread;
+
+    early_exit:
+    (void) interrupt->SetLevel (oldLevel);	// re-enable interrupts
+    return retVal;
 }
 
-Condition::Condition (const char *debugName)
+void Lock::Release ()
 {
+    IntStatus oldLevel = interrupt->SetLevel (IntOff);
+    Thread *thread;
+    /*! Only allow releasing the mutex to the thread that acquired it */
+    if (unlikely(!isHeldByCurrentThread())) {
+        goto early_exit;
+    }
+
+    thread = static_cast<Thread *>(m_queue.Remove ());
+    if (likely(thread != nullptr))	{	// make thread ready, consuming the V immediately
+        scheduler->ReadyToRun (thread);
+    }
+    m_currentThread = nullptr;
+
+early_exit:
+    (void) interrupt->SetLevel (oldLevel);
 }
 
-Condition::~Condition ()
+bool Lock::isHeldByCurrentThread() const
 {
-}
-void
-Condition::Wait (Lock * conditionLock)
-{
-    ASSERT (FALSE);
+    bool retVal = (currentThread && (currentThread == m_currentThread));
+    return retVal;
 }
 
-void
-Condition::Signal (Lock * conditionLock)
-{
+Condition::Condition (const char *debugName):
+    m_name(debugName)
+  , m_threadToUnlock(nullptr)
+    { /* do nothing */ }
+
+Condition::~Condition () {
 }
-void
-Condition::Broadcast (Lock * conditionLock)
-{
+
+void Condition::Wait (Lock * conditionLock) {
+    IntStatus oldLevel = interrupt->SetLevel (IntOff);
+
+    /*! nullptr is specified as parameter */
+    if (unlikely(!conditionLock)) {
+        goto error_exit;
+    }
+
+    /*!
+     * current thread *MUST* hold a lock in order to Wait
+     * this also handles a case when current thread is NULL
+     */
+    if (unlikely(!conditionLock->isHeldByCurrentThread())) {
+        goto error_exit;
+    }
+
+    m_queueBlocked.Append((void *)currentThread);
+
+    conditionLock->Release();
+    currentThread->Sleep();
+    conditionLock->Acquire();
+
+error_exit:
+    (void)interrupt->SetLevel(oldLevel);
+}
+
+int Condition::Signal (Lock * conditionLock) {
+
+    int retVal = 0;
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);
+    Thread *thread;
+    if (unlikely(!conditionLock)) {
+        retVal = -1;
+        goto error_exit;
+    }
+
+    if (unlikely(!conditionLock->isHeldByCurrentThread())) {
+        retVal = -1;
+        goto error_exit;
+    }
+
+    thread = static_cast<Thread *>(m_queueBlocked.Remove());
+
+    if (!thread) {
+        goto error_exit;
+    }
+    scheduler->ReadyToRun(thread);
+
+error_exit:
+    (void)interrupt->SetLevel(oldLevel);
+    return retVal;
+}
+
+void Condition::Broadcast (Lock * conditionLock) {
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);
+
+    int blockedQueueSize = m_queueBlocked.Size();
+    for (int ii = 0; ii < blockedQueueSize; ++ii) {
+        Signal(conditionLock);
+    }
+
+    (void)interrupt->SetLevel(oldLevel);
+
 }

@@ -135,8 +135,8 @@ Scheduler::Run (Thread * nextThread)
 #ifdef USER_PROGRAM
     if (currentThread->space != NULL)
       {				// if there is an address space
-	  currentThread->RestoreUserState ();	// to restore, do it.
-      currentThread->space->RestoreState ();
+        currentThread->RestoreUserState ();	// to restore, do it.
+        currentThread->space->RestoreState ();
       }
 #endif
 }
@@ -151,4 +151,16 @@ Scheduler::Print ()
 {
     printf ("Ready list contents:\n");
     readyList->Mapcar ((VoidFunctionPtr) ThreadPrint);
+}
+
+void Scheduler::EvictThreadsById(int tid) {
+    int size = readyList->Size();
+    for (int ii = 0; ii < size; ++ii) {
+        Thread *evictee = static_cast<Thread *>(readyList->Remove());
+        if (evictee->Tid() == tid) {
+            delete evictee;
+        } else {
+            readyList->Append(evictee);
+        }
+    }
 }

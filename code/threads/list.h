@@ -50,11 +50,12 @@ class List
     void Prepend (void *item);	// Put item at the beginning of the list
     void Append (void *item);	// Put item at the end of the list
     void *Remove ();		// Take item off the front of the list
+    void *Peek();
 
     void Mapcar (VoidFunctionPtr func);	// Apply "func" to every element 
     // on the list
-    bool IsEmpty ();		// is the list empty? 
-
+    bool IsEmpty ();		// is the list empty?
+    int Size() const;
 
     // Routines to put/get items on/off list in order (sorted by key)
     void SortedInsert (void *item, long long sortKey);	// Put item into list
@@ -63,6 +64,7 @@ class List
   private:
       ListElement * first;	// Head of the list, NULL if list is empty
     ListElement *last;		// Last element of list
+    int size;
 };
 
 #endif // LIST_H

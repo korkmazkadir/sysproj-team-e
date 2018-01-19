@@ -27,9 +27,13 @@ Network::Network(NetworkAddress addr, double reliability,
 	VoidFunctionPtr readAvail, VoidFunctionPtr writeDone, int callArg)
 {
     ident = addr;
-    if (reliability < 0) chanceToWork = 0;
-    else if (reliability > 1) chanceToWork = 1;
-    else chanceToWork = reliability;
+    if (reliability < 0) {
+        chanceToWork = 0;
+    } else if (reliability > 1) {
+        chanceToWork = 1;
+    } else {
+        chanceToWork = reliability;
+    }
 
     // set up the stuff to emulate asynchronous interrupts
     writeHandler = writeDone;
@@ -113,8 +117,8 @@ Network::Send(PacketHeader hdr, char* data)
     interrupt->Schedule(NetworkSendDone, (int)this, NetworkTime, NetworkSendInt);
 
     if (Random() % 100 >= chanceToWork * 100) { // emulate a lost packet
-	DEBUG('n', "oops, lost it!\n");
-	return;
+        DEBUG('n', "oops, lost it!\n");
+        return;
     }
 
     // concatenate hdr and data into a single buffer, and send it out

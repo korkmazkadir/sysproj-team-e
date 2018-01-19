@@ -9,9 +9,10 @@
 
 #define MAX_NUM_USERTHREADS 128
 
-static const int THREAD_STACK_SIZE = 3 * PageSize;
+static const int THREAD_STACK_SIZE = 5 * PageSize;
 
 static int numThreads = 0;
+static int numProcesses = 0;
 
 /*!
  * Mapping between address space and the list of available thread stacks
@@ -44,9 +45,10 @@ static void InitializeThreadStructs() {
  * threads stacks)
  *
  * The thread stack size is assumed to be fixed and be multiple of PageSize
+ *
  */
-static void SetUpAvailThreadStacks(AddrSpace *addrSpace) {
-    int begin = addrSpace->GetStack() - THREAD_STACK_SIZE;
+static void SetUpAvailThreadStacks(AddrSpace *addrSpace, bool kernelRequest = false) {
+    int begin = addrSpace->GetStack() - (kernelRequest ? 0 : THREAD_STACK_SIZE);
     int end = addrSpace->GetEndOfNoff();
     List &listOfStacks = threadStacks[addrSpace];
     while (begin - end > THREAD_STACK_SIZE) {
@@ -69,11 +71,8 @@ static void SetUpAvailThreadStacks(AddrSpace *addrSpace) {
 static void StartUserThread(int f) {
     ThreadParam_t *cvtParam = (ThreadParam_t *)f;
 
-    for (int i = 0; i < NumTotalRegs; i++) {
-        machine->WriteRegister (i, 0);
-    }
-
-    //FIXME: Restore state when virtual memory is implemented
+    cvtParam->space->InitRegisters();
+    cvtParam->space->RestoreState();
 
     int instr = (int)cvtParam->functionPtr;
 
@@ -88,10 +87,13 @@ static void StartUserThread(int f) {
 /*!
  * Sets up a new kernel thread associated with the new user thread
  *
- * \param funPtr     <- pointer to function of type \c ThreadFun_t
- * \param arg        <- argument to be passed to \a funPtr when calling it
- * \param retAddress <- address of a function that shall be called when
- *                      funPtr finishes executing
+ * \param funPtr            <- pointer to function of type \c ThreadFun_t
+ * \param arg               <- argument to be passed to \a funPtr when calling it
+ * \param retAddress        <- address of a function that shall be called when
+ *                             funPtr finishes executing
+ * \param kernelRequest     <- whether this function is used for creating a new process
+ *                             if this parameter is set to \c true the function will
+ *                             allow 0 address for \a funPtr
  *
  *
  * \return thread ID if thread creation was successful
@@ -100,7 +102,7 @@ static void StartUserThread(int f) {
  *         -3 if there is no space left on stack for a new thread
  *         -4 ran out of memory
  */
-int do_UserThreadCreate(int funPtr, int arg, int retAddress) {
+int do_UserThreadCreate(int funPtr, int arg, int retAddress, AddrSpace *space, OpenFile *workingDirectoryFile, Thread *parent ,bool kernelRequest) {
 
     int retVal = -1;
     static bool firstTime = true;
@@ -111,7 +113,7 @@ int do_UserThreadCreate(int funPtr, int arg, int retAddress) {
         InitializeThreadStructs();
     }
 
-    if (0 == funPtr) {
+    if (!kernelRequest && (0 == funPtr)) {
         /* The call should fail and return -1 */
         retVal = -1;
         goto early_exit;
@@ -122,16 +124,16 @@ int do_UserThreadCreate(int funPtr, int arg, int retAddress) {
     } else {
         /* Proceed with creating our thread */
 
-        if (currentThread->space) {
-            auto it = threadStacks.find(currentThread->space);
+        if (space) {
+            auto it = threadStacks.find(space);
             if (it == threadStacks.end()) {
-                SetUpAvailThreadStacks(currentThread->space);
+                SetUpAvailThreadStacks(space, kernelRequest);
             }
         } else {
             DEBUG_MSG("Current thread Address space is NULL. \n");
         }
 
-        void *topOfThreadStack = threadStacks[currentThread->space].Remove();
+        void *topOfThreadStack = threadStacks[space].Remove();
 
         // Not enough space for this thread - fail the request
         if (!topOfThreadStack) {
@@ -147,6 +149,7 @@ int do_UserThreadCreate(int funPtr, int arg, int retAddress) {
         }
 
         serializedThreadParam->functionPtr = (ThreadFun_t)funPtr;
+        serializedThreadParam->space = space;
         serializedThreadParam->functionParam = (void *)arg;
         serializedThreadParam->retAddress = retAddress;
         serializedThreadParam->topOfStack = (int)topOfThreadStack;
@@ -155,14 +158,9 @@ int do_UserThreadCreate(int funPtr, int arg, int retAddress) {
         // TODO: Remove after active dev phase
         int threadNum = (int)freeThreadIds.Remove();
 
+        Thread *newThread = new (std::nothrow) Thread("");
 
-
-        const char *format = "User created thread %d";
-        char buf[35];
-        snprintf(buf, 35, format, threadNum);
-
-        Thread *newThread = new (std::nothrow) Thread(buf);
-
+        /* Memory allocation failed */
         if (!newThread) {
             retVal = -4;
             goto early_exit;
@@ -175,16 +173,36 @@ int do_UserThreadCreate(int funPtr, int arg, int retAddress) {
         thread_args[threadNum - 1].threadPtr = newThread;
         thread_args[threadNum - 1].argPtr = (int)serializedThreadParam;
         thread_args[threadNum - 1].waitingForJoin = true;
-        newThread->SetTID(threadNum);
-        /* Memory allocation failed */
+        //thread_args[threadNum - 1].kThread = kernelRequest;
+        
+        
 
+        newThread->SetTID(threadNum);
+        newThread->space = space;
         newThread->Fork(StartUserThread, (int)serializedThreadParam);
-//        currentThread->Yield();
+        newThread->SetWorkingDirectory(workingDirectoryFile);
+        if(parent != NULL){
+            newThread->setOpenFileTable(parent->getOpenFileTable());
+        }else{
+            ThreadOpenFileTable *fileTable = new ThreadOpenFileTable();
+            newThread->setOpenFileTable(fileTable);
+        }
+        
+                
         retVal = threadNum;
         ++numThreads;
-        if (1 == numThreads) {
-            haltSync.P();
+
+        if (kernelRequest) {
+            ++numProcesses;
+            if (1 == numProcesses) {
+//                haltSync.P();
+            }
+        } else {
+            int pTid = currentThread->Tid();
+            thread_args[pTid - 1].children.Append((void*)threadNum);//store children tid
         }
+
+
     }
 
     early_exit:
@@ -207,11 +225,32 @@ void do_UserThreadExit() {
     thread_args[tid - 1].synch->V();
     --numThreads;
     if (0 == numThreads) {
-        haltSync.V();
+//        haltSync.V();
     }
 
     //TODO: Consider removing threadPtr from the descriptor
     descriptor->threadPtr->Finish();
+
+    // Do not delete descriptor.threadPtr explicitly since it will be done by the scheduler
+}
+
+void do_SomeUserThreadExit(Thread* thread) {
+    int tid = thread->Tid();
+    ThreadDescriptor_t *descriptor = &thread_args[tid - 1];
+    ThreadParam_t *cvt = (ThreadParam_t *)descriptor->argPtr;
+
+    threadStacks[thread->space].Append((void *)cvt->topOfStack);
+
+    delete cvt;
+    thread_args[tid - 1].synch->V();
+    --numThreads;
+    if (0 == numThreads) {
+//        haltSync.V();
+    }
+
+    //TODO: Consider removing threadPtr from the descriptor
+    //descriptor->threadPtr->Finish();
+    delete descriptor->threadPtr;
 
     // Do not delete descriptor.threadPtr explicitly since it will be done by the scheduler
 }
@@ -241,4 +280,55 @@ int do_UserThreadJoin(int tid) {
     retVal = 0;
 early_exit:
     return retVal;
+}
+
+
+int do_KernelThreadCreate(AddrSpace *space, OpenFile *workingDirectoryFile) {
+    int retVal = do_UserThreadCreate(0, 0, 0, space, workingDirectoryFile,NULL,true );
+    return retVal;
+}
+
+
+void do_ExitCurrentProcess()
+{    
+    int tid = currentThread->Tid();
+
+
+    //Check if it has userlevel threads
+    while(!thread_args[tid - 1].children.IsEmpty()) {
+        int childTid = (int)thread_args[tid - 1].children.Remove(); //Get child tid
+        //Thread* thread = thread_args[childTid - 1].threadPtr;
+        if(thread_args[childTid - 1].waitingForJoin) {
+            do_UserThreadJoin(childTid); //consider deleting them
+
+            //For deletion, doesn't work yet(tries to access thread after deleting it)
+            /*do_SomeUserThreadExit(thread);
+
+            scheduler->EvictThreadsById(childTid);
+
+            printf("Waiting for children left behind %d\n", childTid);*/
+        }
+    }
+
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);
+
+    thread_args[tid - 1].synch->V();
+    
+    scheduler->EvictThreadsById(tid);
+    delete currentThread->space;
+    currentThread->space = nullptr;
+
+    interrupt->SetLevel(oldLevel);
+
+    --numProcesses;
+
+    //--numThreads; //deleting thread from count?
+    //printf("xiting num proc %d %d \n", numProcesses, tid );
+
+    if (0 >= numProcesses) {
+    //  haltSync.V();
+        interrupt->Halt();
+    }
+
+    currentThread->Finish();
 }
